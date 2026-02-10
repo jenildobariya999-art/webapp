@@ -1,114 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Device Verification</title>
 
-<style>
-body{
-background:#0b1020;
-color:white;
-font-family:sans-serif;
-text-align:center;
-padding:30px;
-}
+<link rel="stylesheet" href="style.css">
 
-.card{
-background:#111a33;
-padding:25px;
-border-radius:18px;
-box-shadow:0 0 20px rgba(0,150,255,.2);
-}
-
-button{
-background:#1da1ff;
-border:none;
-padding:15px 25px;
-border-radius:12px;
-color:white;
-font-size:18px;
-margin-top:20px;
-}
-
-.progress{
-width:100%;
-background:#222;
-border-radius:10px;
-margin-top:20px;
-overflow:hidden;
-display:none;
-}
-
-.bar{
-height:10px;
-width:0%;
-background:#1da1ff;
-}
-
-.success{
-display:none;
-color:#00ff88;
-margin-top:15px;
-font-size:18px;
-}
-</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
 
 <div class="card">
 
-<h2>🔒 Device Verification</h2>
-<p>Please verify to continue</p>
+<div class="icon">🔐</div>
 
-<button onclick="startVerify()">Verify</button>
+<h2>Verifying Device</h2>
+<p id="status">Establishing secure handshake…</p>
 
 <div class="progress">
-<div class="bar" id="bar"></div>
+<div id="bar"></div>
 </div>
 
-<div class="success" id="success">
-✅ Verification Complete!
-</div>
+<button id="verifyBtn">Verify Device</button>
 
 </div>
 
-<script>
-function startVerify(){
-
-document.querySelector(".progress").style.display="block";
-
-let bar=document.getElementById("bar");
-let success=document.getElementById("success");
-
-let width=0;
-
-let interval=setInterval(()=>{
-width+=5;
-bar.style.width=width+"%";
-
-if(width>=100){
-clearInterval(interval);
-success.style.display="block";
-
-sendSignal();
-}
-},150);
-}
-
-function sendSignal(){
-
-fetch("https://api.telegram.org/bot8274297339:AAFRSqaYOoqsrAdlZsHusFOZ6F_jy5Mhx1g/sendMessage",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-chat_id:"6925391837 ",
-text:"✅ User verification completed"
-})
-});
-
-}
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
