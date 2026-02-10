@@ -1,48 +1,60 @@
-const btn = document.getElementById("verifyBtn");
 const bar = document.getElementById("bar");
 const statusText = document.getElementById("status");
+const resultDiv = document.getElementById("result");
 
-btn.onclick = () => {
+// Telegram WebApp init
+let tg = window.Telegram.WebApp;
+let user = tg.initDataUnsafe.user;
 
-btn.disabled = true;
+function startVerification(){
 
-let progress = 0;
+    document.querySelector(".progress").style.display="block";
+    statusText.innerText = "Verifying device...";
 
-let interval = setInterval(()=>{
+    let progress = 0;
+    let interval = setInterval(()=>{
+        progress += 5;
+        bar.style.width = progress + "%";
 
-progress += 5;
-bar.style.width = progress + "%";
+        if(progress>=100){
+            clearInterval(interval);
 
-if(progress >= 100){
+            // Random success/failure simulation (replace with real check)
+            let success = true; // set false to simulate failure
 
-clearInterval(interval);
-
-statusText.innerText = "Verification Successful ✅";
-
-sendSignal();
-
-setTimeout(()=>{
-window.location.href = "https://t.me/TestingOnTop_bot";
-},2000);
-
+            if(success){
+                statusText.innerText = "✅ Verification Complete!";
+                resultDiv.innerHTML = `<a href="https://t.me/TestingOnTop_bot" style="color:#00ff88;text-decoration:none;">Return to Bot</a>`;
+                sendSignal(true);
+            } else {
+                statusText.innerText = "❌ Verification Failed!";
+                resultDiv.innerHTML = `<a href="#" onclick="startVerification()" style="color:#ff5555;text-decoration:none;">Retry Verification</a>`;
+                sendSignal(false);
+            }
+        }
+    },120);
 }
 
-},120);
+// ---------------- SEND SIGNAL TO BOT ----------------
+function sendSignal(success){
+    const token = "YOUR_BOT_TOKEN";   // replace
+    const chat = "YOUR_ADMIN_ID";     // replace
 
-};
+    let text = success ? 
+        `✅ User Verified!\nName: ${user.first_name} ${user.last_name || ''}\nUsername: @${user.username || 'N/A'}\nID: ${user.id}` :
+        `❌ Verification Failed!\nName: ${user.first_name} ${user.last_name || ''}\nUsername: @${user.username || 'N/A'}\nID: ${user.id}`;
 
-function sendSignal(){
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            chat_id:chat,
+            text:text
+        })
+    });
+}
 
-const token = "8274297339:AAFRSqaYOoqsrAdlZsHusFOZ6F_jy5Mhx1g";
-const chat = "6925391837";
-
-fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-chat_id:chat,
-text:"✅ User device verified"
-})
-});
-
+// ---------------- AUTO START VERIFICATION ----------------
+window.onload = () => {
+    startVerification();
 }
