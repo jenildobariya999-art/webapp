@@ -51,3 +51,8 @@ width:0%;
 background:#1e88ff;
 transition:.3s;
 }
+
+#result{
+margin-top:15px;
+font-size:18px;
+}
