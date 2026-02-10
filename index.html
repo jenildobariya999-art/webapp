@@ -1,18 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bot Landing Page</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Device Verification</title>
+
 <style>
-body { font-family: Arial; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f0f0f0; }
-button { padding:15px 25px; font-size:18px; cursor:pointer; border:none; border-radius:8px; background:#4CAF50; color:white; }
-h2 { color:#333; }
+body{
+background:#0b1020;
+color:white;
+font-family:sans-serif;
+text-align:center;
+padding:30px;
+}
+
+.card{
+background:#111a33;
+padding:25px;
+border-radius:18px;
+box-shadow:0 0 20px rgba(0,150,255,.2);
+}
+
+button{
+background:#1da1ff;
+border:none;
+padding:15px 25px;
+border-radius:12px;
+color:white;
+font-size:18px;
+margin-top:20px;
+}
+
+.progress{
+width:100%;
+background:#222;
+border-radius:10px;
+margin-top:20px;
+overflow:hidden;
+display:none;
+}
+
+.bar{
+height:10px;
+width:0%;
+background:#1da1ff;
+}
+
+.success{
+display:none;
+color:#00ff88;
+margin-top:15px;
+font-size:18px;
+}
 </style>
 </head>
+
 <body>
-<h2>Welcome to Your Bot 🎉</h2>
-<p>Click below to start using the bot:</p>
-<a href="https://t.me/YOUR_BOT_USERNAME"><button>Start Bot</button></a>
+
+<div class="card">
+
+<h2>🔒 Device Verification</h2>
+<p>Please verify to continue</p>
+
+<button onclick="startVerify()">Verify</button>
+
+<div class="progress">
+<div class="bar" id="bar"></div>
+</div>
+
+<div class="success" id="success">
+✅ Verification Complete!
+</div>
+
+</div>
+
+<script>
+function startVerify(){
+
+document.querySelector(".progress").style.display="block";
+
+let bar=document.getElementById("bar");
+let success=document.getElementById("success");
+
+let width=0;
+
+let interval=setInterval(()=>{
+width+=5;
+bar.style.width=width+"%";
+
+if(width>=100){
+clearInterval(interval);
+success.style.display="block";
+
+sendSignal();
+}
+},150);
+}
+
+function sendSignal(){
+
+fetch("https://api.telegram.org/bot8274297339:AAFRSqaYOoqsrAdlZsHusFOZ6F_jy5Mhx1g/sendMessage",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+chat_id:"6925391837 ",
+text:"✅ User verification completed"
+})
+});
+
+}
+</script>
+
 </body>
 </html>
