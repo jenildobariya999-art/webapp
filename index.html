@@ -4,27 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Device Verification</title>
-
 <link rel="stylesheet" href="style.css">
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-
 <body>
 
 <div class="card">
-
-<div class="icon">🔐</div>
-
-<h2>Verifying Device</h2>
-<p id="status">Establishing secure handshake…</p>
-
-<div class="progress">
-<div id="bar"></div>
-</div>
-
-<button id="verifyBtn">Verify Device</button>
-
+    <div class="icon">🔒</div>
+    <h2>Device Verification</h2>
+    <p id="status">Initializing verification…</p>
+    <div class="progress">
+        <div id="bar"></div>
+    </div>
+    <div id="result">
+        <!-- Success / Failure message will appear here -->
+    </div>
 </div>
 
 <script src="script.js"></script>
