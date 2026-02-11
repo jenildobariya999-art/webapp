@@ -1,28 +1,146 @@
 <!DOCTYPE html>
 <html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Secure Verification</title>
+
+<style>
+body{
+margin:0;
+font-family:system-ui;
+background:#0b0f2a;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+width:90%;
+max-width:380px;
+background:#12163d;
+border-radius:20px;
+padding:25px;
+text-align:center;
+box-shadow:0 0 40px rgba(0,150,255,.2);
+}
+
+.circle{
+width:120px;
+height:120px;
+border-radius:50%;
+border:4px solid #4aa3ff;
+margin:20px auto;
+animation:spin 2s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+h2{
+color:#6fb3ff;
+margin:10px 0;
+}
+
+.bar{
+width:100%;
+height:8px;
+background:#1d224f;
+border-radius:10px;
+overflow:hidden;
+margin-top:15px;
+}
+
+.progress{
+height:100%;
+width:0%;
+background:#4aa3ff;
+transition:width .3s;
+}
+
+button{
+margin-top:25px;
+width:100%;
+padding:14px;
+border:none;
+border-radius:12px;
+background:#4aa3ff;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+.success{
+border-color:#00ff99;
+box-shadow:0 0 30px rgba(0,255,150,.5);
+animation:none;
+}
+
+.fail{
+border-color:#ff3b3b;
+box-shadow:0 0 30px rgba(255,50,50,.5);
+animation:none;
+}
+</style>
+</head>
+
 <body>
 
-<h2>Verification</h2>
+<div class="card">
 
-<button onclick="verify()">Verify Device</button>
+<div id="circle" class="circle"></div>
+
+<h2 id="status">Secure Verification</h2>
+
+<p id="text">Analyzing device profile...</p>
+
+<div class="bar">
+<div id="progress" class="progress"></div>
+</div>
+
+<button id="btn" style="display:none;">Continue to Bot</button>
+
+</div>
 
 <script>
-function hash(str){
-    let h=0;
-    for(let i=0;i<str.length;i++)
-        h=((h<<5)-h)+str.charCodeAt(i);
-    return Math.abs(h);
+let p=0;
+let bar=document.getElementById("progress");
+let circle=document.getElementById("circle");
+let status=document.getElementById("status");
+let text=document.getElementById("text");
+let btn=document.getElementById("btn");
+
+// simulate verification
+let timer=setInterval(()=>{
+p+=5;
+bar.style.width=p+"%";
+
+if(p>=100){
+clearInterval(timer);
+
+// change TRUE/FALSE to simulate result
+let verified=true;
+
+if(verified){
+circle.className="circle success";
+status.innerText="Verification Success";
+text.innerText="Device authorized.";
+}else{
+circle.className="circle fail";
+status.innerText="Verification Failed";
+text.innerText="Device already registered.";
 }
 
-function verify(){
-    let fp = navigator.userAgent + screen.width + screen.height;
-    let device = hash(fp);
-
-    let uid = new URLSearchParams(location.search).get("uid");
-
-    window.location =
-      "https://t.me/TestingOnTop_bot?start=verify_"+device;
+btn.style.display="block";
 }
+},120);
+
+btn.onclick=()=>{
+window.location.href="https://t.me/TestingOnTop_bot";
+};
 </script>
 
 </body>
