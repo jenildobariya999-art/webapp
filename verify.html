@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Verification</h2>
+
+<button onclick="verify()">Verify Device</button>
+
+<script>
+function hash(str){
+    let h=0;
+    for(let i=0;i<str.length;i++)
+        h=((h<<5)-h)+str.charCodeAt(i);
+    return Math.abs(h);
+}
+
+function verify(){
+    let fp = navigator.userAgent + screen.width + screen.height;
+    let device = hash(fp);
+
+    let uid = new URLSearchParams(location.search).get("uid");
+
+    window.location =
+      "https://t.me/TestingOnTop_bot?start=verify_"+device;
+}
+</script>
+
+</body>
+</html>
