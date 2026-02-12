@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Device Verify</title>
+<title>Verify Device</title>
 
 <style>
+
 body{
 margin:0;
 height:100vh;
@@ -13,57 +13,76 @@ display:flex;
 justify-content:center;
 align-items:center;
 font-family:sans-serif;
-background:#0f172a;
-color:white;
+background:linear-gradient(135deg,#2563eb,#06b6d4);
 overflow:hidden;
+color:white;
+transition:.5s;
+}
+
+.bubble{
+position:absolute;
+border-radius:50%;
+background:rgba(255,255,255,.15);
+animation:float 8s infinite linear;
+}
+
+@keyframes float{
+from{transform:translateY(100vh);}
+to{transform:translateY(-10vh);}
 }
 
 .card{
-text-align:center;
-background:#1e293b;
+background:rgba(0,0,0,.25);
 padding:30px;
 border-radius:20px;
+text-align:center;
 width:85%;
-max-width:350px;
-box-shadow:0 0 20px rgba(0,0,0,.4);
+max-width:360px;
+backdrop-filter:blur(10px);
 }
 
 button{
 margin-top:20px;
-padding:12px 20px;
+padding:12px 22px;
 border:none;
-border-radius:10px;
+border-radius:12px;
 font-size:16px;
-background:#3b82f6;
-color:white;
+background:white;
+color:#2563eb;
+font-weight:bold;
 cursor:pointer;
 }
 
 .footer{
-margin-top:15px;
+margin-top:12px;
 font-size:12px;
 opacity:.7;
 }
+
 </style>
 </head>
 
 <body>
 
 <div class="card">
-
 <h2 id="status">🔒 Device Verification</h2>
-
 <button onclick="verify()">Verify Now</button>
-
 <div class="footer">made by jenish</div>
-
 </div>
 
 <script>
 
+for(let i=0;i<12;i++){
+let b=document.createElement("div");
+b.className="bubble";
+b.style.width=b.style.height=Math.random()*60+20+"px";
+b.style.left=Math.random()*100+"%";
+b.style.animationDuration=Math.random()*6+5+"s";
+document.body.appendChild(b);
+}
+
 function getToken(){
-let p=new URLSearchParams(location.search);
-return p.get("token");
+return new URLSearchParams(location.search).get("token");
 }
 
 function verify(){
@@ -75,15 +94,14 @@ fail();
 return;
 }
 
-// success UI
 document.body.style.background="#16a34a";
 document.getElementById("status").innerText="✅ Verification Successful";
 
-// redirect to bot
 setTimeout(()=>{
 window.location.href=
 "https://t.me/TestingOnTop_bot?start=verified_"+token;
 },1200);
+
 }
 
 function fail(){
