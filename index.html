@@ -53,6 +53,18 @@ width:0%;
 background:#4ea1ff;
 transition:.2s;
 }
+
+button{
+margin-top:20px;
+width:100%;
+padding:14px;
+border:none;
+border-radius:12px;
+background:#4ea1ff;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
 </style>
 </head>
 
@@ -60,15 +72,17 @@ transition:.2s;
 
 <div class="card">
 
-<h2 id="title">Device Verification</h2>
+<h2>Device Verification</h2>
 
-<div id="scan" class="scan"></div>
+<div class="scan"></div>
 
 <p id="status">Scanning security…</p>
 
 <div class="bar">
 <div id="prog" class="progress"></div>
 </div>
+
+<button onclick="goBot()">⬅ Return to Bot</button>
 
 </div>
 
@@ -90,6 +104,11 @@ navigator.language;
 
 let deviceHash = hash(fp);
 
+function goBot(){
+window.location.href=
+"https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
+}
+
 /* progress animation */
 let p=0;
 let prog=document.getElementById("prog");
@@ -102,13 +121,9 @@ if(p>=100){
 clearInterval(timer);
 
 document.getElementById("status").innerText=
-"Redirecting securely…";
+"Verification complete… redirecting";
 
-setTimeout(()=>{
-window.location.href=
-"https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
-},1200);
-
+setTimeout(goBot,1200);
 }
 
 },70);
