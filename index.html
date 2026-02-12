@@ -129,23 +129,22 @@ navigator.language;
 
 let deviceHash = hash(fingerprint);
 
-// previous stored device
+// stored device
 let storedHash = localStorage.getItem("verified_device");
 
-// ===== UI refs =====
-
+// UI refs
 let p=0;
 let prog=document.getElementById("prog");
 let status=document.getElementById("status");
 let scan=document.getElementById("scan");
 
-// redirect to bot
+// redirect
 function goBot(){
 window.location.href =
 "https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
 }
 
-// ===== PROGRESS ANIMATION =====
+// ===== PROGRESS =====
 
 let timer=setInterval(()=>{
 
@@ -156,8 +155,15 @@ if(p>=100){
 
 clearInterval(timer);
 
-// ===== FAIL CASE =====
+let mismatch = false;
+
+// only mismatch if stored exists AND different
 if(storedHash && storedHash !== deviceHash){
+mismatch = true;
+}
+
+// ===== FAIL =====
+if(mismatch){
 
 document.body.classList.add("fail");
 status.innerText="❌ Device mismatch detected";
@@ -168,7 +174,7 @@ setTimeout(goBot,1500);
 return;
 }
 
-// ===== SUCCESS CASE =====
+// ===== SUCCESS =====
 
 localStorage.setItem("verified_device", deviceHash);
 
