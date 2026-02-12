@@ -5,15 +5,17 @@
 <title>Secure Verification</title>
 
 <style>
+
 body{
 margin:0;
 height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-background:radial-gradient(circle,#1c1f4a,#050717);
 font-family:system-ui;
+background:#0a0f2e;
 color:white;
+transition:background .5s;
 }
 
 .card{
@@ -21,9 +23,10 @@ width:90%;
 max-width:380px;
 padding:25px;
 border-radius:18px;
-background:#14193f;
 text-align:center;
+background:#14193f;
 box-shadow:0 0 30px rgba(0,120,255,.3);
+transition:.4s;
 }
 
 .scan{
@@ -54,6 +57,24 @@ background:#4ea1ff;
 transition:.2s;
 }
 
+.success{
+background:#0c3d1f !important;
+}
+
+.fail{
+background:#3d0c0c !important;
+}
+
+.success .card{
+background:#14532d;
+box-shadow:0 0 25px rgba(0,255,120,.6);
+}
+
+.fail .card{
+background:#5b1b1b;
+box-shadow:0 0 25px rgba(255,0,0,.6);
+}
+
 button{
 margin-top:20px;
 width:100%;
@@ -65,6 +86,7 @@ color:white;
 font-size:16px;
 cursor:pointer;
 }
+
 </style>
 </head>
 
@@ -72,11 +94,11 @@ cursor:pointer;
 
 <div class="card">
 
-<h2>Device Verification</h2>
+<h2 id="title">Device Verification</h2>
 
-<div class="scan"></div>
+<div class="scan" id="scan"></div>
 
-<p id="status">Scanning security…</p>
+<p id="status">Scanning device security…</p>
 
 <div class="bar">
 <div id="prog" class="progress"></div>
@@ -88,7 +110,8 @@ cursor:pointer;
 
 <script>
 
-/* device hash */
+// ===== DEVICE HASH =====
+
 function hash(str){
 let h=0;
 for(let i=0;i<str.length;i++)
@@ -104,29 +127,61 @@ navigator.language;
 
 let deviceHash = hash(fp);
 
+// ===== LOCAL DEVICE CHECK =====
+// prevents repeat fake attempts visually
+
+let used = localStorage.getItem("verified_device");
+
 function goBot(){
-window.location.href=
+window.location.href =
 "https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
 }
 
-/* progress animation */
+// ===== PROGRESS =====
+
 let p=0;
 let prog=document.getElementById("prog");
 
 let timer=setInterval(()=>{
-p+=4;
+
+p+=3;
 prog.style.width=p+"%";
 
 if(p>=100){
+
 clearInterval(timer);
 
-document.getElementById("status").innerText=
-"Verification complete… redirecting";
+// ===== FAIL CASE =====
+if(used && used !== String(deviceHash)){
 
-setTimeout(goBot,1200);
+document.body.classList.add("fail");
+document.getElementById("status").innerText =
+"Verification failed — device conflict";
+
+document.getElementById("scan").style.display="none";
+
+setTimeout(goBot,1500);
+
+return;
 }
 
-},70);
+// ===== SUCCESS CASE =====
+
+localStorage.setItem("verified_device", deviceHash);
+
+document.body.classList.add("success");
+
+document.getElementById("status").innerText =
+"Verification successful — redirecting";
+
+document.getElementById("scan").style.display="none";
+
+// ALWAYS redirect
+setTimeout(goBot,1200);
+
+}
+
+},60);
 
 </script>
 
