@@ -1,144 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Device Verification</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Device Verify</title>
 
 <style>
-body {
-    margin:0;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-family:sans-serif;
-    background:#0f172a;
-    overflow:hidden;
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+font-family:sans-serif;
+background:#0f172a;
+color:white;
+overflow:hidden;
 }
 
-.bubble {
-    position:absolute;
-    width:200px;
-    height:200px;
-    background:rgba(255,255,255,0.05);
-    border-radius:50%;
-    animation:float 12s infinite linear;
+.card{
+text-align:center;
+background:#1e293b;
+padding:30px;
+border-radius:20px;
+width:85%;
+max-width:350px;
+box-shadow:0 0 20px rgba(0,0,0,.4);
 }
 
-@keyframes float {
-    from {transform:translateY(100vh);}
-    to {transform:translateY(-200px);}
+button{
+margin-top:20px;
+padding:12px 20px;
+border:none;
+border-radius:10px;
+font-size:16px;
+background:#3b82f6;
+color:white;
+cursor:pointer;
 }
 
-.card {
-    padding:30px;
-    border-radius:16px;
-    text-align:center;
-    color:white;
-    width:280px;
-    backdrop-filter:blur(10px);
-    transition:0.4s;
-}
-
-.success { background:#16a34a; }
-.fail { background:#dc2626; }
-
-button {
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    margin-top:12px;
-    font-size:14px;
+.footer{
+margin-top:15px;
+font-size:12px;
+opacity:.7;
 }
 </style>
 </head>
 
 <body>
 
-<div class="bubble" style="left:10%"></div>
-<div class="bubble" style="left:70%;animation-delay:3s"></div>
+<div class="card">
 
-<div id="card" class="card">
-<h2 id="status">Verifying...</h2>
-<p id="msg">Checking device security</p>
-<button id="btn" style="display:none">Return to Bot</button>
-<p style="font-size:12px;margin-top:10px">made by jenish</p>
+<h2 id="status">🔒 Device Verification</h2>
+
+<button onclick="verify()">Verify Now</button>
+
+<div class="footer">made by jenish</div>
+
 </div>
 
 <script>
 
-const BOT = "TestingOnTop_bot";
-
-// get token
-const params = new URLSearchParams(location.search);
-const token = params.get("token");
-
-// device fingerprint
-function deviceHash(){
-    return btoa(
-        navigator.userAgent +
-        screen.width +
-        screen.height +
-        Intl.DateTimeFormat().resolvedOptions().timeZone
-    );
+function getToken(){
+let p=new URLSearchParams(location.search);
+return p.get("token");
 }
 
-const hash = deviceHash();
+function verify(){
 
-// local device lock
-let used = localStorage.getItem("verified_device");
+let token=getToken();
 
-const card = document.getElementById("card");
-const status = document.getElementById("status");
-const msg = document.getElementById("msg");
-const btn = document.getElementById("btn");
+if(!token){
+fail();
+return;
+}
 
-function success(){
-    card.classList.add("success");
-    status.innerText="Verification Successful";
-    msg.innerText="Device secured ✔";
+// success UI
+document.body.style.background="#16a34a";
+document.getElementById("status").innerText="✅ Verification Successful";
 
-    localStorage.setItem("verified_device",hash);
-
-    btn.style.display="block";
-    btn.onclick=()=>{
-        window.location.href=
-        `https://t.me/${BOT}?start=verified_${token}`;
-    };
-
-    setTimeout(()=>{
-        window.location.href=
-        `https://t.me/${BOT}?start=verified_${token}`;
-    },2000);
+// redirect to bot
+setTimeout(()=>{
+window.location.href=
+"https://t.me/TestingOnTop_bot?start=verified_"+token;
+},1200);
 }
 
 function fail(){
-    card.classList.add("fail");
-    status.innerText="Verification Failed";
-    msg.innerText="Device already used ❌";
-
-    btn.style.display="block";
-    btn.onclick=()=>{
-        window.location.href=`https://t.me/${BOT}`;
-    };
+document.body.style.background="#dc2626";
+document.getElementById("status").innerText="❌ Verification Failed";
 }
-
-// logic
-setTimeout(()=>{
-    if(!token){
-        fail();
-        return;
-    }
-
-    if(used && used===hash){
-        fail();
-        return;
-    }
-
-    success();
-
-},1500);
 
 </script>
 
