@@ -13,9 +13,8 @@ display:flex;
 justify-content:center;
 align-items:center;
 font-family:system-ui;
-background:#0a0f2e;
+background:#0c3d1f;
 color:white;
-transition:background .5s;
 }
 
 .card{
@@ -24,16 +23,15 @@ max-width:380px;
 padding:25px;
 border-radius:18px;
 text-align:center;
-background:#14193f;
-box-shadow:0 0 30px rgba(0,120,255,.3);
-transition:.4s;
+background:#14532d;
+box-shadow:0 0 25px rgba(0,255,120,.6);
 }
 
 .scan{
 width:120px;
 height:120px;
 border-radius:50%;
-border:3px solid #4ea1ff;
+border:3px solid #00ff88;
 margin:20px auto;
 animation:spin 1.2s linear infinite;
 }
@@ -45,7 +43,7 @@ to{transform:rotate(360deg)}
 .bar{
 width:100%;
 height:8px;
-background:#1b204f;
+background:#103a24;
 border-radius:10px;
 overflow:hidden;
 }
@@ -53,26 +51,8 @@ overflow:hidden;
 .progress{
 height:100%;
 width:0%;
-background:#4ea1ff;
+background:#00ff88;
 transition:.2s;
-}
-
-.success{
-background:#0c3d1f !important;
-}
-
-.fail{
-background:#3d0c0c !important;
-}
-
-.success .card{
-background:#14532d;
-box-shadow:0 0 25px rgba(0,255,120,.6);
-}
-
-.fail .card{
-background:#5b1b1b;
-box-shadow:0 0 25px rgba(255,0,0,.6);
 }
 
 button{
@@ -81,8 +61,8 @@ width:100%;
 padding:14px;
 border:none;
 border-radius:12px;
-background:#4ea1ff;
-color:white;
+background:#00ff88;
+color:black;
 font-size:16px;
 cursor:pointer;
 }
@@ -94,11 +74,11 @@ cursor:pointer;
 
 <div class="card">
 
-<h2>Device Verification</h2>
+<h2>Secure Verification</h2>
 
 <div id="scan" class="scan"></div>
 
-<p id="status">Scanning device security…</p>
+<p id="status">Verifying device…</p>
 
 <div class="bar">
 <div id="prog" class="progress"></div>
@@ -110,33 +90,23 @@ cursor:pointer;
 
 <script>
 
-// ===== DEVICE HASH =====
-
+// device hash
 function hash(str){
 let h=0;
 for(let i=0;i<str.length;i++){
 h=((h<<5)-h)+str.charCodeAt(i);
 h|=0;
 }
-return Math.abs(h).toString();
+return Math.abs(h);
 }
 
-let fingerprint =
+let fp =
 navigator.userAgent +
 screen.width +
 screen.height +
 navigator.language;
 
-let deviceHash = hash(fingerprint);
-
-// stored device
-let storedHash = localStorage.getItem("verified_device");
-
-// UI refs
-let p=0;
-let prog=document.getElementById("prog");
-let status=document.getElementById("status");
-let scan=document.getElementById("scan");
+let deviceHash = hash(fp);
 
 // redirect
 function goBot(){
@@ -144,7 +114,9 @@ window.location.href =
 "https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
 }
 
-// ===== PROGRESS =====
+// progress animation
+let p=0;
+let prog=document.getElementById("prog");
 
 let timer=setInterval(()=>{
 
@@ -155,33 +127,8 @@ if(p>=100){
 
 clearInterval(timer);
 
-let mismatch = false;
-
-// only mismatch if stored exists AND different
-if(storedHash && storedHash !== deviceHash){
-mismatch = true;
-}
-
-// ===== FAIL =====
-if(mismatch){
-
-document.body.classList.add("fail");
-status.innerText="❌ Device mismatch detected";
-
-scan.style.display="none";
-
-setTimeout(goBot,1500);
-return;
-}
-
-// ===== SUCCESS =====
-
-localStorage.setItem("verified_device", deviceHash);
-
-document.body.classList.add("success");
-status.innerText="✅ Verification successful — redirecting";
-
-scan.style.display="none";
+document.getElementById("status").innerText =
+"Verification complete — redirecting";
 
 setTimeout(goBot,1200);
 
