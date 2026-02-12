@@ -13,27 +13,49 @@ display:flex;
 justify-content:center;
 align-items:center;
 font-family:system-ui;
-background:#0c3d1f;
+background:linear-gradient(180deg,#0b1f4d,#0a0f2c);
+overflow:hidden;
 color:white;
 }
 
+/* bubbles */
+
+.bubble{
+position:absolute;
+bottom:-100px;
+background:rgba(255,255,255,0.15);
+border-radius:50%;
+animation:rise linear infinite;
+}
+
+@keyframes rise{
+to{
+transform:translateY(-120vh);
+}
+}
+
+/* card */
+
 .card{
+position:relative;
 width:90%;
 max-width:380px;
 padding:25px;
 border-radius:18px;
 text-align:center;
-background:#14532d;
-box-shadow:0 0 25px rgba(0,255,120,.6);
+background:rgba(0,0,0,0.35);
+backdrop-filter:blur(10px);
+box-shadow:0 0 25px rgba(0,140,255,.5);
+z-index:10;
 }
 
 .scan{
 width:120px;
 height:120px;
 border-radius:50%;
-border:3px solid #00ff88;
+border:3px solid #00c3ff;
 margin:20px auto;
-animation:spin 1.2s linear infinite;
+animation:spin 1.3s linear infinite;
 }
 
 @keyframes spin{
@@ -43,7 +65,7 @@ to{transform:rotate(360deg)}
 .bar{
 width:100%;
 height:8px;
-background:#103a24;
+background:#081a3b;
 border-radius:10px;
 overflow:hidden;
 }
@@ -51,20 +73,26 @@ overflow:hidden;
 .progress{
 height:100%;
 width:0%;
-background:#00ff88;
+background:linear-gradient(90deg,#00c3ff,#007bff);
 transition:.2s;
 }
 
 button{
-margin-top:20px;
+margin-top:18px;
 width:100%;
 padding:14px;
 border:none;
 border-radius:12px;
-background:#00ff88;
+background:#00c3ff;
 color:black;
 font-size:16px;
 cursor:pointer;
+}
+
+.credit{
+margin-top:10px;
+font-size:12px;
+opacity:.8;
 }
 
 </style>
@@ -72,11 +100,26 @@ cursor:pointer;
 
 <body>
 
+<!-- bubbles generator -->
+<script>
+for(let i=0;i<20;i++){
+let b=document.createElement("div");
+b.className="bubble";
+let s=Math.random()*40+10;
+b.style.width=s+"px";
+b.style.height=s+"px";
+b.style.left=Math.random()*100+"%";
+b.style.animationDuration=(Math.random()*8+6)+"s";
+b.style.opacity=Math.random();
+document.body.appendChild(b);
+}
+</script>
+
 <div class="card">
 
 <h2>Secure Verification</h2>
 
-<div id="scan" class="scan"></div>
+<div class="scan"></div>
 
 <p id="status">Verifying device…</p>
 
@@ -86,11 +129,13 @@ cursor:pointer;
 
 <button onclick="goBot()">⬅ Return to Bot</button>
 
+<div class="credit">made by jenish</div>
+
 </div>
 
 <script>
 
-// device hash
+// simple device hash
 function hash(str){
 let h=0;
 for(let i=0;i<str.length;i++){
@@ -100,17 +145,17 @@ h|=0;
 return Math.abs(h);
 }
 
-let fp =
-navigator.userAgent +
-screen.width +
-screen.height +
+let fp=
+navigator.userAgent+
+screen.width+
+screen.height+
 navigator.language;
 
-let deviceHash = hash(fp);
+let deviceHash=hash(fp);
 
-// redirect
+// change bot username here
 function goBot(){
-window.location.href =
+window.location.href=
 "https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
 }
 
@@ -124,14 +169,12 @@ p+=3;
 prog.style.width=p+"%";
 
 if(p>=100){
-
 clearInterval(timer);
 
-document.getElementById("status").innerText =
+document.getElementById("status").innerText=
 "Verification complete — redirecting";
 
 setTimeout(goBot,1200);
-
 }
 
 },60);
