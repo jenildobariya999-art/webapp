@@ -94,9 +94,9 @@ cursor:pointer;
 
 <div class="card">
 
-<h2 id="title">Device Verification</h2>
+<h2>Device Verification</h2>
 
-<div class="scan" id="scan"></div>
+<div id="scan" class="scan"></div>
 
 <p id="status">Scanning device security…</p>
 
@@ -114,33 +114,38 @@ cursor:pointer;
 
 function hash(str){
 let h=0;
-for(let i=0;i<str.length;i++)
+for(let i=0;i<str.length;i++){
 h=((h<<5)-h)+str.charCodeAt(i);
-return Math.abs(h);
+h|=0;
+}
+return Math.abs(h).toString();
 }
 
-let fp =
+let fingerprint =
 navigator.userAgent +
 screen.width +
 screen.height +
 navigator.language;
 
-let deviceHash = hash(fp);
+let deviceHash = hash(fingerprint);
 
-// ===== LOCAL DEVICE CHECK =====
-// prevents repeat fake attempts visually
+// previous stored device
+let storedHash = localStorage.getItem("verified_device");
 
-let used = localStorage.getItem("verified_device");
+// ===== UI refs =====
 
+let p=0;
+let prog=document.getElementById("prog");
+let status=document.getElementById("status");
+let scan=document.getElementById("scan");
+
+// redirect to bot
 function goBot(){
 window.location.href =
 "https://t.me/TestingOnTop_bot?start=verify_"+deviceHash;
 }
 
-// ===== PROGRESS =====
-
-let p=0;
-let prog=document.getElementById("prog");
+// ===== PROGRESS ANIMATION =====
 
 let timer=setInterval(()=>{
 
@@ -152,16 +157,14 @@ if(p>=100){
 clearInterval(timer);
 
 // ===== FAIL CASE =====
-if(used && used !== String(deviceHash)){
+if(storedHash && storedHash !== deviceHash){
 
 document.body.classList.add("fail");
-document.getElementById("status").innerText =
-"Verification failed — device conflict";
+status.innerText="❌ Device mismatch detected";
 
-document.getElementById("scan").style.display="none";
+scan.style.display="none";
 
 setTimeout(goBot,1500);
-
 return;
 }
 
@@ -170,13 +173,10 @@ return;
 localStorage.setItem("verified_device", deviceHash);
 
 document.body.classList.add("success");
+status.innerText="✅ Verification successful — redirecting";
 
-document.getElementById("status").innerText =
-"Verification successful — redirecting";
+scan.style.display="none";
 
-document.getElementById("scan").style.display="none";
-
-// ALWAYS redirect
 setTimeout(goBot,1200);
 
 }
