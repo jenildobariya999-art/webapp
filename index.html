@@ -2,60 +2,132 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secure Verification</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secure Device Verification</title>
 
 <style>
+
 body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:linear-gradient(180deg,#0b0f2a,#11163f);
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:radial-gradient(circle at top,#1c1f4a,#050717);
+font-family:system-ui;
+color:white;
+overflow:hidden;
+}
+
+/* floating particles */
+body::before{
+content:"";
+position:absolute;
+width:200%;
+height:200%;
+background:
+radial-gradient(circle,#4ea1ff22 2px,transparent 3px);
+background-size:40px 40px;
+animation:float 30s linear infinite;
+}
+
+@keyframes float{
+from{transform:translateY(0)}
+to{transform:translateY(-200px)}
 }
 
 .card{
-  width:90%;
-  max-width:360px;
-  background:#14193f;
-  border-radius:18px;
-  padding:25px;
-  text-align:center;
-  box-shadow:0 0 30px rgba(0,0,0,0.6);
+position:relative;
+width:92%;
+max-width:380px;
+padding:30px;
+border-radius:20px;
+background:rgba(20,25,60,.85);
+backdrop-filter:blur(10px);
+text-align:center;
+box-shadow:0 0 50px rgba(0,120,255,.25);
+z-index:2;
 }
 
-.circle{
-  width:110px;
-  height:110px;
-  border-radius:50%;
-  border:4px solid #4e7cff;
-  margin:20px auto;
-  animation:spin 1.2s linear infinite;
+h2{
+margin:0 0 10px;
+color:#7db3ff;
+}
+
+.scanner{
+width:130px;
+height:130px;
+margin:25px auto;
+border-radius:50%;
+border:3px solid #4ea1ff;
+position:relative;
+box-shadow:0 0 20px #4ea1ff;
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%{box-shadow:0 0 5px #4ea1ff}
+50%{box-shadow:0 0 25px #4ea1ff}
+100%{box-shadow:0 0 5px #4ea1ff}
+}
+
+.scanner::after{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+border-radius:50%;
+border-top:3px solid white;
+animation:spin 1.2s linear infinite;
 }
 
 @keyframes spin{
-  from{transform:rotate(0)}
-  to{transform:rotate(360deg)}
+to{transform:rotate(360deg)}
+}
+
+.bar{
+width:100%;
+height:8px;
+background:#1b204f;
+border-radius:10px;
+overflow:hidden;
+margin-top:15px;
+}
+
+.progress{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#4ea1ff,#9ec8ff);
+transition:.2s;
 }
 
 button{
-  margin-top:20px;
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:12px;
-  background:#4e7cff;
-  color:white;
-  font-size:16px;
-  cursor:pointer;
+margin-top:25px;
+width:100%;
+padding:14px;
+border:none;
+border-radius:12px;
+font-size:16px;
+background:linear-gradient(90deg,#4ea1ff,#6ab0ff);
+color:white;
+cursor:pointer;
+display:none;
 }
 
-.success{border-color:#22c55e}
-.fail{border-color:#ff3b3b}
-.hidden{display:none}
+.success{
+border-color:#00ff88;
+box-shadow:0 0 30px #00ff88;
+animation:none;
+}
+
+.fail{
+border-color:#ff3b3b;
+box-shadow:0 0 30px #ff3b3b;
+animation:none;
+}
+
 </style>
 </head>
 
@@ -65,49 +137,57 @@ button{
 
 <h2 id="title">Secure Verification</h2>
 
-<div id="loader" class="circle"></div>
+<div id="scan" class="scanner"></div>
 
-<p id="status">Analyzing device security…</p>
+<p id="status">Scanning device security…</p>
 
-<button id="btn" class="hidden" onclick="goBack()">
-Continue to Bot
-</button>
+<div class="bar">
+<div id="prog" class="progress"></div>
+</div>
+
+<button id="btn">Continue to Bot</button>
 
 </div>
 
 <script>
 
-// fake verification simulation
-setTimeout(() => {
+let p=0;
+let prog=document.getElementById("prog");
+let scan=document.getElementById("scan");
+let status=document.getElementById("status");
+let title=document.getElementById("title");
+let btn=document.getElementById("btn");
 
-let verified = Math.random() > 0.4; 
-// change probability if needed
+let timer=setInterval(()=>{
+p+=3;
+prog.style.width=p+"%";
 
-let loader = document.getElementById("loader");
-let status = document.getElementById("status");
-let title = document.getElementById("title");
-let btn = document.getElementById("btn");
+if(p>=100){
 
-loader.classList.remove("circle");
+clearInterval(timer);
+
+let verified=Math.random()>0.3;
+
+scan.classList.remove("scanner");
 
 if(verified){
-  loader.classList.add("success");
-  title.innerText="Already Verified";
-  status.innerText="This device is authorized.";
+scan.classList.add("success");
+title.innerText="Verification Success";
+status.innerText="Device authorized securely.";
 }else{
-  loader.classList.add("fail");
-  title.innerText="Verification Failed";
-  status.innerText="Device linked to another account.";
+scan.classList.add("fail");
+title.innerText="Verification Failed";
+status.innerText="Device already linked.";
 }
 
-btn.classList.remove("hidden");
-
-},3000);
-
-
-function goBack(){
-  window.location.href="https://t.me/TestingOnTop_bot";
+btn.style.display="block";
 }
+
+},80);
+
+btn.onclick=()=>{
+window.location.href="https://t.me/TestingOnTop_bot";
+};
 
 </script>
 
