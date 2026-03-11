@@ -1,0 +1,73 @@
+body {
+    background-color: #f0f2f5;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.app-container {
+    width: 375px; /* Mobile width */
+    background: #f8f9ff;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+/* Gradient Card */
+.balance-card {
+    background: linear-gradient(135deg, #7b61ff, #5c27fe);
+    color: white;
+    margin: 20px;
+    padding: 25px;
+    border-radius: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.monthly-stat {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* Action Icons */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 0 20px;
+}
+
+.action-item {
+    background: white;
+    padding: 15px 5px;
+    border-radius: 20px;
+    text-align: center;
+    font-size: 0.7rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.icon {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+/* Colors */
+.orange { color: #ff8c00; }
+.blue { color: #00a8ff; }
+.green { color: #2ecc71; }
+.purple { color: #9b59b6; }
+
+.activity-card {
+    background: white;
+    margin: 20px;
+    padding: 20px;
+    border-radius: 30px;
+}
