@@ -1,53 +1,41 @@
-// Dashboard.jsx
-import React from 'react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fintech Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="menu-icon">☰</div>
+            <h2>Dashboard</h2>
+            <div class="profile-pic">👤</div>
+        </header>
 
-const Dashboard = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black p-8 text-white">
-      {/* Glassmorphism Header */}
-      <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white border-opacity-20 mb-8">
-        <h1 className="text-2xl font-bold">Athi Gateway Dashboard</h1>
-        <p className="text-purple-200">Welcome back, Merchant</p>
-      </div>
+        <div class="balance-card">
+            <div class="balance-info">
+                <span class="label">● TOTAL BALANCE</span>
+                <h1>₹78.09</h1>
+                <span class="monthly-stat">↗ ₹391.00 this month</span>
+            </div>
+            <button class="add-money">+</button>
+        </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Total Balance" value="₹ 45,230.00" color="from-purple-500" />
-        <StatCard title="Today's Deposit" value="₹ 12,800.00" color="from-blue-500" />
-        <StatCard title="Withdrawals" value="₹ 5,000.00" color="from-pink-500" />
-      </div>
-      
-      {/* Transaction Table */}
-      <div className="mt-8 bg-black bg-opacity-30 rounded-xl overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-white bg-opacity-10">
-            <tr>
-              <th className="p-4">Transaction ID</th>
-              <th className="p-4">Method</th>
-              <th className="p-4">Amount</th>
-              <th className="p-4">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-white border-opacity-5">
-              <td className="p-4">#TXN98234</td>
-              <td className="p-4">UPI (Athi)</td>
-              <td className="p-4">₹ 500.00</td>
-              <td className="p-4"><span className="text-green-400">Success</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="action-grid">
+            <div class="action-item"><div class="icon orange">✉</div><span>Lifafa</span></div>
+            <div class="action-item"><div class="icon blue">👛</div><span>Withdraw</span></div>
+            <div class="action-item"><div class="icon green">👥</div><span>Pay User</span></div>
+            <div class="action-item"><div class="icon purple">💳</div><span>UPI Pay</span></div>
+        </div>
+
+        <div class="activity-card">
+            <h3>ACTIVITY</h3>
+            <canvas id="activityChart"></canvas>
+        </div>
     </div>
-  );
-};
-
-const StatCard = ({ title, value, color }) => (
-  <div className={`p-6 rounded-xl bg-gradient-to-r ${color} to-transparent border border-white border-opacity-10`}>
-    <p className="text-sm opacity-80">{title}</p>
-    <p className="text-3xl font-bold mt-2">{value}</p>
-  </div>
-);
-
-export default Dashboard;
-            
+    <script src="script.js"></script>
+</body>
+</html>
