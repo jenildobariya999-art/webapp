@@ -1,41 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fintech Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Verification</title>
 </head>
+
 <body>
-    <div class="app-container">
-        <header>
-            <div class="menu-icon">☰</div>
-            <h2>Dashboard</h2>
-            <div class="profile-pic">👤</div>
-        </header>
 
-        <div class="balance-card">
-            <div class="balance-info">
-                <span class="label">● TOTAL BALANCE</span>
-                <h1>₹78.09</h1>
-                <span class="monthly-stat">↗ ₹391.00 this month</span>
-            </div>
-            <button class="add-money">+</button>
-        </div>
+<h2>Telegram Verification</h2>
 
-        <div class="action-grid">
-            <div class="action-item"><div class="icon orange">✉</div><span>Lifafa</span></div>
-            <div class="action-item"><div class="icon blue">👛</div><span>Withdraw</span></div>
-            <div class="action-item"><div class="icon green">👥</div><span>Pay User</span></div>
-            <div class="action-item"><div class="icon purple">💳</div><span>UPI Pay</span></div>
-        </div>
+<script>
 
-        <div class="activity-card">
-            <h3>ACTIVITY</h3>
-            <canvas id="activityChart"></canvas>
-        </div>
-    </div>
-    <script src="script.js"></script>
+const params = new URLSearchParams(window.location.search)
+const uid = params.get("uid")
+
+if(!uid){
+ document.body.innerHTML="User ID missing"
+}
+
+fetch("/api/verify?uid="+uid)
+.then(res=>res.json())
+.then(data=>{
+ document.body.innerHTML = `
+ <h3>Verification Successful</h3>
+ <p>User: ${data.user}</p>
+ <p>Device ID: ${data.device}</p>
+ `
+})
+
+</script>
+
 </body>
 </html>
