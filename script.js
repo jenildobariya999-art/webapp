@@ -1,208 +1,186 @@
-(function(){
-"use strict";
-
-var PROCESS_URL="https://verificationtest.byethost31.com/verificationFolder/process.php";
-
-function setStatus(status){
-var badge=document.getElementById("headerBadge");
-var text=document.getElementById("headerStatusText");
-if(badge)badge.classList.remove("scanning","error","active","failed");
-if(status==="SCANNING"){
-if(badge)badge.classList.add("scanning");
-if(text)text.textContent="SCANNING";
-}else if(status==="ERROR"){
-if(badge)badge.classList.add("error");
-if(text)text.textContent="ERROR";
-}else if(status==="ACTIVE"){
-if(badge)badge.classList.add("active");
-if(text)text.textContent="ACTIVE";
-}else if(status==="FAILED"){
-if(badge)badge.classList.add("failed");
-if(text)text.textContent="FAILED";
+const API_URL =
+    "https://verificationtest.byethost31.com/verificationFolder/process.php";
+const $ = (id) => document.getElementById(id);
+function showView(id) {
+    document.querySelectorAll(".view-section").forEach((view) => {
+        view.classList.remove("active");
+    });
+    const view = $(id);
+    if (view) view.classList.add("active");
 }
+function setHeader(state, text) {
+    const badge = $("headerBadge");
+    const statusText = $("headerStatusText");
+    if (badge) {
+        badge.classList.remove("pill-blue", "pill-green", "pill-red");
+        badge.classList.add(
+            state === "success"
+                ? "pill-green"
+                : state === "failed"
+                  ? "pill-red"
+                  : "pill-blue",
+        );
+    }
+    if (statusText) statusText.textContent = text;
 }
-
-function showView(id){
-var sections=document.querySelectorAll(".view-section");
-for(var i=0;i<sections.length;i++)sections[i].classList.remove("active");
-var view=document.getElementById(id);
-if(view)view.classList.add("active");
+function showFailure(message) {
+    setHeader("failed", "FAILED");
+    const failedMessage = $("failedMsg");
+    if (failedMessage) failedMessage.textContent = message;
+    showView("view-failed");
 }
-
-function setMessage(message){
-var el=document.getElementById("failedMsg");
-if(el)el.textContent=message;
+function createParticles() {
+    const container = $("particles");
+    if (!container) return;
+    for (let i = 0; i < 18; i += 1) {
+        const particle = document.createElement("div");
+        particle.className = "particle";
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        particle.style.animationDuration = `${8 + Math.random() * 8}s`;
+        container.appendChild(particle);
+    }
 }
-
-function getTelegramUser(){
-try{
-if(window.Telegram&&window.Telegram.WebApp){
-if(window.Telegram.WebApp.ready)window.Telegram.WebApp.ready();
-return window.Telegram.WebApp.initDataUnsafe&&window.Telegram.WebApp.initDataUnsafe.user?window.Telegram.WebApp.initDataUnsafe.user:null;
+function getTelegramUser() {
+    const telegram = window.Telegram && window.Telegram.WebApp;
+    if (!telegram) {
+        return { telegram: null, user: null };
+    }
+    telegram.ready();
+    const user =
+        telegram.initDataUnsafe && telegram.initDataUnsafe.user
+            ? telegram.initDataUnsafe.user
+            : null;
+    return { telegram, user };
 }
-}catch(e){
-console.error("Telegram error:",e);
+function renderUser(user) {
+    const fullName = [user.first_name, user.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const nameElement = $("userName");
+    const idElement = $("userIdDisplay");
+    const avatar = $("avatarBox");
+    if (nameElement) nameElement.textContent = fullName || "USER";
+    if (idElement) idElement.textContent = String(user.id);
+    if (avatar && user.photo_url) {
+        avatar.textContent = "";
+        avatar.style.backgroundImage = `url("${user.photo_url}")`;
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+    } else if (avatar) {
+        avatar.textContent = (fullName || "U").charAt(0).toUpperCase();
+    }
 }
-return null;
+function closeTelegramPage(telegram) {
+    if (telegram && typeof telegram.close === "function") {
+        telegram.close();
+        return;
+    }
+    window.close();
 }
-
-function displayUser(user){
-if(!user)return;
-var name=document.getElementById("userName");
-var uid=document.getElementById("userIdDisplay");
-var avatar=document.getElementById("avatarBox");
-var fullName=((user.first_name||"")+" "+(user.last_name||"")).trim();
-
-if(name)name.textContent=fullName||"Telegram User";
-if(uid)uid.textContent=String(user.id||"");
-if(avatar&&user.photo_url)avatar.style.backgroundImage="url(\""+user.photo_url+"\")";
+async function getFingerprint() {
+    if (!window.FingerprintJS) {
+        throw new Error("FingerprintJS library was not loaded.");
+    }
+    const agent = await window.FingerprintJS.load();
+    const result = await agent.get();
+    if (!result || !result.visitorId) {
+        throw new Error("Fingerprint was not returned.");
+    }
+    return result.visitorId;
 }
-
-function getParams(){
-var params=new URLSearchParams(window.location.search);
-return{
-bot:params.get("bot")||"",
-bot_hash:params.get("botHash")||""
-};
+async function sendAuditRequest(payload) {
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+    const responseText = await response.text();
+    let data;
+    try {
+        data = JSON.parse(responseText);
+    } catch {
+        throw new Error(
+            `Server returned non-JSON response (${response.status}).`,
+        );
+    }
+    if (!response.ok) {
+        throw new Error(data.message || `Server returned HTTP ${response.status}.`);
+    }
+    return data;
 }
-
-function getTimezone(){
-try{
-return Intl.DateTimeFormat().resolvedOptions().timeZone||"unknown";
-}catch(e){
-return"unknown";
+async function startVerification() {
+    createParticles();
+    showView("view-scanning");
+    setHeader("scanning", "SCANNING");
+    const progress = $("scanBar");
+    if (progress) progress.style.width = "20%";
+    const { telegram, user } = getTelegramUser();
+    if (!telegram || !user || !user.id) {
+        showFailure(
+            "Open this page from the Verify button inside Telegram. A Telegram user ID is unavailable in a normal browser.",
+        );
+        return;
+    }
+    renderUser(user);
+    try {
+        if (progress) progress.style.width = "45%";
+        const fingerprint = await getFingerprint();
+        if (progress) progress.style.width = "70%";
+        const params = new URLSearchParams(window.location.search);
+        const botHash = params.get("bothash") || params.get("bot_hash") || "";
+        const botUsername =
+            params.get("botusername") || params.get("bot") || "";
+        const payload = {
+            user_id: user.id,
+            bot: botUsername,
+            bot_hash: botHash,
+            botusername: botUsername,
+            hash: botHash,
+            fingerprint: fingerprint,
+            device_id: fingerprint,
+            user_agent: navigator.userAgent,
+            platform: navigator.platform || "unknown",
+            language: navigator.language || "unknown",
+            timezone:
+                Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown",
+            hardware_concurrency: navigator.hardwareConcurrency || null,
+            device_memory: navigator.deviceMemory || null,
+            screen_resolution: `${window.screen.width}x${window.screen.height}`,
+        };
+        const data = await sendAuditRequest(payload);
+        if (progress) progress.style.width = "100%";
+        /*
+         * The supplied PHP endpoint intentionally returns audit_only.
+         * Do not turn a browser response into Telegram authentication.
+         */
+        if (data.status === "audit_only") {
+            showFailure(
+                "Device information was received for local audit. No Telegram verification was granted.",
+            );
+            return;
+        }
+        showFailure(data.message || "Verification was not completed.");
+    } catch (error) {
+        console.error("Verification request failed:", error);
+        showFailure(
+            "Connection failed. Check the PHP URL, HTTPS, CORS, and server response.",
+        );
+    }
 }
-}
-
-function createPayload(user,params,fingerprint){
-return{
-user_id:user?user.id:null,
-bot:params.bot,
-bot_hash:params.bot_hash,
-visitorId:fingerprint&&fingerprint.visitorId?fingerprint.visitorId:"",
-device_id:navigator.userAgent||"",
-user_agent:navigator.userAgent||"",
-platform:navigator.platform||"",
-language:navigator.language||"",
-timezone:getTimezone(),
-hardware_concurrency:navigator.hardwareConcurrency||0,
-device_memory:navigator.deviceMemory||"unknown",
-screen_resolution:(window.screen&&window.screen.width?window.screen.width:0)+"x"+(window.screen&&window.screen.height?window.screen.height:0)
-};
-}
-
-function sendPayload(payload){
-return fetch(PROCESS_URL,{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Accept":"application/json"
-},
-body:JSON.stringify(payload)
-})
-.then(function(response){
-return response.text().then(function(text){
-if(!response.ok)throw new Error("HTTP "+response.status+": "+text);
-if(!text)throw new Error("Empty response from PHP");
-var data;
-try{
-data=JSON.parse(text);
-}catch(e){
-throw new Error("Invalid JSON response: "+text);
-}
-return data;
+document.addEventListener("DOMContentLoaded", () => {
+    $("btnSuccessClose")?.addEventListener("click", () => {
+        closeTelegramPage(window.Telegram?.WebApp);
+    });
+    $("btnFailClose")?.addEventListener("click", () => {
+        closeTelegramPage(window.Telegram?.WebApp);
+    });
+    $("btnAlreadyClose")?.addEventListener("click", () => {
+        closeTelegramPage(window.Telegram?.WebApp);
+    });
+    startVerification();
 });
-});
-}
-
-function processResult(data){
-if(!data){
-setStatus("ERROR");
-setMessage("Empty response from verification server.");
-showView("view-failed");
-return;
-}
-
-if(data.status==="success"||data.status==="active"){
-setStatus("ACTIVE");
-showView("view-success");
-return;
-}
-
-if(data.status==="already"||data.status==="attempt"){
-setStatus("ACTIVE");
-showView("view-already");
-return;
-}
-
-if(data.status==="failed"){
-setStatus("FAILED");
-setMessage(data.message||"Verification criteria not met.");
-showView("view-failed");
-return;
-}
-
-setStatus("ERROR");
-setMessage(data.message||"Unknown verification response.");
-showView("view-failed");
-}
-
-function getFingerprint(){
-if(typeof FingerprintJS==="undefined")return Promise.resolve(null);
-
-return FingerprintJS.load()
-.then(function(fp){
-return fp.get();
-})
-.catch(function(error){
-console.error("FingerprintJS error:",error);
-return null;
-});
-}
-
-function verify(){
-setStatus("SCANNING");
-showView("view-scanning");
-
-var params=getParams();
-var user=getTelegramUser();
-
-displayUser(user);
-
-if(!user||!user.id){
-setStatus("ERROR");
-setMessage("Telegram user information could not be detected.");
-showView("view-failed");
-return;
-}
-
-if(!params.bot_hash){
-setStatus("ERROR");
-setMessage("Verification link is missing botHash.");
-showView("view-failed");
-return;
-}
-
-getFingerprint()
-.then(function(fingerprint){
-var payload=createPayload(user,params,fingerprint);
-console.log("Verification payload:",payload);
-return sendPayload(payload);
-})
-.then(function(data){
-console.log("PHP response:",data);
-processResult(data);
-})
-.catch(function(error){
-console.error("Verification error:",error);
-setStatus("ERROR");
-setMessage("We encountered an error in verification. Please try again.");
-showView("view-failed");
-});
-}
-
-document.addEventListener("DOMContentLoaded",function(){
-verify();
-});
-
-})();
