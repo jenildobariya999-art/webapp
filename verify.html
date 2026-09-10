@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jenil Bot — Finishing setup</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+<style>
+  :root{
+    --bg:#0f0f1a; --card:rgba(17,17,27,.85); --text:#f8fafc; --muted:#94a3b8;
+    --accent:#6366f1;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:Inter,system-ui,sans-serif;
+    background:linear-gradient(135deg,#0f0f1a,#1e1b4b);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  }
+  .card{
+    width:100%;max-width:360px;background:var(--card);
+    border:1px solid rgba(255,255,255,.1);border-radius:20px;
+    padding:32px 24px;text-align:center;backdrop-filter:blur(10px);
+  }
+  .spinner{
+    width:48px;height:48px;margin:0 auto 20px;
+    border:3px solid rgba(255,255,255,.15);
+    border-top-color:var(--accent);border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  h1{font-size:18px;margin-bottom:8px}
+  p{color:var(--muted);font-size:14px;line-height:1.5}
+  .hidden{display:none}
+  .icon{font-size:40px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+  <div class="card" id="stateChecking">
+    <div class="spinner"></div>
+    <h1>Finishing setup…</h1>
+    <p>Just a moment while we confirm your join.</p>
+  </div>
+
+  <div class="card hidden" id="stateDone">
+    <div class="icon">✅</div>
+    <h1>All set!</h1>
+    <p id="doneMsg">You're good to go — head back to the chat.</p>
+  </div>
+
+  <div class="card hidden" id="stateError">
+    <div class="icon">⚠️</div>
+    <h1>Something went wrong</h1>
+    <p>Please go back to the bot and try again.</p>
+  </div>
+
+<script>
+  // This page's only job: get a device identifier + your Telegram user id,
+  // and tell the bot's own webhook "this user, on this device, just joined."
+  // No other server, no hidden collection, nothing beyond that one POST.
+
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  function show(id) {
+    ['stateChecking', 'stateDone', 'stateError'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  async function main() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const webhookUrl = params.get('wh');
+      const uidFromLink = params.get('uid');
+
+      const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+      const userId = (tgUser && tgUser.id) || uidFromLink;
+
+      if (!webhookUrl || !userId) {
+        show('stateError');
+        return;
+      }
+
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+
+      const resp = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          visitor_id: result.visitorId
+        })
+      });
+
+      if (!resp.ok) throw new Error('Bad response from webhook');
+
+      show('stateDone');
+      setTimeout(() => { if (tg) tg.close(); }, 1200);
+
+    } catch (err) {
+      console.error(err);
+      show('stateError');
+    }
+  }
+
+  main();
+</script>
+</body>
+</html>
