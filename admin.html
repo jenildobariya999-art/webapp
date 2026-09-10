@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Verification Admin</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #0b1020;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+.header {
+    padding: 20px;
+    background: #11182d;
+    border-bottom: 1px solid #27304a;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.header p {
+    margin: 6px 0 0;
+    color: #8993aa;
+    font-size: 13px;
+}
+
+.container {
+    max-width: 1300px;
+    margin: auto;
+    padding: 20px;
+}
+
+.login {
+    max-width: 400px;
+    margin: 80px auto;
+    background: #11182d;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #27304a;
+}
+
+.login h2 {
+    margin-top: 0;
+}
+
+input {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid #303a56;
+    background: #0b1020;
+    color: #fff;
+    outline: none;
+    margin-bottom: 12px;
+}
+
+button {
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 18px;
+    cursor: pointer;
+    background: #4f7cff;
+    color: white;
+    font-weight: bold;
+}
+
+button:hover {
+    opacity: .9;
+}
+
+.error {
+    color: #ff7070;
+    margin-top: 10px;
+}
+
+.dashboard {
+    display: none;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: #11182d;
+    border: 1px solid #27304a;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.card-title {
+    color: #8993aa;
+    font-size: 13px;
+}
+
+.card-number {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.section {
+    background: #11182d;
+    border: 1px solid #27304a;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.section h2 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+.search {
+    margin-bottom: 15px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #27304a;
+    text-align: left;
+    font-size: 13px;
+}
+
+th {
+    color: #8993aa;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+.success {
+    background: #123d2a;
+    color: #53e49a;
+}
+
+.failed {
+    background: #401c23;
+    color: #ff7272;
+}
+
+.active {
+    background: #392f12;
+    color: #ffd45c;
+}
+
+.muted {
+    color: #8993aa;
+}
+
+.refresh {
+    float: right;
+}
+
+@media(max-width: 800px) {
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media(max-width: 450px) {
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 12px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+    <h1>Verification Admin</h1>
+
+    <p>
+        Verification monitoring dashboard
+    </p>
+
+</div>
+
+
+<div id="loginBox" class="login">
+
+    <h2>Admin Login</h2>
+
+    <input
+        type="password"
+        id="password"
+        placeholder="Admin password"
+    >
+
+    <button onclick="login()">
+        Login
+    </button>
+
+    <div id="loginError" class="error"></div>
+
+</div>
+
+
+<div id="dashboard" class="dashboard">
+
+<div class="container">
+
+    <button class="refresh" onclick="loadData()">
+        Refresh
+    </button>
+
+    <div style="clear:both;height:20px;"></div>
+
+
+    <div class="stats">
+
+        <div class="card">
+            <div class="card-title">TOTAL</div>
+            <div id="total" class="card-number">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">SUCCESS</div>
+            <div id="success" class="card-number">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">FAILED</div>
+            <div id="failed" class="card-number">0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">ACTIVE</div>
+            <div id="active" class="card-number">0</div>
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>Bot Wise Statistics</h2>
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Bot Hash</th>
+                        <th>Total</th>
+                        <th>Success</th>
+                        <th>Failed</th>
+                        <th>Active</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="botTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>All Verification Data</h2>
+
+        <input
+            class="search"
+            id="search"
+            placeholder="Search user ID, bot, IP, device..."
+            oninput="filterRecords()"
+        >
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>User ID</th>
+                        <th>Bot</th>
+                        <th>Status</th>
+                        <th>IP</th>
+                        <th>Platform</th>
+                        <th>Device ID</th>
+                        <th>Time</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="recordTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let ADMIN_PASSWORD = "";
+let allRecords = [];
+
+
+function login() {
+
+    const password =
+        document.getElementById("password").value.trim();
+
+    if (!password) {
+
+        document.getElementById("loginError").innerText =
+            "Enter admin password";
+
+        return;
+    }
+
+    ADMIN_PASSWORD = password;
+
+    loadData();
+}
+
+
+async function loadData() {
+
+    try {
+
+        const response = await fetch("admin.php", {
+
+            method: "GET",
+
+            headers: {
+                "X-Admin-Password": ADMIN_PASSWORD
+            }
+
+        });
+
+        const data = await response.json();
+
+        if (response.status === 401) {
+
+            document.getElementById("loginError").innerText =
+                "Wrong admin password";
+
+            return;
+        }
+
+        if (data.status !== "success") {
+
+            document.getElementById("loginError").innerText =
+                data.message || "Unable to load data";
+
+            return;
+        }
+
+        document.getElementById("loginBox").style.display =
+            "none";
+
+        document.getElementById("dashboard").style.display =
+            "block";
+
+
+        document.getElementById("total").innerText =
+            data.stats.total;
+
+        document.getElementById("success").innerText =
+            data.stats.success;
+
+        document.getElementById("failed").innerText =
+            data.stats.failed;
+
+        document.getElementById("active").innerText =
+            data.stats.active;
+
+
+        renderBots(data.bots);
+
+        allRecords = data.records || [];
+
+        renderRecords(allRecords);
+
+    } catch (error) {
+
+        document.getElementById("loginError").innerText =
+            "Server connection error";
+
+    }
+
+}
+
+
+function renderBots(bots) {
+
+    const table =
+        document.getElementById("botTable");
+
+    table.innerHTML = "";
+
+    bots.forEach(function(bot) {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+
+            <td>
+                <b>${escapeHtml(bot.bot_hash)}</b>
+            </td>
+
+            <td>${bot.total}</td>
+
+            <td>
+                <span class="badge success">
+                    ${bot.success}
+                </span>
+            </td>
+
+            <td>
+                <span class="badge failed">
+                    ${bot.failed}
+                </span>
+            </td>
+
+            <td>
+                <span class="badge active">
+                    ${bot.active}
+                </span>
+            </td>
+
+        `;
+
+        table.appendChild(row);
+
+    });
+
+}
+
+
+function renderRecords(records) {
+
+    const table =
+        document.getElementById("recordTable");
+
+    table.innerHTML = "";
+
+    records.forEach(function(record) {
+
+        let status =
+            String(record.status || "").toLowerCase();
+
+        let badgeClass = status;
+
+        if (
+            status !== "success" &&
+            status !== "failed" &&
+            status !== "active"
+        ) {
+            badgeClass = "active";
+        }
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+
+            <td>
+                ${escapeHtml(record.user_id || "-")}
+            </td>
+
+            <td>
+                ${escapeHtml(record.bot_hash || "-")}
+            </td>
+
+            <td>
+                <span class="badge ${badgeClass}">
+                    ${escapeHtml(status)}
+                </span>
+            </td>
+
+            <td>
+                ${escapeHtml(record.ip || "-")}
+            </td>
+
+            <td>
+                ${escapeHtml(record.platform || "-")}
+            </td>
+
+            <td>
+                ${escapeHtml(record.device_id || "-")}
+            </td>
+
+            <td>
+                ${escapeHtml(record.created_at || "-")}
+            </td>
+
+        `;
+
+        table.appendChild(row);
+
+    });
+
+}
+
+
+function filterRecords() {
+
+    const search =
+        document.getElementById("search")
+        .value
+        .toLowerCase()
+        .trim();
+
+    if (!search) {
+
+        renderRecords(allRecords);
+
+        return;
+    }
+
+    const filtered =
+        allRecords.filter(function(record) {
+
+            return JSON.stringify(record)
+                .toLowerCase()
+                .includes(search);
+
+        });
+
+    renderRecords(filtered);
+
+}
+
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+</script>
+
+</body>
+</html>
