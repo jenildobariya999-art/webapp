@@ -1,0 +1,370 @@
+<?php
+
+/*
+ * Replacement process.php
+ * Compatible with fire.html / script.js
+ *
+ * Receives JSON:
+ * user_id
+ * bot_hash
+ * visitorId
+ * device_id
+ * user_agent
+ * platform
+ * language
+ * timezone
+ * hardware_concurrency
+ * device_memory
+ * screen_resolution
+ *
+ * Returns JSON:
+ * {
+ *   "status": "success",
+ *   "message": "Verification completed."
+ * }
+ */
+
+header("Content-Type: application/json; charset=UTF-8");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+
+function response_json($status, $message = "", $extra = array())
+{
+    $response = array(
+        "status" => $status,
+        "message" => $message
+    );
+
+    foreach ($extra as $key => $value) {
+        $response[$key] = $value;
+    }
+
+    echo json_encode($response, JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+
+/* Only POST is accepted */
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    response_json(
+        "failed",
+        "Only POST requests are allowed."
+    );
+}
+
+
+/* Read JSON body */
+$raw = file_get_contents("php://input");
+
+if (!$raw) {
+    response_json(
+        "failed",
+        "Empty request."
+    );
+}
+
+$data = json_decode($raw, true);
+
+if (!is_array($data)) {
+    response_json(
+        "failed",
+        "Invalid JSON request."
+    );
+}
+
+
+/* Required fields */
+$required = array(
+    "user_id",
+    "bot_hash",
+    "visitorId",
+    "device_id",
+    "user_agent",
+    "platform",
+    "language",
+    "timezone",
+    "hardware_concurrency",
+    "device_memory",
+    "screen_resolution"
+);
+
+foreach ($required as $field) {
+
+    if (!array_key_exists($field, $data)) {
+        response_json(
+            "failed",
+            "Missing field: " . $field
+        );
+    }
+}
+
+
+/* Clean basic values */
+$user_id = trim((string)$data["user_id"]);
+$bot_hash = trim((string)$data["bot_hash"]);
+$visitor_id = trim((string)$data["visitorId"]);
+$device_id = trim((string)$data["device_id"]);
+
+$user_agent = trim((string)$data["user_agent"]);
+$platform = trim((string)$data["platform"]);
+$language = trim((string)$data["language"]);
+$timezone = trim((string)$data["timezone"]);
+
+$hardware_concurrency = trim(
+    (string)$data["hardware_concurrency"]
+);
+
+$device_memory = trim(
+    (string)$data["device_memory"]
+);
+
+$screen_resolution = trim(
+    (string)$data["screen_resolution"]
+);
+
+
+/* Basic validation */
+if ($user_id === "") {
+    response_json(
+        "failed",
+        "Invalid Telegram user ID."
+    );
+}
+
+if (!preg_match('/^[0-9]+$/', $user_id)) {
+    response_json(
+        "failed",
+        "Invalid Telegram user ID."
+    );
+}
+
+if ($bot_hash === "") {
+    response_json(
+        "failed",
+        "Invalid bot hash."
+    );
+}
+
+if ($visitor_id === "") {
+    response_json(
+        "failed",
+        "Device fingerprint missing."
+    );
+}
+
+if ($device_id === "") {
+    response_json(
+        "failed",
+        "Device ID missing."
+    );
+}
+
+
+/*
+ * Optional bot hash allow-list.
+ *
+ * Put your own allowed bot hashes here.
+ *
+ * Example:
+ *
+ * $allowed_bot_hashes = array(
+ *     "YOUR_BOT_HASH"
+ * );
+ *
+ * Leave the array empty if this replacement is being
+ * used for a single private installation and you don't
+ * want an allow-list.
+ */
+$allowed_bot_hashes = array();
+
+if (count($allowed_bot_hashes) > 0) {
+
+    if (!in_array($bot_hash, $allowed_bot_hashes, true)) {
+        response_json(
+            "failed",
+            "Invalid bot hash."
+        );
+    }
+}
+
+
+/*
+ * Data directory
+ */
+$data_dir = __DIR__ . DIRECTORY_SEPARATOR . "data";
+
+if (!is_dir($data_dir)) {
+
+    if (!mkdir($data_dir, 0755, true)) {
+        response_json(
+            "failed",
+            "Unable to create data directory."
+        );
+    }
+}
+
+
+/*
+ * Verification database
+ */
+$db_file = $data_dir .
+    DIRECTORY_SEPARATOR .
+    "verifications.json";
+
+
+/* Create database if missing */
+if (!file_exists($db_file)) {
+
+    $initial = array();
+
+    file_put_contents(
+        $db_file,
+        json_encode($initial, JSON_PRETTY_PRINT)
+    );
+}
+
+
+/* Read database */
+$db_raw = file_get_contents($db_file);
+
+if (!$db_raw) {
+    $records = array();
+} else {
+
+    $records = json_decode(
+        $db_raw,
+        true
+    );
+
+    if (!is_array($records)) {
+        $records = array();
+    }
+}
+
+
+/*
+ * Find existing verification.
+ *
+ * A user is considered already verified when
+ * the same Telegram user + bot hash + device ID
+ * has already been verified.
+ */
+$already_verified = false;
+
+foreach ($records as $record) {
+
+    if (!is_array($record)) {
+        continue;
+    }
+
+    $record_user = isset($record["user_id"])
+        ? (string)$record["user_id"]
+        : "";
+
+    $record_bot = isset($record["bot_hash"])
+        ? (string)$record["bot_hash"]
+        : "";
+
+    $record_device = isset($record["device_id"])
+        ? (string)$record["device_id"]
+        : "";
+
+    if (
+        $record_user === $user_id &&
+        $record_bot === $bot_hash &&
+        $record_device === $device_id
+    ) {
+
+        $already_verified = true;
+        break;
+    }
+}
+
+
+/*
+ * Existing device:
+ *
+ * The frontend has an "Already Verified" view,
+ * so return "active".
+ */
+if ($already_verified) {
+
+    response_json(
+        "active",
+        "This device is already verified."
+    );
+}
+
+
+/*
+ * Build verification record.
+ */
+$record = array(
+    "user_id" => $user_id,
+    "bot_hash" => $bot_hash,
+
+    "visitorId" => $visitor_id,
+    "device_id" => $device_id,
+
+    "user_agent" => $user_agent,
+    "platform" => $platform,
+    "language" => $language,
+    "timezone" => $timezone,
+
+    "hardware_concurrency" =>
+        $hardware_concurrency,
+
+    "device_memory" =>
+        $device_memory,
+
+    "screen_resolution" =>
+        $screen_resolution,
+
+    "ip_address" =>
+        isset($_SERVER["REMOTE_ADDR"])
+            ? $_SERVER["REMOTE_ADDR"]
+            : "",
+
+    "verified_at" =>
+        gmdate("c"),
+
+    "status" => "verified"
+);
+
+
+/*
+ * Add record.
+ */
+$records[] = $record;
+
+
+/*
+ * Save safely with file locking.
+ */
+$save_result = file_put_contents(
+    $db_file,
+    json_encode(
+        $records,
+        JSON_PRETTY_PRINT |
+        JSON_UNESCAPED_SLASHES
+    ),
+    LOCK_EX
+);
+
+if ($save_result === false) {
+
+    response_json(
+        "failed",
+        "Unable to save verification."
+    );
+}
+
+
+/*
+ * Verification completed.
+ */
+response_json(
+    "success",
+    "Verification completed."
+);
+?>
