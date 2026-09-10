@@ -1,5 +1,3 @@
-import { put } from "@vercel/blob";
-
 export default async function handler(req, res) {
 
     // ==============================
@@ -36,14 +34,14 @@ export default async function handler(req, res) {
 
 
     // ==============================
-    // ONLY POST
+    // POST ONLY
     // ==============================
 
     if (req.method !== "POST") {
 
         return res.status(405).json({
 
-            status: "failed",
+            status: "fail",
 
             message:
                 "Only POST requests are allowed"
@@ -56,7 +54,7 @@ export default async function handler(req, res) {
     try {
 
         // ==========================
-        // REQUEST DATA
+        // GET BODY
         // ==========================
 
         let data = req.body;
@@ -72,9 +70,10 @@ export default async function handler(req, res) {
 
                 return res.status(400).json({
 
-                    status: "failed",
+                    status: "fail",
 
-                    message: "Invalid JSON"
+                    message:
+                        "Invalid JSON"
 
                 });
 
@@ -87,7 +86,7 @@ export default async function handler(req, res) {
 
             return res.status(400).json({
 
-                status: "failed",
+                status: "fail",
 
                 message:
                     "Invalid request body"
@@ -98,7 +97,7 @@ export default async function handler(req, res) {
 
 
         // ==========================
-        // FIRE.HTML DATA
+        // USER ID
         // ==========================
 
         const user_id =
@@ -107,78 +106,14 @@ export default async function handler(req, res) {
                 : "";
 
 
-        const bot_hash =
-            data.bot_hash !== undefined
-                ? String(data.bot_hash).trim()
-                : "";
-
-
-        const visitorId =
-            data.visitorId !== undefined
-                ? String(data.visitorId)
-                : "";
-
-
-        const device_id =
-            data.device_id !== undefined
-                ? String(data.device_id)
-                : "";
-
-
-        const user_agent =
-            data.user_agent !== undefined
-                ? String(data.user_agent)
-                : "";
-
-
-        const platform =
-            data.platform !== undefined
-                ? String(data.platform)
-                : "";
-
-
-        const language =
-            data.language !== undefined
-                ? String(data.language)
-                : "";
-
-
-        const timezone =
-            data.timezone !== undefined
-                ? String(data.timezone)
-                : "";
-
-
-        const hardware_concurrency =
-            data.hardware_concurrency !== undefined
-                ? String(data.hardware_concurrency)
-                : "";
-
-
-        const device_memory =
-            data.device_memory !== undefined
-                ? String(data.device_memory)
-                : "";
-
-
-        const screen_resolution =
-            data.screen_resolution !== undefined
-                ? String(data.screen_resolution)
-                : "";
-
-
-        // ==========================
-        // REQUIRED
-        // ==========================
-
-        if (!user_id || !bot_hash) {
+        if (!user_id) {
 
             return res.status(400).json({
 
-                status: "failed",
+                status: "fail",
 
                 message:
-                    "Missing user_id or bot_hash"
+                    "Missing field: user_id"
 
             });
 
@@ -186,113 +121,27 @@ export default async function handler(req, res) {
 
 
         // ==========================
-        // IP
+        // BOT HASH
         // ==========================
 
-        let ip = "unknown";
+        const bot_hash =
+            data.bot_hash !== undefined
+                ? String(data.bot_hash).trim()
+                : "";
 
 
-        if (req.headers["x-forwarded-for"]) {
+        if (!bot_hash) {
 
-            ip =
-                String(
-                    req.headers["x-forwarded-for"]
-                )
-                .split(",")[0]
-                .trim();
+            return res.status(400).json({
 
-        } else if (
-            req.headers["x-real-ip"]
-        ) {
+                status: "fail",
 
-            ip =
-                String(
-                    req.headers["x-real-ip"]
-                ).trim();
+                message:
+                    "Missing field: bot_hash"
+
+            });
 
         }
-
-
-        // ==========================
-        // UNIQUE RECORD ID
-        // ==========================
-
-        const recordId =
-            Date.now().toString() +
-            "_" +
-            Math.random()
-                .toString(36)
-                .substring(2, 10);
-
-
-        // ==========================
-        // RECORD
-        // ==========================
-
-        const record = {
-
-            id: recordId,
-
-            user_id: user_id,
-
-            bot_hash: bot_hash,
-
-            visitorId: visitorId,
-
-            device_id: device_id,
-
-            user_agent: user_agent,
-
-            platform: platform,
-
-            language: language,
-
-            timezone: timezone,
-
-            hardware_concurrency:
-                hardware_concurrency,
-
-            device_memory:
-                device_memory,
-
-            screen_resolution:
-                screen_resolution,
-
-            ip: ip,
-
-            status: "success",
-
-            created_at:
-                new Date().toISOString()
-
-        };
-
-
-        // ==========================
-        // SAVE DIRECTLY TO BLOB
-        // ==========================
-
-        await put(
-
-            "verification/" +
-            bot_hash +
-            "/" +
-            user_id +
-            "/" +
-            recordId +
-            ".json",
-
-            JSON.stringify(
-                record,
-                null,
-                2
-            ),
-
-            {
-                access: "private"
-            }
-
-        );
 
 
         // ==========================
@@ -304,7 +153,13 @@ export default async function handler(req, res) {
             status: "success",
 
             message:
-                "Verification successful"
+                "Verification data received",
+
+            user_id:
+                user_id,
+
+            bot_hash:
+                bot_hash
 
         });
 
@@ -312,20 +167,20 @@ export default async function handler(req, res) {
     } catch (error) {
 
         console.error(
-            "PROCESS ERROR:",
+            "API ERROR:",
             error
         );
 
 
         return res.status(500).json({
 
-            status: "failed",
+            status: "fail",
 
             message:
-                "Storage error"
+                "Internal server error"
 
         });
 
     }
 
-    }
+}
