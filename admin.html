@@ -247,7 +247,7 @@ th {
 
     <h1>Verification Admin</h1>
 
-    <p>Verification monitoring dashboard</p>
+    <p>Vercel Verification Dashboard</p>
 
 </div>
 
@@ -275,7 +275,10 @@ th {
 
     <div id="loginError" class="error"></div>
 
-    <div id="loginSuccess" class="success-msg"></div>
+    <div
+        id="loginSuccess"
+        class="success-msg"
+    ></div>
 
 </div>
 
@@ -433,13 +436,13 @@ th {
 
     <div class="section">
 
-        <h2>Debug Information</h2>
+        <h2>API Debug</h2>
 
         <div
             id="debug"
             class="debug"
         >
-            No debug information.
+            Waiting...
         </div>
 
     </div>
@@ -457,12 +460,6 @@ let ADMIN_PASSWORD = "";
 let allRecords = [];
 
 
-/*
-========================================
-SHOW ERROR
-========================================
-*/
-
 function showError(message) {
 
     const box =
@@ -474,12 +471,6 @@ function showError(message) {
 
 }
 
-
-/*
-========================================
-SHOW SUCCESS
-========================================
-*/
 
 function showSuccess(message) {
 
@@ -493,12 +484,6 @@ function showSuccess(message) {
 }
 
 
-/*
-========================================
-CLEAR MESSAGES
-========================================
-*/
-
 function clearMessages() {
 
     document.getElementById("loginError")
@@ -509,12 +494,6 @@ function clearMessages() {
 
 }
 
-
-/*
-========================================
-LOGIN
-========================================
-*/
 
 function login() {
 
@@ -529,7 +508,9 @@ function login() {
 
     if (!password) {
 
-        showError("Please enter admin password.");
+        showError(
+            "Please enter admin password."
+        );
 
         return;
     }
@@ -542,34 +523,43 @@ function login() {
 }
 
 
-/*
-========================================
-TEST API
-========================================
-*/
-
 async function testAPI() {
 
     clearMessages();
 
+    const password =
+        document
+        .getElementById("password")
+        .value
+        .trim();
+
+
     try {
 
         const response =
-            await fetch("admin.php", {
-                method: "GET",
-                cache: "no-store",
-                headers: {
-                    "X-Admin-Password":
-                        document
-                        .getElementById("password")
-                        .value
-                        .trim()
+            await fetch(
+                "/api/admin",
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "X-Admin-Password":
+                            password
+                    }
                 }
-            });
+            );
 
 
         const text =
             await response.text();
+
+
+        document.getElementById("debug")
+            .innerText =
+            "HTTP " +
+            response.status +
+            "\n\n" +
+            text;
 
 
         let data;
@@ -579,30 +569,28 @@ async function testAPI() {
 
             data = JSON.parse(text);
 
-        } catch (e) {
+        } catch (error) {
 
             showError(
-                "admin.php did not return JSON.\n\n" +
-                "HTTP Status: " +
+                "API did not return JSON.\n\n" +
+                "HTTP: " +
                 response.status +
-                "\n\nResponse:\n" +
-                text.substring(0, 2000)
+                "\n\n" +
+                text.substring(0, 3000)
             );
 
             return;
         }
 
 
-        document.getElementById("debug")
-            .innerText =
-            JSON.stringify(data, null, 2);
-
-
         if (!response.ok) {
 
             showError(
-                "API Error\n\n" +
-                JSON.stringify(data, null, 2)
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                )
             );
 
             return;
@@ -610,14 +598,14 @@ async function testAPI() {
 
 
         showSuccess(
-            "API is working successfully."
+            "Vercel Admin API is working."
         );
 
 
     } catch (error) {
 
         showError(
-            "Connection failed.\n\n" +
+            "Request failed:\n\n" +
             error.message
         );
 
@@ -626,12 +614,6 @@ async function testAPI() {
 }
 
 
-/*
-========================================
-LOAD DATA
-========================================
-*/
-
 async function loadData() {
 
     clearMessages();
@@ -639,14 +621,17 @@ async function loadData() {
     try {
 
         const response =
-            await fetch("admin.php", {
-                method: "GET",
-                cache: "no-store",
-                headers: {
-                    "X-Admin-Password":
-                        ADMIN_PASSWORD
+            await fetch(
+                "/api/admin",
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "X-Admin-Password":
+                            ADMIN_PASSWORD
+                    }
                 }
-            });
+            );
 
 
         const text =
@@ -660,13 +645,13 @@ async function loadData() {
 
             data = JSON.parse(text);
 
-        } catch (e) {
+        } catch (error) {
 
             showError(
-                "Server returned invalid JSON.\n\n" +
-                "HTTP Status: " +
+                "Invalid API response.\n\n" +
+                "HTTP: " +
                 response.status +
-                "\n\nResponse:\n" +
+                "\n\n" +
                 text.substring(0, 3000)
             );
 
@@ -677,21 +662,10 @@ async function loadData() {
         document.getElementById("debug")
             .innerText =
             JSON.stringify(
-                data.debug || data,
+                data,
                 null,
                 2
             );
-
-
-        if (response.status === 401) {
-
-            showError(
-                data.message ||
-                "Wrong admin password."
-            );
-
-            return;
-        }
 
 
         if (!response.ok) {
@@ -699,7 +673,7 @@ async function loadData() {
             showError(
                 data.message ||
                 data.error ||
-                "Server error."
+                "API request failed."
             );
 
             return;
@@ -710,8 +684,7 @@ async function loadData() {
 
             showError(
                 data.message ||
-                data.error ||
-                "API failed."
+                "API returned failure."
             );
 
             return;
@@ -763,24 +736,16 @@ async function loadData() {
     } catch (error) {
 
         showError(
-            "Connection failed.\n\n" +
+            "Request failed.\n\n" +
             error.name +
             ": " +
-            error.message +
-            "\n\n" +
-            "Check whether admin.php is running on a PHP server."
+            error.message
         );
 
     }
 
 }
 
-
-/*
-========================================
-BOT TABLE
-========================================
-*/
 
 function renderBots(bots) {
 
@@ -790,10 +755,10 @@ function renderBots(bots) {
     table.innerHTML = "";
 
 
-    if (bots.length === 0) {
+    if (!bots.length) {
 
         table.innerHTML =
-            "<tr><td colspan='5'>No bot data found.</td></tr>";
+            "<tr><td colspan='5'>No bot data.</td></tr>";
 
         return;
     }
@@ -841,12 +806,6 @@ function renderBots(bots) {
 }
 
 
-/*
-========================================
-RECORD TABLE
-========================================
-*/
-
 function renderRecords(records) {
 
     const table =
@@ -855,10 +814,10 @@ function renderRecords(records) {
     table.innerHTML = "";
 
 
-    if (records.length === 0) {
+    if (!records.length) {
 
         table.innerHTML =
-            "<tr><td colspan='7'>No verification records.</td></tr>";
+            "<tr><td colspan='7'>No records.</td></tr>";
 
         return;
     }
@@ -872,8 +831,7 @@ function renderRecords(records) {
             ).toLowerCase();
 
 
-        let badge =
-            "active";
+        let badge = "active";
 
 
         if (status === "success") {
@@ -932,12 +890,6 @@ function renderRecords(records) {
 }
 
 
-/*
-========================================
-SEARCH
-========================================
-*/
-
 function filterRecords() {
 
     const search =
@@ -971,12 +923,6 @@ function filterRecords() {
 }
 
 
-/*
-========================================
-HTML ESCAPE
-========================================
-*/
-
 function escapeHtml(value) {
 
     return String(value)
@@ -992,4 +938,4 @@ function escapeHtml(value) {
 
 </body>
 
-</html>
+    </html>
