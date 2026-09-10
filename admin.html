@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>Verification Admin</title>
 
@@ -16,14 +21,14 @@
 body {
     margin: 0;
     background: #0b1020;
-    color: #fff;
+    color: white;
     font-family: Arial, sans-serif;
 }
 
 .header {
     padding: 20px;
     background: #11182d;
-    border-bottom: 1px solid #27304a;
+    border-bottom: 1px solid #29334d;
 }
 
 .header h1 {
@@ -44,12 +49,12 @@ body {
 }
 
 .login {
-    max-width: 400px;
-    margin: 80px auto;
-    background: #11182d;
+    max-width: 420px;
+    margin: 70px auto;
     padding: 25px;
+    background: #11182d;
+    border: 1px solid #29334d;
     border-radius: 16px;
-    border: 1px solid #27304a;
 }
 
 .login h2 {
@@ -59,65 +64,94 @@ body {
 input {
     width: 100%;
     padding: 13px;
-    border-radius: 10px;
-    border: 1px solid #303a56;
-    background: #0b1020;
-    color: #fff;
-    outline: none;
     margin-bottom: 12px;
+    background: #080d19;
+    color: white;
+    border: 1px solid #303b59;
+    border-radius: 10px;
+    outline: none;
 }
 
 button {
     border: 0;
-    border-radius: 10px;
     padding: 12px 18px;
-    cursor: pointer;
+    border-radius: 10px;
     background: #4f7cff;
     color: white;
     font-weight: bold;
+    cursor: pointer;
 }
 
 button:hover {
     opacity: .9;
 }
 
+.test {
+    background: #26324e;
+    margin-left: 5px;
+}
+
 .error {
-    color: #ff7070;
-    margin-top: 10px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #351b23;
+    border-radius: 10px;
+    color: #ff7c7c;
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.success-msg {
+    margin-top: 12px;
+    padding: 12px;
+    background: #143425;
+    border-radius: 10px;
+    color: #58e49c;
+    display: none;
 }
 
 .dashboard {
     display: none;
 }
 
+.topbar {
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.refresh {
+    float: right;
+}
+
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .card {
     background: #11182d;
-    border: 1px solid #27304a;
+    border: 1px solid #29334d;
     border-radius: 15px;
     padding: 20px;
 }
 
 .card-title {
     color: #8993aa;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .card-number {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: bold;
     margin-top: 8px;
 }
 
 .section {
     background: #11182d;
-    border: 1px solid #27304a;
+    border: 1px solid #29334d;
     border-radius: 15px;
     padding: 20px;
     margin-bottom: 20px;
@@ -126,10 +160,6 @@ button:hover {
 .section h2 {
     margin-top: 0;
     font-size: 18px;
-}
-
-.search {
-    margin-bottom: 15px;
 }
 
 .table-wrap {
@@ -145,8 +175,8 @@ table {
 th,
 td {
     padding: 12px;
-    border-bottom: 1px solid #27304a;
     text-align: left;
+    border-bottom: 1px solid #29334d;
     font-size: 13px;
 }
 
@@ -155,36 +185,37 @@ th {
 }
 
 .badge {
-    display: inline-block;
     padding: 5px 9px;
     border-radius: 20px;
     font-size: 11px;
 }
 
 .success {
-    background: #123d2a;
-    color: #53e49a;
+    color: #54e59b;
+    background: #123c29;
 }
 
 .failed {
+    color: #ff7373;
     background: #401c23;
-    color: #ff7272;
 }
 
 .active {
-    background: #392f12;
-    color: #ffd45c;
+    color: #ffd35b;
+    background: #3b3115;
 }
 
-.muted {
-    color: #8993aa;
+.debug {
+    background: #080d19;
+    padding: 15px;
+    border-radius: 10px;
+    color: #9ba6bd;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
-.refresh {
-    float: right;
-}
-
-@media(max-width: 800px) {
+@media(max-width:800px) {
 
     .stats {
         grid-template-columns: repeat(2, 1fr);
@@ -192,7 +223,7 @@ th {
 
 }
 
-@media(max-width: 450px) {
+@media(max-width:450px) {
 
     .stats {
         grid-template-columns: 1fr;
@@ -208,15 +239,15 @@ th {
 
 </head>
 
+
 <body>
+
 
 <div class="header">
 
     <h1>Verification Admin</h1>
 
-    <p>
-        Verification monitoring dashboard
-    </p>
+    <p>Verification monitoring dashboard</p>
 
 </div>
 
@@ -235,7 +266,16 @@ th {
         Login
     </button>
 
+    <button
+        class="test"
+        onclick="testAPI()"
+    >
+        Test API
+    </button>
+
     <div id="loginError" class="error"></div>
+
+    <div id="loginSuccess" class="success-msg"></div>
 
 </div>
 
@@ -244,33 +284,82 @@ th {
 
 <div class="container">
 
-    <button class="refresh" onclick="loadData()">
-        Refresh
-    </button>
 
-    <div style="clear:both;height:20px;"></div>
+    <div class="topbar">
+
+        <button
+            class="refresh"
+            onclick="loadData()"
+        >
+            Refresh
+        </button>
+
+    </div>
 
 
     <div class="stats">
 
         <div class="card">
-            <div class="card-title">TOTAL</div>
-            <div id="total" class="card-number">0</div>
+
+            <div class="card-title">
+                TOTAL
+            </div>
+
+            <div
+                id="total"
+                class="card-number"
+            >
+                0
+            </div>
+
         </div>
 
-        <div class="card">
-            <div class="card-title">SUCCESS</div>
-            <div id="success" class="card-number">0</div>
-        </div>
 
         <div class="card">
-            <div class="card-title">FAILED</div>
-            <div id="failed" class="card-number">0</div>
+
+            <div class="card-title">
+                SUCCESS
+            </div>
+
+            <div
+                id="success"
+                class="card-number"
+            >
+                0
+            </div>
+
         </div>
 
+
         <div class="card">
-            <div class="card-title">ACTIVE</div>
-            <div id="active" class="card-number">0</div>
+
+            <div class="card-title">
+                FAILED
+            </div>
+
+            <div
+                id="failed"
+                class="card-number"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                ACTIVE
+            </div>
+
+            <div
+                id="active"
+                class="card-number"
+            >
+                0
+            </div>
+
         </div>
 
     </div>
@@ -310,9 +399,8 @@ th {
         <h2>All Verification Data</h2>
 
         <input
-            class="search"
             id="search"
-            placeholder="Search user ID, bot, IP, device..."
+            placeholder="Search user, bot, IP, device..."
             oninput="filterRecords()"
         >
 
@@ -342,6 +430,21 @@ th {
 
     </div>
 
+
+    <div class="section">
+
+        <h2>Debug Information</h2>
+
+        <div
+            id="debug"
+            class="debug"
+        >
+            No debug information.
+        </div>
+
+    </div>
+
+
 </div>
 
 </div>
@@ -350,95 +453,334 @@ th {
 <script>
 
 let ADMIN_PASSWORD = "";
+
 let allRecords = [];
 
 
+/*
+========================================
+SHOW ERROR
+========================================
+*/
+
+function showError(message) {
+
+    const box =
+        document.getElementById("loginError");
+
+    box.style.display = "block";
+
+    box.innerText = message;
+
+}
+
+
+/*
+========================================
+SHOW SUCCESS
+========================================
+*/
+
+function showSuccess(message) {
+
+    const box =
+        document.getElementById("loginSuccess");
+
+    box.style.display = "block";
+
+    box.innerText = message;
+
+}
+
+
+/*
+========================================
+CLEAR MESSAGES
+========================================
+*/
+
+function clearMessages() {
+
+    document.getElementById("loginError")
+        .style.display = "none";
+
+    document.getElementById("loginSuccess")
+        .style.display = "none";
+
+}
+
+
+/*
+========================================
+LOGIN
+========================================
+*/
+
 function login() {
 
+    clearMessages();
+
     const password =
-        document.getElementById("password").value.trim();
+        document
+        .getElementById("password")
+        .value
+        .trim();
+
 
     if (!password) {
 
-        document.getElementById("loginError").innerText =
-            "Enter admin password";
+        showError("Please enter admin password.");
 
         return;
     }
 
+
     ADMIN_PASSWORD = password;
 
     loadData();
+
 }
 
 
-async function loadData() {
+/*
+========================================
+TEST API
+========================================
+*/
+
+async function testAPI() {
+
+    clearMessages();
 
     try {
 
-        const response = await fetch("admin.php", {
+        const response =
+            await fetch("admin.php", {
+                method: "GET",
+                cache: "no-store",
+                headers: {
+                    "X-Admin-Password":
+                        document
+                        .getElementById("password")
+                        .value
+                        .trim()
+                }
+            });
 
-            method: "GET",
 
-            headers: {
-                "X-Admin-Password": ADMIN_PASSWORD
-            }
+        const text =
+            await response.text();
 
-        });
 
-        const data = await response.json();
+        let data;
 
-        if (response.status === 401) {
 
-            document.getElementById("loginError").innerText =
-                "Wrong admin password";
+        try {
+
+            data = JSON.parse(text);
+
+        } catch (e) {
+
+            showError(
+                "admin.php did not return JSON.\n\n" +
+                "HTTP Status: " +
+                response.status +
+                "\n\nResponse:\n" +
+                text.substring(0, 2000)
+            );
 
             return;
         }
 
-        if (data.status !== "success") {
 
-            document.getElementById("loginError").innerText =
-                data.message || "Unable to load data";
+        document.getElementById("debug")
+            .innerText =
+            JSON.stringify(data, null, 2);
+
+
+        if (!response.ok) {
+
+            showError(
+                "API Error\n\n" +
+                JSON.stringify(data, null, 2)
+            );
 
             return;
         }
 
-        document.getElementById("loginBox").style.display =
-            "none";
 
-        document.getElementById("dashboard").style.display =
-            "block";
+        showSuccess(
+            "API is working successfully."
+        );
 
-
-        document.getElementById("total").innerText =
-            data.stats.total;
-
-        document.getElementById("success").innerText =
-            data.stats.success;
-
-        document.getElementById("failed").innerText =
-            data.stats.failed;
-
-        document.getElementById("active").innerText =
-            data.stats.active;
-
-
-        renderBots(data.bots);
-
-        allRecords = data.records || [];
-
-        renderRecords(allRecords);
 
     } catch (error) {
 
-        document.getElementById("loginError").innerText =
-            "Server connection error";
+        showError(
+            "Connection failed.\n\n" +
+            error.message
+        );
 
     }
 
 }
 
+
+/*
+========================================
+LOAD DATA
+========================================
+*/
+
+async function loadData() {
+
+    clearMessages();
+
+    try {
+
+        const response =
+            await fetch("admin.php", {
+                method: "GET",
+                cache: "no-store",
+                headers: {
+                    "X-Admin-Password":
+                        ADMIN_PASSWORD
+                }
+            });
+
+
+        const text =
+            await response.text();
+
+
+        let data;
+
+
+        try {
+
+            data = JSON.parse(text);
+
+        } catch (e) {
+
+            showError(
+                "Server returned invalid JSON.\n\n" +
+                "HTTP Status: " +
+                response.status +
+                "\n\nResponse:\n" +
+                text.substring(0, 3000)
+            );
+
+            return;
+        }
+
+
+        document.getElementById("debug")
+            .innerText =
+            JSON.stringify(
+                data.debug || data,
+                null,
+                2
+            );
+
+
+        if (response.status === 401) {
+
+            showError(
+                data.message ||
+                "Wrong admin password."
+            );
+
+            return;
+        }
+
+
+        if (!response.ok) {
+
+            showError(
+                data.message ||
+                data.error ||
+                "Server error."
+            );
+
+            return;
+        }
+
+
+        if (data.status !== "success") {
+
+            showError(
+                data.message ||
+                data.error ||
+                "API failed."
+            );
+
+            return;
+        }
+
+
+        document.getElementById("loginBox")
+            .style.display = "none";
+
+
+        document.getElementById("dashboard")
+            .style.display = "block";
+
+
+        document.getElementById("total")
+            .innerText =
+            data.stats.total;
+
+
+        document.getElementById("success")
+            .innerText =
+            data.stats.success;
+
+
+        document.getElementById("failed")
+            .innerText =
+            data.stats.failed;
+
+
+        document.getElementById("active")
+            .innerText =
+            data.stats.active;
+
+
+        allRecords =
+            data.records || [];
+
+
+        renderBots(
+            data.bots || []
+        );
+
+
+        renderRecords(
+            allRecords
+        );
+
+
+    } catch (error) {
+
+        showError(
+            "Connection failed.\n\n" +
+            error.name +
+            ": " +
+            error.message +
+            "\n\n" +
+            "Check whether admin.php is running on a PHP server."
+        );
+
+    }
+
+}
+
+
+/*
+========================================
+BOT TABLE
+========================================
+*/
 
 function renderBots(bots) {
 
@@ -447,37 +789,50 @@ function renderBots(bots) {
 
     table.innerHTML = "";
 
+
+    if (bots.length === 0) {
+
+        table.innerHTML =
+            "<tr><td colspan='5'>No bot data found.</td></tr>";
+
+        return;
+    }
+
+
     bots.forEach(function(bot) {
 
-        const row = document.createElement("tr");
+        const row =
+            document.createElement("tr");
 
-        row.innerHTML = `
 
-            <td>
-                <b>${escapeHtml(bot.bot_hash)}</b>
-            </td>
+        row.innerHTML =
 
-            <td>${bot.total}</td>
+            "<td>" +
+            escapeHtml(bot.bot_hash) +
+            "</td>" +
 
-            <td>
-                <span class="badge success">
-                    ${bot.success}
-                </span>
-            </td>
+            "<td>" +
+            bot.total +
+            "</td>" +
 
-            <td>
-                <span class="badge failed">
-                    ${bot.failed}
-                </span>
-            </td>
+            "<td>" +
+            "<span class='badge success'>" +
+            bot.success +
+            "</span>" +
+            "</td>" +
 
-            <td>
-                <span class="badge active">
-                    ${bot.active}
-                </span>
-            </td>
+            "<td>" +
+            "<span class='badge failed'>" +
+            bot.failed +
+            "</span>" +
+            "</td>" +
 
-        `;
+            "<td>" +
+            "<span class='badge active'>" +
+            bot.active +
+            "</span>" +
+            "</td>";
+
 
         table.appendChild(row);
 
@@ -485,6 +840,12 @@ function renderBots(bots) {
 
 }
 
+
+/*
+========================================
+RECORD TABLE
+========================================
+*/
 
 function renderRecords(records) {
 
@@ -493,57 +854,76 @@ function renderRecords(records) {
 
     table.innerHTML = "";
 
+
+    if (records.length === 0) {
+
+        table.innerHTML =
+            "<tr><td colspan='7'>No verification records.</td></tr>";
+
+        return;
+    }
+
+
     records.forEach(function(record) {
 
-        let status =
-            String(record.status || "").toLowerCase();
+        const status =
+            String(
+                record.status || "unknown"
+            ).toLowerCase();
 
-        let badgeClass = status;
 
-        if (
-            status !== "success" &&
-            status !== "failed" &&
-            status !== "active"
-        ) {
-            badgeClass = "active";
+        let badge =
+            "active";
+
+
+        if (status === "success") {
+            badge = "success";
         }
+
+
+        if (status === "failed") {
+            badge = "failed";
+        }
+
 
         const row =
             document.createElement("tr");
 
-        row.innerHTML = `
 
-            <td>
-                ${escapeHtml(record.user_id || "-")}
-            </td>
+        row.innerHTML =
 
-            <td>
-                ${escapeHtml(record.bot_hash || "-")}
-            </td>
+            "<td>" +
+            escapeHtml(record.user_id || "-") +
+            "</td>" +
 
-            <td>
-                <span class="badge ${badgeClass}">
-                    ${escapeHtml(status)}
-                </span>
-            </td>
+            "<td>" +
+            escapeHtml(record.bot_hash || "-") +
+            "</td>" +
 
-            <td>
-                ${escapeHtml(record.ip || "-")}
-            </td>
+            "<td>" +
+            "<span class='badge " +
+            badge +
+            "'>" +
+            escapeHtml(status) +
+            "</span>" +
+            "</td>" +
 
-            <td>
-                ${escapeHtml(record.platform || "-")}
-            </td>
+            "<td>" +
+            escapeHtml(record.ip || "-") +
+            "</td>" +
 
-            <td>
-                ${escapeHtml(record.device_id || "-")}
-            </td>
+            "<td>" +
+            escapeHtml(record.platform || "-") +
+            "</td>" +
 
-            <td>
-                ${escapeHtml(record.created_at || "-")}
-            </td>
+            "<td>" +
+            escapeHtml(record.device_id || "-") +
+            "</td>" +
 
-        `;
+            "<td>" +
+            escapeHtml(record.created_at || "-") +
+            "</td>";
+
 
         table.appendChild(row);
 
@@ -552,13 +932,21 @@ function renderRecords(records) {
 }
 
 
+/*
+========================================
+SEARCH
+========================================
+*/
+
 function filterRecords() {
 
     const search =
-        document.getElementById("search")
+        document
+        .getElementById("search")
         .value
         .toLowerCase()
         .trim();
+
 
     if (!search) {
 
@@ -566,6 +954,7 @@ function filterRecords() {
 
         return;
     }
+
 
     const filtered =
         allRecords.filter(function(record) {
@@ -576,10 +965,17 @@ function filterRecords() {
 
         });
 
+
     renderRecords(filtered);
 
 }
 
+
+/*
+========================================
+HTML ESCAPE
+========================================
+*/
 
 function escapeHtml(value) {
 
@@ -595,4 +991,5 @@ function escapeHtml(value) {
 </script>
 
 </body>
+
 </html>
