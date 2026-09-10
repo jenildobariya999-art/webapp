@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
 
-    // ==============================
+    // ==========================================
     // CORS
-    // ==============================
+    // ==========================================
 
     res.setHeader(
         "Access-Control-Allow-Origin",
@@ -20,10 +20,6 @@ export default async function handler(req, res) {
     );
 
 
-    // ==============================
-    // OPTIONS
-    // ==============================
-
     if (req.method === "OPTIONS") {
 
         return res.status(200).json({
@@ -33,19 +29,15 @@ export default async function handler(req, res) {
     }
 
 
-    // ==============================
-    // POST ONLY
-    // ==============================
+    // ==========================================
+    // METHOD
+    // ==========================================
 
     if (req.method !== "POST") {
 
         return res.status(405).json({
-
             status: "fail",
-
-            message:
-                "Only POST requests are allowed"
-
+            message: "Only POST requests are allowed"
         });
 
     }
@@ -53,9 +45,9 @@ export default async function handler(req, res) {
 
     try {
 
-        // ==========================
-        // GET BODY
-        // ==========================
+        // ======================================
+        // BODY
+        // ======================================
 
         let data = req.body;
 
@@ -69,12 +61,8 @@ export default async function handler(req, res) {
             } catch (error) {
 
                 return res.status(400).json({
-
                     status: "fail",
-
-                    message:
-                        "Invalid JSON"
-
+                    message: "Invalid JSON"
                 });
 
             }
@@ -82,23 +70,22 @@ export default async function handler(req, res) {
         }
 
 
-        if (!data || typeof data !== "object") {
+        if (
+            !data ||
+            typeof data !== "object"
+        ) {
 
             return res.status(400).json({
-
                 status: "fail",
-
-                message:
-                    "Invalid request body"
-
+                message: "Invalid request body"
             });
 
         }
 
 
-        // ==========================
-        // USER ID
-        // ==========================
+        // ======================================
+        // INPUTS
+        // ======================================
 
         const user_id =
             data.user_id !== undefined
@@ -106,81 +93,237 @@ export default async function handler(req, res) {
                 : "";
 
 
-        if (!user_id) {
-
-            return res.status(400).json({
-
-                status: "fail",
-
-                message:
-                    "Missing field: user_id"
-
-            });
-
-        }
-
-
-        // ==========================
-        // BOT HASH
-        // ==========================
-
-        const bot_hash =
-            data.bot_hash !== undefined
-                ? String(data.bot_hash).trim()
+        const botusername =
+            data.botusername !== undefined
+                ? String(data.botusername).trim()
                 : "";
 
 
-        if (!bot_hash) {
+        const hash =
+            data.hash !== undefined
+                ? String(data.hash).trim()
+                : "";
+
+
+        const webhook =
+            data.webhook !== undefined
+                ? String(data.webhook).trim()
+                : "";
+
+
+        const fingerprint =
+            data.fingerprint !== undefined
+                ? String(data.fingerprint).trim()
+                : "";
+
+
+        // ======================================
+        // VALIDATION
+        // ======================================
+
+        if (!user_id) {
 
             return res.status(400).json({
-
                 status: "fail",
-
-                message:
-                    "Missing field: bot_hash"
-
+                message: "Missing field: user_id"
             });
 
         }
 
 
-        // ==========================
-        // RESPONSE
-        // ==========================
+        if (!botusername) {
 
-        return res.status(200).json({
+            return res.status(400).json({
+                status: "fail",
+                message: "Missing field: botusername"
+            });
 
-            status: "success",
+        }
+
+
+        if (!hash) {
+
+            return res.status(400).json({
+                status: "fail",
+                message: "Missing field: hash"
+            });
+
+        }
+
+
+        if (!webhook) {
+
+            return res.status(400).json({
+                status: "fail",
+                message: "Missing field: webhook"
+            });
+
+        }
+
+
+        if (!fingerprint) {
+
+            return res.status(400).json({
+                status: "fail",
+                message: "Missing field: fingerprint"
+            });
+
+        }
+
+
+        // ======================================
+        // WEBHOOK URL VALIDATION
+        // ======================================
+
+        let webhookUrl;
+
+        try {
+
+            webhookUrl =
+                new URL(webhook);
+
+        } catch (error) {
+
+            return res.status(400).json({
+                status: "fail",
+                message: "Invalid webhook URL"
+            });
+
+        }
+
+
+        if (
+            webhookUrl.protocol !== "https:"
+        ) {
+
+            return res.status(400).json({
+                status: "fail",
+                message: "Webhook must use HTTPS"
+            });
+
+        }
+
+
+        // ======================================
+        // RESULT
+        // ======================================
+        //
+        // Your TBC code performs the actual
+        // same-device check using:
+        //
+        // Bot.getData("FP_" + fp)
+        //
+        // Therefore the first response is PASS.
+        //
+        // TBC decides whether it is:
+        //
+        // New device
+        // OR
+        // Same device
+        //
+        // ======================================
+
+        const verificationResult = {
+
+            status: "pass",
 
             message:
-                "Verification data received",
+                "Verified Successfully",
 
-            user_id:
-                user_id,
+            fingerprint:
+                fingerprint,
 
-            bot_hash:
-                bot_hash
+            botusername:
+                botusername
 
-        });
+        };
+
+
+        // ======================================
+        // SEND RESULT TO TBC WEBHOOK
+        // ======================================
+
+        let webhookResponse;
+
+
+        try {
+
+            webhookResponse =
+                await fetch(
+                    webhookUrl.toString(),
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                verificationResult
+                            )
+                    }
+                );
+
+        } catch (error) {
+
+            console.error(
+                "TBC WEBHOOK ERROR:",
+                error
+            );
+
+            return res.status(502).json({
+                status: "fail",
+                message:
+                    "Unable to contact verification callback"
+            });
+
+        }
+
+
+        // ======================================
+        // CHECK WEBHOOK
+        // ======================================
+
+        if (!webhookResponse.ok) {
+
+            console.error(
+                "TBC WEBHOOK STATUS:",
+                webhookResponse.status
+            );
+
+            return res.status(502).json({
+                status: "fail",
+                message:
+                    "Verification callback failed"
+            });
+
+        }
+
+
+        // ======================================
+        // SUCCESS
+        // ======================================
+
+        return res.status(200).json(
+            verificationResult
+        );
 
 
     } catch (error) {
 
         console.error(
-            "API ERROR:",
+            "PROCESS API ERROR:",
             error
         );
 
-
         return res.status(500).json({
-
             status: "fail",
-
             message:
                 "Internal server error"
-
         });
 
     }
 
-}
+            }
