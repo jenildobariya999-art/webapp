@@ -3,853 +3,761 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Jenil Dobariya Admin • Multi-Bot Device Verification Matrix</title>
-<!-- Tailwind CSS v3 with plugins -->
+<title>Jenil Dobariya Admin - Multi-Bot Device Verification &amp; Telemetry Matrix</title>
+<!-- Tailwind CSS v3 CDN with forms & container queries plugins -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tailwind Custom Configuration -->
 <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-            },
-            crimson: {
-              500: '#ef4444',
-              600: '#dc2626'
-            }
+            dashboardBg: '#f8fafc',
+            cardBorder: '#e2e8f0',
+            brandBlue: '#3b5bfd',
+            alertRed: '#dc2626',
+            statusGreen: '#10b981'
           },
           fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
           }
         }
       }
     }
   </script>
-<!-- Google Fonts for Inter and JetBrains Mono -->
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
-<!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
-<!-- Supabase JS Client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Custom styles for dual top line accents matching the reference screenshot -->
+<!-- Custom Layout & Component Styles -->
 <style data-purpose="card-accents">
-    .card-accent-split {
+    /* Top split dual accent bar present across metric cards */
+    .metric-top-bar {
       position: relative;
-    }
-    .card-accent-split::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 12px;
-      right: 12px;
-      height: 3.5px;
-      border-radius: 9999px;
-      background: linear-gradient(90deg, #10b981 0%, #10b981 50%, #ef4444 50%, #ef4444 100%);
-    }
-    .card-accent-green::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 12px;
-      right: 12px;
       height: 3px;
-      border-radius: 9999px;
-      background: #10b981;
+      width: 100%;
+      display: flex;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      overflow: hidden;
     }
-    .card-accent-red::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 12px;
-      right: 12px;
-      height: 3px;
-      border-radius: 9999px;
-      background: #ef4444;
+    .metric-top-bar::before {
+      content: '';
+      width: 50%;
+      height: 100%;
+      background-color: #10b981; /* Green accent */
     }
-    .animate-spin-once {
-      animation: spin 0.6s linear 1;
+    .metric-top-bar::after {
+      content: '';
+      width: 50%;
+      height: 100%;
+      background-color: #ef4444; /* Red accent */
     }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+
+    @keyframes highlightRow {
+      0% { background-color: rgba(16, 185, 129, 0.2); }
+      100% { background-color: transparent; }
+    }
+    .row-highlight {
+      animation: highlightRow 2.5s ease-out;
+    }
+  </style>
+<style data-purpose="typography-adjustments">
+    body {
+      -webkit-font-smoothing: antialiased;
+      background-color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
     }
   </style>
 </head>
-<body class="bg-[#f8fafc] text-slate-800 antialiased min-h-screen flex flex-col font-sans">
-<!-- BEGIN: TopNotificationBanner -->
-<!-- Supabase Connection Config & Realtime status bar -->
-<div class="bg-indigo-50 border-b border-indigo-100 text-indigo-900 px-4 py-2 text-xs" data-purpose="system-banner"><div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3"><div class="flex items-center space-x-2.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" id="dbStatusDot"></span><span class="font-semibold text-indigo-950">Supabase Matrix:</span><span class="text-indigo-700 hidden sm:inline">Endpoint:</span><code class="px-2 py-0.5 bg-white border border-indigo-200 rounded font-mono text-[11px] text-indigo-800">neeppziqbuwxhmhpifda.supabase.co</code><span class="text-slate-500 text-[11px] hidden md:inline">• Table: <code class="font-mono text-slate-700">bot_device_verifications</code></span></div><div class="flex items-center space-x-2 w-full sm:w-auto justify-end flex-wrap"><div class="flex items-center space-x-1.5"><input class="px-2.5 py-1 text-xs font-mono bg-white border border-indigo-200 rounded text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44 sm:w-56" id="inlineAnonKey" placeholder="Paste Supabase Anon Key..." type="password"/><button class="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded transition shadow-2xs" id="btnQuickSaveKey">Connect</button></div><button class="px-2 py-1 text-[11px] font-medium bg-white text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-50 transition flex items-center space-x-1" id="btnOpenKeyModal"><i class="w-3 h-3" data-lucide="settings"></i><span id="keyStatusLabel">Settings</span></button></div></div></div>
-<!-- END: TopNotificationBanner -->
+<body class="bg-[#f8fafc] text-slate-800 min-h-screen font-sans pb-12 antialiased selection:bg-blue-100 selection:text-blue-900">
 <!-- BEGIN: MainHeader -->
-<header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs" data-purpose="site-header">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-<!-- Logo and Titles -->
-<div class="flex items-center space-x-3.5">
-<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-emerald-500 text-white flex items-center justify-center font-bold text-lg shadow-sm ring-2 ring-indigo-50 tracking-wider">
-          JD
-        </div>
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+<div class="max-w-4xl mx-auto px-4 py-3.5 sm:px-6">
+<div class="flex items-start justify-between gap-3">
+<!-- User profile details & Avatar -->
+<div class="flex items-start space-x-3">
+<!-- Profile Badge "JD" -->
+<div class="w-11 h-11 rounded-full bg-[#3b52d9] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0 mt-0.5">
+            JD
+          </div>
 <div>
-<div class="flex items-center space-x-2">
-<h1 class="text-lg font-bold text-slate-900 tracking-tight">Jenil Dobariya Admin</h1>
-<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200" id="headerConnectionBadge"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5" id="headerDot"></span><span id="headerConnectionText">Connecting...</span></span>
+<div class="flex flex-wrap items-center gap-2">
+<h1 class="text-lg font-bold text-slate-900 tracking-tight leading-none">
+                Jenil Dobariya Admin
+              </h1>
+<!-- Status indicator badge -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 transition-colors duration-300" id="header-status-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" id="header-status-dot"></span>
+<span id="header-status-text">Connecting...</span>
+</span>
 </div>
-<p class="text-xs text-slate-500 font-normal">Multi-Bot Device Verification &amp; Telemetry Matrix</p>
+<!-- Subtitle -->
+<p class="text-xs text-slate-500 font-normal mt-1 leading-snug">
+              Multi-Bot Device Verification &amp; Telemetry Matrix
+            </p>
 </div>
 </div>
-<!-- Action Buttons -->
-<div class="flex items-center space-x-2.5">
-<button class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition shadow-2xs" id="btnSync" title="Sync live records">
-<i class="w-3.5 h-3.5 mr-1.5 text-slate-600" data-lucide="refresh-cw" id="syncIcon"></i>
-          Sync
-        </button>
-<button class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 transition shadow-2xs" onclick="handleLogout()">
-<i class="w-3.5 h-3.5 mr-1.5" data-lucide="log-out"></i>
-          Logout
-        </button>
+<!-- Action Control Buttons -->
+<div class="flex items-center space-x-2 shrink-0">
+<!-- Sync Button -->
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors" data-purpose="refresh-data" id="sync-btn" type="button">
+<svg class="w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" id="sync-spinner-icon" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Sync
+          </button>
+<!-- Logout Button -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#dc2626] hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-colors" data-purpose="logout" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Logout
+          </button>
+</div>
 </div>
 </div>
 </header>
 <!-- END: MainHeader -->
-<!-- BEGIN: MainContentContainer -->
-<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-7">
-<!-- BEGIN: KPICardsSection -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="kpi-metric-cards"><!-- KPI 1: Total Users -->
-<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs card-accent-split flex flex-col justify-between pt-6">
-<div>
-<div class="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
-<span>Total Users</span>
-<div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="users"></i>
+<!-- BEGIN: DashboardContent -->
+<main class="max-w-4xl mx-auto px-4 pt-5 sm:px-6 space-y-4">
+<!-- BEGIN: TopMetricsGrid -->
+<section class="grid grid-cols-1 gap-3.5" data-purpose="kpi-cards-group">
+<!-- Card 1: TOTAL USERS -->
+<article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden" data-purpose="metric-total-users">
+<div class="metric-top-bar"></div>
+<div class="p-4 pt-3.5">
+<div class="flex items-start justify-between">
+<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              TOTAL USERS
+            </span>
+<!-- User Icon -->
+<div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
 </div>
 </div>
-<div class="mt-2 flex items-baseline space-x-2">
-<span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiTotalUsers">0</span>
-<span class="text-xs font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200" id="kpiUsersBadge">Real-time</span>
+<div class="flex items-baseline gap-2.5 mt-1.5">
+<span class="text-3xl font-extrabold text-slate-900 tracking-tight transition-all duration-300" id="val-total-users">--</span>
+<span class="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 text-blue-600 border border-blue-100">
+              Real-time
+            </span>
 </div>
-</div>
-<div class="mt-4 pt-2 border-t border-slate-100">
-<div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-<div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" id="capacityBar" style="width: 0%"></div>
-</div>
-<div class="flex justify-between text-[11px] text-slate-500 mt-1.5 font-medium">
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
 <span>Unique Telemetry IDs</span>
-<span id="kpiCapacityText">0 recorded</span>
+<span class="font-medium text-slate-700" id="val-unique-ids">-- recorded</span>
 </div>
 </div>
-</div>
-<!-- KPI 2: Active Bots -->
-<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs card-accent-split flex flex-col justify-between pt-6">
-<div>
-<div class="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
-<span>Active Bots</span>
+</article>
+<!-- Card 2: ACTIVE BOTS -->
+<article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden" data-purpose="metric-active-bots">
+<div class="metric-top-bar"></div>
+<div class="p-4 pt-3.5">
+<div class="flex items-start justify-between">
+<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              ACTIVE BOTS
+            </span>
+<!-- Robot Icon -->
 <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="bot"></i>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
 </div>
 </div>
-<div class="mt-2 flex items-baseline space-x-2">
-<span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiActiveBots">0</span>
-<span class="text-xs text-slate-500 font-medium">connected</span>
+<div class="flex items-baseline gap-2 mt-1.5">
+<span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="val-active-bots">--</span>
+<span class="text-sm text-slate-400 font-normal">connected</span>
 </div>
-</div>
-<div class="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-<span class="text-slate-500 font-medium">Bot Fleet Status</span>
-<span class="inline-flex items-center font-semibold text-slate-500" id="kpiFleetStatus">
-<span class="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5" id="fleetDot"></span>
-<span id="fleetStatusText">Awaiting Data</span>
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+<span>Bot Fleet Status</span>
+<span class="flex items-center gap-1 font-medium text-slate-600" id="val-fleet-status">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" id="fleet-status-dot"></span>
+<span id="fleet-status-label">Awaiting Data</span>
 </span>
 </div>
 </div>
-<!-- KPI 3: Verified Today -->
-<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs card-accent-split flex flex-col justify-between pt-6">
-<div>
-<div class="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
-<span>Verified Today</span>
+</article>
+<!-- Card 3: VERIFIED TODAY -->
+<article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden" data-purpose="metric-verified-today">
+<div class="metric-top-bar"></div>
+<div class="p-4 pt-3.5">
+<div class="flex items-start justify-between">
+<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              VERIFIED TODAY
+            </span>
+<!-- Shield/Check Icon -->
 <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="check-circle"></i>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
 </div>
 </div>
-<div class="mt-2 flex items-baseline space-x-2">
-<span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="kpiVerifiedToday">0</span>
-<span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center" id="kpiVerifiedBadge">
-<i class="w-3 h-3 mr-1 inline" data-lucide="check"></i> Passed
-      </span>
+<div class="flex items-baseline gap-2.5 mt-1.5">
+<span class="text-3xl font-extrabold text-slate-900 tracking-tight transition-all duration-300" id="val-verified-today">--</span>
+<span class="px-2 py-0.5 text-xs font-medium rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+<span>✓</span> Passed
+            </span>
 </div>
-</div>
-<div class="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
 <span>Fingerprint Validity</span>
-<span class="font-bold text-slate-700" id="kpiPassRate">--</span>
+<span class="font-medium text-slate-600" id="val-fingerprint-validity">--</span>
 </div>
 </div>
-<!-- KPI 4: Blocked Users -->
-<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs card-accent-split flex flex-col justify-between pt-6">
-<div>
-<div class="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
-<span>Blocked / Flagged</span>
-<div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="alert-triangle"></i>
+</article>
+<!-- Card 4: BLOCKED / FLAGGED -->
+<article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden" data-purpose="metric-blocked-flagged">
+<div class="metric-top-bar"></div>
+<div class="p-4 pt-3.5">
+<div class="flex items-start justify-between">
+<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase">
+              BLOCKED / FLAGGED
+            </span>
+<!-- Alert Triangle Icon -->
+<div class="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
 </div>
 </div>
-<div class="mt-2 flex items-baseline space-x-2">
-<span class="text-3xl font-extrabold text-red-600 tracking-tight" id="kpiBlockedUsers">0</span>
-<span class="text-xs font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 flex items-center" id="kpiBlockedBadge">
-<i class="w-3 h-3 mr-1 inline" data-lucide="shield-alert"></i> Flagged
-      </span>
+<div class="flex items-baseline gap-2.5 mt-1.5">
+<span class="text-3xl font-extrabold text-[#dc2626] tracking-tight transition-all duration-300" id="val-blocked-flagged">--</span>
+<span class="px-2 py-0.5 text-xs font-medium rounded-md bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
+<svg class="w-3 h-3 text-rose-500" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" fill-rule="evenodd"></path>
+</svg>
+              Flagged
+            </span>
+</div>
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+<span>Duplicate Device / IP</span>
+<span class="font-medium text-slate-700" id="val-rejected-devices">-- rejected</span>
 </div>
 </div>
-<div class="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-<span class="text-slate-500 font-medium">Duplicate Device / IP</span>
-<span class="font-semibold text-slate-600" id="kpiBlockedRate">0 rejected</span>
-</div>
-</div></section>
-<!-- END: KPICardsSection -->
-<!-- BEGIN: ConnectedBotsGridSection -->
-<!-- Direct faithful recreation from user snapshot IMG_20260912_075837_807.jpg -->
-<section class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs" data-purpose="connected-bots-card-container">
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-<div class="flex items-center space-x-2.5">
-<div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="smartphone"></i>
-</div>
-<h2 class="text-base font-bold text-slate-900 tracking-tight">Connected Bots</h2>
-<span class="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full" id="botTotalCounter">0 bots</span>
-</div>
-<!-- Search filter for bot list -->
-<div class="relative w-full sm:w-64">
-<i class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" data-lucide="search"></i>
-<input class="w-full text-xs pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-slate-50 hover:bg-white transition-colors" id="botFilterInput" placeholder="Filter bot handles..." type="text"/>
-</div>
-</div>
-<!-- 2-Column Responsive Bot Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-5" id="botGridContainer"><div class="col-span-1 md:grid-cols-2 flex flex-col items-center justify-center py-10 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-center w-full min-h-[140px]"><i class="w-6 h-6 text-slate-400 mb-2" data-lucide="bot"></i><p class="text-xs font-semibold text-slate-700">Waiting for bot verifications...</p><p class="text-[11px] text-slate-400 mt-0.5">Connected bots will automatically populate here as device verification rows arrive in Supabase.</p></div></div>
+</article>
 </section>
-<!-- END: ConnectedBotsGridSection -->
-<!-- BEGIN: TelemetryTableSection -->
-<section class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden" data-purpose="telemetry-logs-section">
-<!-- Table Header Bar with Filters -->
-<div class="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-<div>
+<!-- END: TopMetricsGrid -->
+<!-- BEGIN: LiveTelemetryStreamSection -->
+<section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" data-purpose="telemetry-records-table">
+<div class="p-5 border-b border-slate-100">
+<!-- Header row with title & record count badge -->
+<div class="flex items-center justify-between gap-2">
 <div class="flex items-center space-x-2">
-<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-<h2 class="text-base font-bold text-slate-900 tracking-tight">Live Telemetry Records</h2>
-<span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded" id="recordCountBadge">(0 records)</span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 -ml-4 inline-block"></span>
+<h2 class="text-base font-bold text-slate-900 tracking-tight">
+              Live Telemetry Records
+            </h2>
 </div>
-<p class="text-xs text-slate-500 mt-0.5">Real-time device signatures streamed from table <span class="font-mono text-slate-700">bot_device_verifications</span></p>
+<span class="px-2.5 py-1 text-xs text-slate-600 bg-slate-100 font-mono rounded-lg border border-slate-200/80" id="records-counter-badge">
+            (-- records)
+          </span>
 </div>
-<!-- Filter Controls -->
-<div class="flex flex-wrap items-center gap-2.5">
+<!-- Monospace caption from database schema note -->
+<p class="mt-2 text-xs font-mono text-slate-500 leading-relaxed break-words">
+          Real-time device signatures streamed from table <span class="text-slate-700 font-semibold underline decoration-slate-300">bot_device_verifications</span>
+</p>
+<!-- Filters controls: search bar and dropdown selectors -->
+<div class="mt-4 space-y-2.5">
+<!-- Filter Search Box -->
 <div class="relative">
-<i class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" data-lucide="search"></i>
-<input class="text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-52 bg-slate-50" id="tableFilterInput" placeholder="Filter Telegram ID, Device, Bot..." type="text"/>
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
 </div>
-<select class="text-xs py-1.5 pl-3 pr-8 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-medium" id="botSelectFilter">
-<option value="ALL">All Connected Bots</option>
-<option value="@AugusttMoneyybot">@AugusttMoneyybot</option>
-<option value="@DressCashbot">@DressCashbot</option>
-<option value="@Moneyybagggbot">@Moneyybagggbot</option>
-<option value="@Bunnyxcasggbot">@Bunnyxcasggbot</option>
-<option value="@Mobile_money_lbot">@Mobile_money_lbot</option>
-<option value="@Cashccultrabot">@Cashccultrabot</option>
+<input class="w-full pl-9 pr-4 py-2 text-xs text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="filter-query" placeholder="Filter Telegram ID, Device, Bot..." type="text"/>
+</div>
+<!-- Dropdowns for bot selection and status -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+<!-- Bot select -->
+<div class="relative">
+<select class="w-full text-xs text-slate-700 bg-white border border-slate-200 rounded-xl py-2 px-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer" id="filter-bot">
+<option selected="" value="ALL">All Connected Bots</option>
 </select>
-<select class="text-xs py-1.5 pl-3 pr-8 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-medium" id="statusSelectFilter">
-<option value="ALL">All Statuses</option>
-<option value="VERIFIED">Verified (PASS)</option>
-<option value="BLOCKED">Blocked (FLAGGED)</option>
+<div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<!-- Status select -->
+<div class="relative">
+<select class="w-full text-xs text-slate-700 bg-white border border-slate-200 rounded-xl py-2 px-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer" id="filter-status">
+<option selected="" value="ALL">All Statuses</option>
+<option value="verified">Verified</option>
+<option value="flagged">Flagged</option>
+<option value="pending">Pending</option>
 </select>
+<div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
 </div>
 </div>
-<!-- Responsive Table Container -->
-<div class="overflow-x-auto min-h-[280px] relative">
-<table class="w-full text-left text-xs border-collapse">
+</div>
+</div>
+</div>
+<!-- Telemetry Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse" id="telemetry-table">
 <thead>
-<tr class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200 text-[11px]">
-<th class="py-3 px-4">Row ID / Time</th>
-<th class="py-3 px-4">Telegram User</th>
-<th class="py-3 px-4">Assigned Bot</th>
-<th class="py-3 px-4">Status</th>
-<th class="py-3 px-4">Device Fingerprint</th>
-<th class="py-3 px-4">Platform &amp; Screen</th>
-<th class="py-3 px-4">IP / Timezone</th>
-<th class="py-3 px-4 text-right">Inspect</th>
+<tr class="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+<th class="py-3 px-4" scope="col">ROW ID / TIME</th>
+<th class="py-3 px-4" scope="col">TELEGRAM USER</th>
+<th class="py-3 px-4" scope="col">ASSIGNED BOT</th>
 </tr>
 </thead>
-<tbody class="divide-y divide-slate-100 font-sans" id="telemetryTableBody">
-<!-- Loading indicator initially -->
-<tr id="tableLoadingRow">
-<td class="text-center py-12 text-slate-400" colspan="8">
-<i class="w-6 h-6 animate-spin mx-auto text-indigo-500 mb-2" data-lucide="loader-2"></i>
-<p class="text-xs font-medium text-slate-500">Connecting to Supabase endpoint &amp; fetching verification records...</p>
+<tbody class="divide-y divide-slate-100 text-xs" id="telemetry-tbody">
+<tr id="empty-state-row">
+<td class="py-8 px-4 text-center text-slate-400 font-mono text-xs" colspan="3">
+Awaiting real Supabase data stream... (No fake records)
 </td>
 </tr>
 </tbody>
 </table>
 </div>
-<!-- Table Footer / Pagination Notice -->
-<div class="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-<span id="footerRecordStatus">Showing latest active verification logs</span>
-<div class="flex items-center space-x-2">
-<button class="px-2.5 py-1 bg-white border border-slate-200 rounded text-slate-600 hover:bg-slate-100 text-xs font-medium transition shadow-2xs" id="btnFetchMore">
-            Refresh Stream
-          </button>
-</div>
+<!-- Card Table Bottom Pagination/Refresh Bar -->
+<div class="p-3.5 bg-slate-50/40 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+<span class="text-slate-500 text-center sm:text-left" id="telemetry-footer-summary">
+          Awaiting real Supabase data...
+        </span>
+<button class="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer" data-purpose="refresh-stream" id="refresh-stream-btn" type="button">
+          Refresh Stream
+        </button>
 </div>
 </section>
-<!-- END: TelemetryTableSection -->
+<!-- END: LiveTelemetryStreamSection -->
 </main>
-<!-- END: MainContentContainer -->
-<!-- BEGIN: MainFooter -->
-<footer class="mt-auto bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500" data-purpose="site-footer">
-<div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-<div class="flex items-center space-x-2">
-<span class="font-bold text-slate-800">Jenil Dobariya Admin</span>
-<span>•</span>
+<!-- END: DashboardContent -->
+<!-- BEGIN: PageFooter -->
+<footer class="mt-8 border-t border-slate-200 bg-white py-6">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500 space-y-1.5">
+<div class="flex flex-wrap items-center justify-center gap-2 font-medium text-slate-700">
+<span>Jenil Dobariya Admin</span>
+<span class="text-slate-300">•</span>
 <span>Multi-Bot Device Verification Matrix</span>
 </div>
-<div class="text-slate-400">
+<p class="text-slate-400">
         © 2026 Jenil Dobariya. All systems operational.
-      </div>
+      </p>
 </div>
 </footer>
-<!-- END: MainFooter -->
-<!-- BEGIN: ConfigModal -->
-<!-- Supabase Credentials configuration modal -->
-<div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4" id="keyModal">
-<div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4">
-<div class="flex items-center justify-between">
-<div class="flex items-center space-x-2.5">
-<div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="database"></i>
-</div>
-<h3 class="font-bold text-slate-900 text-sm">Supabase Connection Settings</h3>
-</div>
-<button class="text-slate-400 hover:text-slate-600" id="btnCloseKeyModal">
-<i class="w-4 h-4" data-lucide="x"></i>
-</button>
-</div>
-<p class="text-xs text-slate-500 leading-relaxed">
-        Live database endpoint: <span class="font-mono text-indigo-700 font-medium">https://neeppziqbuwxhmhpifda.supabase.co</span>.
-        Provide your Supabase Anon/Public Key to sync real-time verification rows from <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">bot_device_verifications</code>.
-      </p>
-<div class="space-y-3">
-<div>
-<label class="block text-xs font-semibold text-slate-700 mb-1">Supabase Anon Key</label>
-<input class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" id="inputAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." type="password"/>
-</div>
-<div class="text-[11px] text-slate-400">
-          Keys are stored locally in browser session and never sent to external servers.
-        </div>
-</div>
-<div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-<button class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg" id="btnCancelKeyModal">Cancel</button>
-<button class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm" id="btnSaveKey">Save &amp; Connect</button>
-</div>
-</div>
-</div>
-<!-- END: ConfigModal -->
-<!-- BEGIN: RecordInspectModal -->
-<!-- Modal showing full JSON telemetry fingerprint -->
-<div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4" id="inspectModal">
-<div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 flex flex-col max-h-[85vh]">
-<div class="p-5 border-b border-slate-100 flex items-center justify-between">
-<div class="flex items-center space-x-2.5">
-<div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-<i class="w-4 h-4" data-lucide="cpu"></i>
-</div>
-<div>
-<h3 class="font-bold text-slate-900 text-sm">Telemetry Hardware Fingerprint</h3>
-<p class="text-xs text-slate-500 font-mono" id="inspectModalSubtitle">Row ID #0</p>
-</div>
-</div>
-<button class="text-slate-400 hover:text-slate-600" id="btnCloseInspectModal">
-<i class="w-4 h-4" data-lucide="x"></i>
-</button>
-</div>
-<div class="p-5 overflow-y-auto flex-1 bg-slate-900 text-slate-100 font-mono text-xs rounded-b-2xl">
-<div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-<span class="text-emerald-400 text-[11px] uppercase tracking-wider font-semibold">Raw Device Verification Payload</span>
-<button class="text-slate-400 hover:text-white text-[11px] flex items-center space-x-1" id="btnCopyJson">
-<i class="w-3 h-3" data-lucide="copy"></i>
-<span>Copy JSON</span>
-</button>
-</div>
-<pre class="overflow-x-auto text-[11px] leading-relaxed text-slate-200" id="jsonPayloadDisplay">{}</pre>
-</div>
-</div>
-</div>
-<!-- END: RecordInspectModal -->
-<!-- BEGIN: ToastNotification -->
-<div class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg flex items-center space-x-2" id="toast">
-<i class="w-4 h-4 text-emerald-400" data-lucide="info"></i>
-<span id="toastMessage">Success</span>
-</div>
-<!-- END: ToastNotification -->
-<!-- BEGIN: ScriptLogic -->
-<!-- Unified Controller script: Supabase integration, search filters & UI behaviors -->
-<script data-purpose="admin-controller">
-    // Supabase project specifications
-    const SUPABASE_PROJECT_URL = 'https://neeppziqbuwxhmhpifda.supabase.co';
-    let supabaseClient = null;
+<!-- END: PageFooter -->
+<!-- BEGIN: Supabase Realtime & Dashboard Logic -->
+<script data-purpose="supabase-realtime-logic">
+    (function () {
+      // Configuration: Uses window.ENV overrides or exact real Supabase endpoint
+      const SUPABASE_URL = window.SUPABASE_URL || 'https://neeppziqbuwxhmhpifda.supabase.co';
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummyKey';
 
-    // Cache of telemetry rows
-    let currentRecords = [];
+      // Store fetched records strictly from Supabase
+      let records = [];
+      let isInitialFetchDone = false;
 
-    // Fallback Mock Dataset matching user's exact bot handles and screenshot metrics
-    const FALLBACK_RECORDS = [
-      {
-        id: 'rec_849201',
-        created_at: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-        telegram_id: '682910482',
-        telegram_username: 'alex_nordic',
-        bot_handle: '@AugusttMoneyybot',
-        status: 'VERIFIED',
-        fingerprint_hash: 'a7b8e920d3f412c9',
-        browser: 'Chrome 122.0 Mobile',
-        os: 'Android 14 (Pixel 8)',
-        screen_resolution: '1080x2400',
-        ip_address: '152.57.12.89',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'ARM Mali-G715',
-        device_memory_gb: 8,
-        hardware_concurrency: 8
-      },
-      {
-        id: 'rec_849202',
-        created_at: new Date(Date.now() - 1000 * 60 * 7).toISOString(),
-        telegram_id: '509214711',
-        telegram_username: 'vikram_cash',
-        bot_handle: '@DressCashbot',
-        status: 'VERIFIED',
-        fingerprint_hash: 'c4e5f601b2a398d7',
-        browser: 'Mobile Safari 17.2',
-        os: 'iOS 17.3 (iPhone 15 Pro)',
-        screen_resolution: '1179x2556',
-        ip_address: '103.21.124.9',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'Apple GPU',
-        device_memory_gb: 8,
-        hardware_concurrency: 6
-      },
-      {
-        id: 'rec_849203',
-        created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-        telegram_id: '198204918',
-        telegram_username: 'rahul_9999',
-        bot_handle: '@Moneyybagggbot',
-        status: 'BLOCKED',
-        fingerprint_hash: '9f8e7d6c5b4a3120',
-        browser: 'Firefox Headless 121',
-        os: 'Linux x86_64',
-        screen_resolution: '800x600',
-        ip_address: '185.220.101.5',
-        timezone: 'Europe/Amsterdam',
-        webgl_vendor: 'Google SwiftShader (Emulated)',
-        device_memory_gb: 2,
-        hardware_concurrency: 2,
-        block_reason: 'Automated Headless / Datacenter VPN'
-      },
-      {
-        id: 'rec_849204',
-        created_at: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
-        telegram_id: '719283019',
-        telegram_username: 'sumit_crypto',
-        bot_handle: '@Bunnyxcasggbot',
-        status: 'VERIFIED',
-        fingerprint_hash: '12ef34ab56cd7890',
-        browser: 'Samsung Internet 23',
-        os: 'Android 13 (Samsung S23)',
-        screen_resolution: '1080x2340',
-        ip_address: '49.36.192.81',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'Qualcomm Adreno 740',
-        device_memory_gb: 8,
-        hardware_concurrency: 8
-      },
-      {
-        id: 'rec_849205',
-        created_at: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-        telegram_id: '829103841',
-        telegram_username: 'dev_singh01',
-        bot_handle: '@Mobile_money_lbot',
-        status: 'VERIFIED',
-        fingerprint_hash: '5566778899aabbcc',
-        browser: 'Chrome 122.0 Mobile',
-        os: 'Android 12 (Redmi Note 11)',
-        screen_resolution: '1080x2400',
-        ip_address: '106.213.88.19',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'Qualcomm Adreno 610',
-        device_memory_gb: 6,
-        hardware_concurrency: 8
-      },
-      {
-        id: 'rec_849206',
-        created_at: new Date(Date.now() - 1000 * 60 * 31).toISOString(),
-        telegram_id: '394819201',
-        telegram_username: 'deep_money',
-        bot_handle: '@Money_Machineer_bot',
-        status: 'BLOCKED',
-        fingerprint_hash: 'a7b8e920d3f412c9', // duplicate fingerprint detected
-        browser: 'Chrome 122.0 Mobile',
-        os: 'Android 14 (Pixel 8)',
-        screen_resolution: '1080x2400',
-        ip_address: '152.57.12.89',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'ARM Mali-G715',
-        device_memory_gb: 8,
-        hardware_concurrency: 8,
-        block_reason: 'Duplicate Fingerprint across multiple accounts'
-      },
-      {
-        id: 'rec_849207',
-        created_at: new Date(Date.now() - 1000 * 60 * 42).toISOString(),
-        telegram_id: '674910283',
-        telegram_username: 'kunal_patel',
-        bot_handle: '@Cashccultrabot',
-        status: 'VERIFIED',
-        fingerprint_hash: '89abcdef01234567',
-        browser: 'Mobile Safari 17.0',
-        os: 'iOS 17.1 (iPhone 14)',
-        screen_resolution: '1170x2532',
-        ip_address: '157.34.199.12',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'Apple GPU',
-        device_memory_gb: 6,
-        hardware_concurrency: 6
-      },
-      {
-        id: 'rec_849208',
-        created_at: new Date(Date.now() - 1000 * 60 * 55).toISOString(),
-        telegram_id: '482019384',
-        telegram_username: 'golden_user',
-        bot_handle: '@GoldenBonusBot',
-        status: 'VERIFIED',
-        fingerprint_hash: '456789abcdef0123',
-        browser: 'Chrome 121.0 Mobile',
-        os: 'Android 13 (OnePlus 11)',
-        screen_resolution: '1440x3216',
-        ip_address: '223.187.114.6',
-        timezone: 'Asia/Kolkata',
-        webgl_vendor: 'Qualcomm Adreno 740',
-        device_memory_gb: 12,
-        hardware_concurrency: 8
-      }
-    ];
+      // DOM Elements
+      const statusBadge = document.getElementById('header-status-badge');
+      const statusDot = document.getElementById('header-status-dot');
+      const statusText = document.getElementById('header-status-text');
+      const tbody = document.getElementById('telemetry-tbody');
+      const recordsCounterBadge = document.getElementById('records-counter-badge');
+      const footerSummary = document.getElementById('telemetry-footer-summary');
+      const valTotalUsers = document.getElementById('val-total-users');
+      const valActiveBots = document.getElementById('val-active-bots');
+      const valVerifiedToday = document.getElementById('val-verified-today');
+      const valBlockedFlagged = document.getElementById('val-blocked-flagged');
+      const valUniqueIds = document.getElementById('val-unique-ids');
+      const valRejectedDevices = document.getElementById('val-rejected-devices');
+      const valFingerprintValidity = document.getElementById('val-fingerprint-validity');
+      const valFleetStatusDot = document.getElementById('fleet-status-dot');
+      const valFleetStatusLabel = document.getElementById('fleet-status-label');
+      const syncBtn = document.getElementById('sync-btn');
+      const refreshStreamBtn = document.getElementById('refresh-stream-btn');
+      const filterInput = document.getElementById('filter-query');
+      const botFilter = document.getElementById('filter-bot');
+      const statusFilter = document.getElementById('filter-status');
 
-    // Initialize UI on DOM load
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      initSupabase();
-      bindEventListeners();
-      loadTelemetryData();
-    });
-
-    // Initialize Supabase Client
-    function initSupabase() {
-      const storedKey = localStorage.getItem('supabase_anon_key');
-      const keyLabel = document.getElementById('keyStatusLabel');
-      
-      if (storedKey) {
-        try {
-          supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, storedKey);
-          keyLabel.textContent = 'Key Active';
-          keyLabel.classList.add('text-emerald-700');
-        } catch (err) {
-          console.error('Failed to init Supabase:', err);
+      // Update UI Status Badge
+      function setConnectionStatus(status) {
+        if (!statusBadge || !statusDot || !statusText) return;
+        if (status === 'connected') {
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 transition-colors duration-300';
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping';
+          statusText.textContent = 'Connected';
+          if (valFleetStatusDot && valFleetStatusLabel) {
+            valFleetStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block';
+            valFleetStatusLabel.textContent = records.length > 0 ? 'Active Telemetry' : 'Connected (No Records)';
+          }
+        } else if (status === 'connecting') {
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 transition-colors duration-300';
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse';
+          statusText.textContent = 'Connecting...';
+        } else if (status === 'disconnected') {
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 transition-colors duration-300';
+          statusDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
+          statusText.textContent = 'Reconnecting...';
+          if (valFleetStatusDot && valFleetStatusLabel) {
+            valFleetStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 inline-block';
+            valFleetStatusLabel.textContent = 'Awaiting Sync';
+          }
         }
-      } else {
-        keyLabel.textContent = 'Set Supabase Key';
       }
-    }
 
-    // Fetch telemetry data from Supabase or utilize synchronized fallback
-    async function loadTelemetryData() {
-      const tableBody = document.getElementById('telemetryTableBody');
-      const syncIcon = document.getElementById('syncIcon');
-      
-      syncIcon.classList.add('animate-spin-once');
-      setTimeout(() => syncIcon.classList.remove('animate-spin-once'), 600);
+      function updateMetricsFromRealData() {
+        if (!isInitialFetchDone) {
+          if (valTotalUsers) valTotalUsers.textContent = '--';
+          if (valActiveBots) valActiveBots.textContent = '--';
+          if (valVerifiedToday) valVerifiedToday.textContent = '--';
+          if (valBlockedFlagged) valBlockedFlagged.textContent = '--';
+          if (valUniqueIds) valUniqueIds.textContent = '-- recorded';
+          if (valRejectedDevices) valRejectedDevices.textContent = '-- rejected';
+          if (valFingerprintValidity) valFingerprintValidity.textContent = '--';
+          if (recordsCounterBadge) recordsCounterBadge.textContent = '(-- records)';
+          if (footerSummary) footerSummary.textContent = 'Awaiting real Supabase data stream...';
+          return;
+        }
 
-      let fetchedRows = null;
+        const count = records.length;
+        const uniqueUserIds = new Set();
+        const activeBotsSet = new Set();
+        let verifiedCount = 0;
+        let blockedCount = 0;
 
-      if (supabaseClient) {
+        records.forEach(rec => {
+          const uId = rec.telegram_id || rec.user_id;
+          if (uId) uniqueUserIds.add(uId);
+
+          const bot = rec.assigned_bot || rec.bot_username;
+          if (bot) activeBotsSet.add(bot);
+
+          const st = (rec.status || rec.verification_status || '').toLowerCase();
+          if (st.includes('flag') || st.includes('block') || rec.is_flagged === true) {
+            blockedCount++;
+          } else if (st.includes('verify') || st === 'passed' || st === 'active') {
+            verifiedCount++;
+          }
+        });
+
+        if (valTotalUsers) valTotalUsers.textContent = count > 0 ? count.toLocaleString() : '0';
+        if (valActiveBots) valActiveBots.textContent = activeBotsSet.size.toString();
+        if (valVerifiedToday) valVerifiedToday.textContent = verifiedCount.toLocaleString();
+        if (valBlockedFlagged) valBlockedFlagged.textContent = blockedCount.toLocaleString();
+        if (valUniqueIds) valUniqueIds.textContent = `${uniqueUserIds.size} recorded`;
+        if (valRejectedDevices) valRejectedDevices.textContent = `${blockedCount} rejected`;
+        if (valFingerprintValidity) valFingerprintValidity.textContent = count > 0 ? `${Math.round((verifiedCount / count) * 100)}%` : '--';
+        if (recordsCounterBadge) recordsCounterBadge.textContent = `(${count} records)`;
+        if (footerSummary) footerSummary.textContent = `Showing ${count} telemetry verification events`;
+      }
+
+      function formatRowTime(timestamp) {
+        if (!timestamp) return '--:--';
         try {
+          const d = new Date(timestamp);
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        } catch {
+          return '--:--';
+        }
+      }
+
+      function createTableRowHtml(record) {
+        const id = record.id ?? '--';
+        const timeStr = formatRowTime(record.created_at || record.verified_at);
+        const username = record.telegram_username ? `@${record.telegram_username.replace(/^@/, '')}` : (record.user_name || 'User');
+        const telegramId = record.telegram_id ? `ID: ${record.telegram_id}` : (record.user_id ? `ID: ${record.user_id}` : 'ID: N/A');
+        const botName = record.assigned_bot || record.bot_username || 'N/A';
+
+        return `
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900 text-sm">${id}</div>
+            <div class="text-[11px] text-slate-400 font-normal font-mono">${timeStr}</div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900">${escapeHtml(username)}</div>
+            <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(telegramId)}</div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              ${escapeHtml(botName)}
+            </span>
+          </td>
+        `;
+      }
+
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>'"]/g, tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag));
+      }
+
+      function renderTableRows() {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!isInitialFetchDone || records.length === 0) {
+          const tr = document.createElement('tr');
+          tr.id = 'empty-state-row';
+          tr.innerHTML = `
+            <td colspan="3" class="py-8 px-4 text-center text-slate-400 font-mono text-xs">
+              Awaiting real Supabase data stream... (No fake records)
+            </td>
+          `;
+          tbody.appendChild(tr);
+          return;
+        }
+
+        // Update bot filter options dynamically based on real data
+        const currentSelectedBot = botFilter?.value || 'ALL';
+        if (botFilter) {
+          botFilter.innerHTML = '<option value="ALL">All Connected Bots</option>';
+          const botSet = new Set();
+          records.forEach(r => {
+            const bot = r.assigned_bot || r.bot_username;
+            if (bot) botSet.add(bot);
+          });
+          botSet.forEach(bot => {
+            const opt = document.createElement('option');
+            opt.value = bot;
+            opt.textContent = bot;
+            if (bot === currentSelectedBot) opt.selected = true;
+            botFilter.appendChild(opt);
+          });
+        }
+
+        records.forEach(rec => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/60 transition-colors';
+          tr.setAttribute('data-row-id', rec.id);
+          tr.setAttribute('data-bot', rec.assigned_bot || rec.bot_username || '');
+          tr.setAttribute('data-status', (rec.status || rec.verification_status || 'verified').toLowerCase());
+          tr.innerHTML = createTableRowHtml(rec);
+          tbody.appendChild(tr);
+        });
+
+        applyRowFilters();
+      }
+
+      function applyRowFilters() {
+        const query = (filterInput?.value || '').toLowerCase().trim();
+        const selectedBot = botFilter?.value || 'ALL';
+        const selectedStatus = (statusFilter?.value || 'ALL').toLowerCase();
+
+        const rows = tbody.querySelectorAll('tr:not(#empty-state-row)');
+        rows.forEach(row => {
+          const rowBot = (row.getAttribute('data-bot') || '').toLowerCase();
+          const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+          const text = row.innerText.toLowerCase();
+
+          const matchesQuery = !query || text.includes(query);
+          const matchesBot = selectedBot === 'ALL' || rowBot === selectedBot.toLowerCase();
+          const matchesStatus = selectedStatus === 'ALL' || rowStatus.includes(selectedStatus);
+
+          row.style.display = (matchesQuery && matchesBot && matchesStatus) ? '' : 'none';
+        });
+      }
+
+      // Handle real-time telemetry events from Postgres
+      function handleRealtimeEvent(payload) {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        
+        if (eventType === 'INSERT') {
+          records.unshift(newRecord);
+          renderTableRows();
+          updateMetricsFromRealData();
+          const newTr = tbody.querySelector(`tr[data-row-id="${newRecord.id}"]`);
+          if (newTr) {
+            newTr.classList.add('row-highlight');
+          }
+        } else if (eventType === 'UPDATE') {
+          const index = records.findIndex(r => r.id === newRecord.id);
+          if (index !== -1) {
+            records[index] = newRecord;
+          } else {
+            records.unshift(newRecord);
+          }
+          renderTableRows();
+          updateMetricsFromRealData();
+          const updTr = tbody.querySelector(`tr[data-row-id="${newRecord.id}"]`);
+          if (updTr) {
+            updTr.classList.add('row-highlight');
+          }
+        } else if (eventType === 'DELETE') {
+          records = records.filter(r => r.id !== oldRecord?.id);
+          renderTableRows();
+          updateMetricsFromRealData();
+        }
+      }
+
+      // Fetch real Supabase initial records
+      async function fetchRealSupabaseRecords(supabaseClient) {
+        try {
+          setConnectionStatus('connecting');
           const { data, error } = await supabaseClient
             .from('bot_device_verifications')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(100);
 
-          if (!error && data && data.length > 0) {
-            fetchedRows = data;
-            showToast('Synchronized with live Supabase database!');
+          if (error) {
+            console.warn('Supabase fetch returned error or table not queryable:', error);
+            isInitialFetchDone = true;
+            setConnectionStatus('disconnected');
+            updateMetricsFromRealData();
+            renderTableRows();
+            return;
           }
-        } catch (e) {
-          console.warn('Realtime fetch failed, using fallback stream:', e);
+
+          records = Array.isArray(data) ? data : [];
+          isInitialFetchDone = true;
+          setConnectionStatus('connected');
+          updateMetricsFromRealData();
+          renderTableRows();
+        } catch (err) {
+          console.error('Error fetching records:', err);
+          isInitialFetchDone = true;
+          setConnectionStatus('disconnected');
+          updateMetricsFromRealData();
+          renderTableRows();
         }
       }
 
-      // Default to curated dataset if Supabase table is newly created or empty
-      currentRecords = fetchedRows || FALLBACK_RECORDS;
-      renderTable(currentRecords);
-      updateKPIs(currentRecords);
-    }
+      // Initialize Supabase Client and Postgres Realtime subscription
+      function initSupabaseRealtime() {
+        if (!window.supabase) {
+          console.warn('Supabase JS library not loaded. Metrics remaining at -- with no fake data.');
+          setConnectionStatus('disconnected');
+          isInitialFetchDone = true;
+          updateMetricsFromRealData();
+          renderTableRows();
+          return;
+        }
 
-    // Render table rows
-    function renderTable(records) {
-      const tableBody = document.getElementById('telemetryTableBody');
-      const badgeCount = document.getElementById('recordCountBadge');
-      const footerStatus = document.getElementById('footerRecordStatus');
+        try {
+          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          setConnectionStatus('connecting');
 
-      badgeCount.textContent = `(${records.length} records)`;
-      footerStatus.textContent = `Showing ${records.length} telemetry verification events`;
+          fetchRealSupabaseRecords(supabase);
 
-      if (records.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="8" class="text-center py-10 text-slate-400">
-              <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
-              No verification records match your filters.
-            </td>
-          </tr>
-        `;
-        lucide.createIcons();
-        return;
-      }
-
-      tableBody.innerHTML = records.map(row => {
-        const isVerified = row.status === 'VERIFIED';
-        const dateObj = new Date(row.created_at || Date.now());
-        const timeFormatted = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const shortHash = (row.fingerprint_hash || 'hash_default').substring(0, 10) + '...';
-
-        return `
-          <tr class="hover:bg-slate-50/80 transition-colors group">
-            <td class="py-3 px-4">
-              <div class="font-mono text-slate-800 font-semibold">${row.id ? String(row.id).substring(0, 10) : 'REC#'}</div>
-              <div class="text-[11px] text-slate-400">${timeFormatted}</div>
-            </td>
-            <td class="py-3 px-4">
-              <div class="font-semibold text-slate-800">${row.telegram_username ? '@' + row.telegram_username.replace('@','') : 'User'}</div>
-              <div class="font-mono text-[11px] text-slate-400">ID: ${row.telegram_id || 'N/A'}</div>
-            </td>
-            <td class="py-3 px-4">
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200">
-                ${row.bot_handle || '@AugusttMoneyybot'}
-              </span>
-            </td>
-            <td class="py-3 px-4">
-              ${isVerified 
-                ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1"></span> PASS
-                   </span>`
-                : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1"></span> BLOCKED
-                   </span>`
+          const channel = supabase
+            .channel('realtime:bot_device_verifications')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'bot_device_verifications'
+              },
+              (payload) => {
+                console.log('Realtime telemetry received:', payload);
+                handleRealtimeEvent(payload);
               }
-            </td>
-            <td class="py-3 px-4 font-mono text-[11px] text-slate-600">
-              <div class="flex items-center space-x-1.5">
-                <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${shortHash}</span>
-                <button onclick="copyToClipboard('${row.fingerprint_hash || ''}')" title="Copy fingerprint hash" class="text-slate-400 hover:text-indigo-600 transition">
-                  <i data-lucide="copy" class="w-3 h-3"></i>
-                </button>
-              </div>
-            </td>
-            <td class="py-3 px-4 text-slate-600">
-              <div class="font-medium text-slate-800 text-[11px]">${row.os || 'Android'}</div>
-              <div class="text-[11px] text-slate-400">${row.screen_resolution || '1080x2400'} • ${row.browser ? row.browser.split(' ')[0] : 'Browser'}</div>
-            </td>
-            <td class="py-3 px-4 text-slate-600">
-              <div class="font-mono text-[11px]">${row.ip_address || '127.0.0.1'}</div>
-              <div class="text-[11px] text-slate-400">${row.timezone || 'Asia/Kolkata'}</div>
-            </td>
-            <td class="py-3 px-4 text-right">
-              <button onclick="openInspectModal('${encodeURIComponent(JSON.stringify(row))}')" class="inline-flex items-center px-2 py-1 text-[11px] font-medium text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded border border-slate-200 transition shadow-2xs">
-                Inspect
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+            )
+            .subscribe((status, err) => {
+              if (status === 'SUBSCRIBED') {
+                setConnectionStatus('connected');
+              } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                setConnectionStatus('disconnected');
+                if (err) console.error('Supabase subscription error:', err);
+              } else if (status === 'TIMED_OUT') {
+                setConnectionStatus('disconnected');
+              }
+            });
 
-      lucide.createIcons();
-    }
+          // Keep-alive/reconnect handler if browser goes offline/online
+          window.addEventListener('online', () => {
+            setConnectionStatus('connecting');
+            channel.subscribe();
+            fetchRealSupabaseRecords(supabase);
+          });
+          window.addEventListener('offline', () => {
+            setConnectionStatus('disconnected');
+          });
 
-    // Dynamic KPI updates
-    function updateKPIs(records) {
-      const blocked = records.filter(r => r.status === 'BLOCKED').length;
-      const verified = records.filter(r => r.status === 'VERIFIED').length;
-      
-      // Keep primary values aligned with the user snapshot
-      document.getElementById('kpiTotalUsers').textContent = "3,049";
-      document.getElementById('kpiActiveBots').textContent = "176";
-      document.getElementById('kpiVerifiedToday').textContent = String(463 + verified - 7);
-      document.getElementById('kpiBlockedUsers').textContent = String(201 + blocked - 2);
-    }
-
-    // Filter Logic
-    function applyFilters() {
-      const searchVal = document.getElementById('tableFilterInput').value.toLowerCase().trim();
-      const botVal = document.getElementById('botSelectFilter').value;
-      const statusVal = document.getElementById('statusSelectFilter').value;
-
-      const filtered = currentRecords.filter(r => {
-        const matchesSearch = !searchVal || 
-          (r.telegram_username && r.telegram_username.toLowerCase().includes(searchVal)) ||
-          (r.telegram_id && String(r.telegram_id).includes(searchVal)) ||
-          (r.bot_handle && r.bot_handle.toLowerCase().includes(searchVal)) ||
-          (r.fingerprint_hash && r.fingerprint_hash.toLowerCase().includes(searchVal)) ||
-          (r.ip_address && r.ip_address.includes(searchVal));
-
-        const matchesBot = (botVal === 'ALL') || (r.bot_handle === botVal);
-        const matchesStatus = (statusVal === 'ALL') || (r.status === statusVal);
-
-        return matchesSearch && matchesBot && matchesStatus;
-      });
-
-      renderTable(filtered);
-    }
-
-    // Connected Bot Cards filtering
-    function filterBotCards(term) {
-      const cards = document.querySelectorAll('#botGridContainer .bot-card');
-      let visibleCount = 0;
-      cards.forEach(card => {
-        const handle = card.getAttribute('data-handle').toLowerCase();
-        if (handle.includes(term.toLowerCase())) {
-          card.classList.remove('hidden');
-          visibleCount++;
-        } else {
-          card.classList.add('hidden');
+          return supabase;
+        } catch (error) {
+          console.error('Supabase Realtime setup exception:', error);
+          setConnectionStatus('disconnected');
+          isInitialFetchDone = true;
+          updateMetricsFromRealData();
+          renderTableRows();
         }
-      });
-      document.getElementById('botTotalCounter').textContent = `${visibleCount} bots`;
-    }
-
-    // Inspect Modal Trigger
-    window.openInspectModal = function(rowString) {
-      try {
-        const row = JSON.parse(decodeURIComponent(rowString));
-        document.getElementById('inspectModalSubtitle').textContent = `Log Entry: ${row.id || 'N/A'} • Telegram ID: ${row.telegram_id || 'N/A'}`;
-        document.getElementById('jsonPayloadDisplay').textContent = JSON.stringify(row, null, 2);
-        document.getElementById('inspectModal').classList.remove('hidden');
-      } catch (err) {
-        console.error('Inspect payload error', err);
       }
-    };
 
-    // Copy to clipboard helper
-    window.copyToClipboard = function(text) {
-      if (!text) return;
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!');
-      });
-    };
+      // Filter events
+      if (filterInput) filterInput.addEventListener('input', applyRowFilters);
+      if (botFilter) botFilter.addEventListener('change', applyRowFilters);
+      if (statusFilter) statusFilter.addEventListener('change', applyRowFilters);
 
-    // Toast notification
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const msgEl = document.getElementById('toastMessage');
-      msgEl.textContent = msg;
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 2400);
-    }
-
-    // Logout handling
-    window.handleLogout = function() {
-      if (confirm("Are you sure you want to log out of Jenil Dobariya Admin?")) {
-        showToast("Logged out successfully");
-        setTimeout(() => location.reload(), 600);
-      }
-    };
-
-    // Event Listeners Binding
-    function bindEventListeners() {
-      // Sync Button
-      document.getElementById('btnSync').addEventListener('click', () => {
-        loadTelemetryData();
-        showToast('Refreshing telemetry logs...');
-      });
-
-      document.getElementById('btnFetchMore').addEventListener('click', () => {
-        loadTelemetryData();
-      });
-
-      // Filter Inputs
-      document.getElementById('tableFilterInput').addEventListener('input', applyFilters);
-      document.getElementById('botSelectFilter').addEventListener('change', applyFilters);
-      document.getElementById('statusSelectFilter').addEventListener('change', applyFilters);
-
-      // Bot Card Search
-      document.getElementById('botFilterInput').addEventListener('input', (e) => {
-        filterBotCards(e.target.value);
-      });
-
-      // Bot card click-to-filter
-      document.querySelectorAll('#botGridContainer .bot-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const handle = card.getAttribute('data-handle');
-          document.getElementById('botSelectFilter').value = handle;
-          applyFilters();
-          document.getElementById('telemetryTableBody').scrollIntoView({ behavior: 'smooth' });
-          showToast(`Filtered records by ${handle}`);
+      // Refresh Buttons
+      if (syncBtn) {
+        syncBtn.addEventListener('click', () => {
+          const original = syncBtn.innerHTML;
+          syncBtn.disabled = true;
+          syncBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5 animate-spin text-slate-500" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg> Syncing...
+          `;
+          if (window.supabase) {
+            try {
+              const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+              fetchRealSupabaseRecords(client).finally(() => {
+                syncBtn.disabled = false;
+                syncBtn.innerHTML = original;
+              });
+            } catch {
+              syncBtn.disabled = false;
+              syncBtn.innerHTML = original;
+            }
+          } else {
+            setTimeout(() => {
+              syncBtn.disabled = false;
+              syncBtn.innerHTML = original;
+            }, 600);
+          }
         });
-      });
+      }
 
-      // Inspect Modal Close
-      document.getElementById('btnCloseInspectModal').addEventListener('click', () => {
-        document.getElementById('inspectModal').classList.add('hidden');
-      });
+      if (refreshStreamBtn) {
+        refreshStreamBtn.addEventListener('click', () => {
+          refreshStreamBtn.innerText = 'Refreshing...';
+          refreshStreamBtn.disabled = true;
+          if (window.supabase) {
+            try {
+              const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+              fetchRealSupabaseRecords(client).finally(() => {
+                refreshStreamBtn.innerText = 'Refresh Stream';
+                refreshStreamBtn.disabled = false;
+              });
+            } catch {
+              refreshStreamBtn.innerText = 'Refresh Stream';
+              refreshStreamBtn.disabled = false;
+            }
+          } else {
+            setTimeout(() => {
+              refreshStreamBtn.innerText = 'Refresh Stream';
+              refreshStreamBtn.disabled = false;
+              applyRowFilters();
+            }, 600);
+          }
+        });
+      }
 
-      // Copy Full JSON
-      document.getElementById('btnCopyJson').addEventListener('click', () => {
-        const text = document.getElementById('jsonPayloadDisplay').textContent;
-        copyToClipboard(text);
-      });
-
-      // Key Modal controls
-      const keyModal = document.getElementById('keyModal');
-      document.getElementById('btnOpenKeyModal').addEventListener('click', () => {
-        const currentKey = localStorage.getItem('supabase_anon_key') || '';
-        document.getElementById('inputAnonKey').value = currentKey;
-        keyModal.classList.remove('hidden');
-      });
-
-      document.getElementById('btnCloseKeyModal').addEventListener('click', () => {
-        keyModal.classList.add('hidden');
-      });
-
-      document.getElementById('btnCancelKeyModal').addEventListener('click', () => {
-        keyModal.classList.add('hidden');
-      });
-
-      document.getElementById('btnSaveKey').addEventListener('click', () => {
-        const key = document.getElementById('inputAnonKey').value.trim();
-        if (key) {
-          localStorage.setItem('supabase_anon_key', key);
-          initSupabase();
-          keyModal.classList.add('hidden');
-          showToast('Supabase Anon Key saved! Fetching data...');
-          loadTelemetryData();
-        } else {
-          localStorage.removeItem('supabase_anon_key');
-          supabaseClient = null;
-          document.getElementById('keyStatusLabel').textContent = 'Set Supabase Key';
-          document.getElementById('keyStatusLabel').classList.remove('text-emerald-700');
-          keyModal.classList.add('hidden');
-          showToast('Key cleared. Running in demo matrix mode.');
-        }
-      });
-    }
+      // Initial state setup
+      updateMetricsFromRealData();
+      // Launch connection
+      initSupabaseRealtime();
+    })();
   </script>
-<!-- END: ScriptLogic -->
+<!-- END: Supabase Realtime & Dashboard Logic -->
 </body></html>
