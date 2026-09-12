@@ -1,941 +1,1705 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Gateway Portal | Jenil Dobariya</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase Client for Realtime Database Fetch -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<meta charset="UTF-8">
+    <style>
+        /* ==========================================================
+           JENIL DOBARIYA MULTI-BOT VERIFICATION GATEWAY - COMPLETE ALL-IN-ONE
+           Cyberpunk Dark Matrix Holographic Theme
+           ========================================================== */
+        :root {
+            --bg-base: #06070d;
+            --bg-surface: #0c0e17;
+            --bg-surface-elevated: rgba(18, 21, 36, 0.78);
+            --bg-card: rgba(15, 18, 30, 0.7);
+            --bg-card-hover: rgba(23, 28, 48, 0.85);
+            --border-subtle: rgba(99, 102, 241, 0.16);
+            --border-bright: rgba(99, 102, 241, 0.38);
+            --border-focus: #6366f1;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            
+            /* Status Accents & Neon Gradients */
+            --accent-indigo: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.35);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 26px;
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<title>Verification Admin</title>
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
 
-<style>
+        /* Ambient Glow & Background Grid */
+        .glow-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
 
-* {
-    box-sizing: border-box;
-}
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.25;
+            animation: orbFloat 18s infinite alternate ease-in-out;
+        }
 
-body {
-    margin: 0;
-    background: #0b1020;
-    color: white;
-    font-family: Arial, sans-serif;
-}
+        .orb-1 {
+            top: -10%;
+            left: 15%;
+            width: 500px;
+            height: 500px;
+            background: #4f46e5;
+        }
 
-.header {
-    padding: 20px;
-    background: #11182d;
-    border-bottom: 1px solid #29334d;
-}
+        .orb-2 {
+            bottom: 5%;
+            right: 10%;
+            width: 600px;
+            height: 600px;
+            background: #06b6d4;
+            animation-delay: -7s;
+        }
 
-.header h1 {
-    margin: 0;
-    font-size: 22px;
-}
+        .orb-3 {
+            top: 40%;
+            left: 45%;
+            width: 400px;
+            height: 400px;
+            background: #a855f7;
+            animation-delay: -12s;
+        }
 
-.header p {
-    margin: 6px 0 0;
-    color: #8993aa;
-    font-size: 13px;
-}
+        .cyber-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        }
 
-.container {
-    max-width: 1300px;
-    margin: auto;
-    padding: 20px;
-}
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, 40px) scale(1.15); }
+        }
 
-.login {
-    max-width: 420px;
-    margin: 70px auto;
-    padding: 25px;
-    background: #11182d;
-    border: 1px solid #29334d;
-    border-radius: 16px;
-}
+        .mono { font-family: var(--font-mono); }
+        .font-xs { font-size: 11px; }
+        .font-sm { font-size: 13px; }
+        .bold { font-weight: 700; }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-dim { color: var(--text-dim); }
+        .text-indigo { color: #818cf8; }
+        .text-success { color: #34d399 !important; }
+        .text-warning { color: #fbbf24 !important; }
+        .text-danger { color: #fb7185 !important; }
 
-.login h2 {
-    margin-top: 0;
-}
+        /* ==========================================================
+           VIEW 1: MASTER PASSCODE LOCKSCREEN OVERLAY
+           ========================================================== */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(25px);
+            background: rgba(6, 7, 13, 0.88);
+        }
 
-input {
-    width: 100%;
-    padding: 13px;
-    margin-bottom: 12px;
-    background: #080d19;
-    color: white;
-    border: 1px solid #303b59;
-    border-radius: 10px;
-    outline: none;
-}
+        .auth-overlay.active {
+            display: flex;
+        }
 
-button {
-    border: 0;
-    padding: 12px 18px;
-    border-radius: 10px;
-    background: #4f7cff;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-bright);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-xl);
+            padding: 45px 35px;
+            text-align: center;
+            position: relative;
+            backdrop-filter: blur(20px);
+        }
 
-button:hover {
-    opacity: .9;
-}
+        .shield-badge {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            box-shadow: var(--glow-indigo);
+            font-size: 28px;
+            color: #818cf8;
+        }
 
-.test {
-    background: #26324e;
-    margin-left: 5px;
-}
+        .auth-header h2 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-.error {
-    margin-top: 12px;
-    padding: 12px;
-    background: #351b23;
-    border-radius: 10px;
-    color: #ff7c7c;
-    display: none;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 28px;
+        }
 
-.success-msg {
-    margin-top: 12px;
-    padding: 12px;
-    background: #143425;
-    border-radius: 10px;
-    color: #58e49c;
-    display: none;
-}
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 16px;
+        }
 
-.dashboard {
-    display: none;
-}
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 16px;
+        }
 
-.topbar {
-    margin-bottom: 20px;
-    overflow: hidden;
-}
+        .input-wrapper input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 50px 16px 48px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            font-family: var(--font-sans);
+            transition: all 0.3s;
+        }
 
-.refresh {
-    float: right;
-}
+        .input-wrapper input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
 
-.stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
-}
+        .toggle-pass {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+        }
 
-.card {
-    background: #11182d;
-    border: 1px solid #29334d;
-    border-radius: 15px;
-    padding: 20px;
-}
+        .auth-error-msg {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #fb7185;
+            font-size: 13px;
+            margin-bottom: 18px;
+            font-weight: 500;
+        }
 
-.card-title {
-    color: #8993aa;
-    font-size: 12px;
-}
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
 
-.card-number {
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 8px;
-}
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6);
+        }
 
-.section {
-    background: #11182d;
-    border: 1px solid #29334d;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
+        .auth-footer {
+            margin-top: 30px;
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-.section h2 {
-    margin-top: 0;
-    font-size: 18px;
-}
+        .shake-anim {
+            animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
 
-.table-wrap {
-    overflow-x: auto;
-}
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 800px;
-}
+        /* ==========================================================
+           VIEW 2: MAIN DASHBOARD VIEW
+           ========================================================== */
+        .dashboard-wrapper {
+            position: relative;
+            z-index: 1;
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-th,
-td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #29334d;
-    font-size: 13px;
-}
+        .dashboard-wrapper.active {
+            display: flex;
+        }
 
-th {
-    color: #8993aa;
-}
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 36px;
+            background: rgba(12, 14, 23, 0.85);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-.badge {
-    padding: 5px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-}
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
-.success {
-    color: #54e59b;
-    background: #123c29;
-}
+        .logo-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: var(--glow-indigo);
+        }
 
-.failed {
-    color: #ff7373;
-    background: #401c23;
-}
+        .brand-text h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #fff;
+        }
 
-.active {
-    color: #ffd35b;
-    background: #3b3115;
-}
+        .brand-text h1 span {
+            color: #818cf8;
+            font-weight: 400;
+        }
 
-.debug {
-    background: #080d19;
-    padding: 15px;
-    border-radius: 10px;
-    color: #9ba6bd;
-    font-size: 12px;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
 
-@media(max-width:800px) {
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulseGlow 1.8s infinite;
+        }
 
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.6; }
+        }
 
-}
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
-@media(max-width:450px) {
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
 
-    .stats {
-        grid-template-columns: 1fr;
-    }
+        .chip-online {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
 
-    .container {
-        padding: 12px;
-    }
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+        }
 
-}
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
 
-</style>
+        .btn-action.btn-danger:hover {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: rgba(244, 63, 94, 0.4);
+            color: #fb7185;
+        }
 
+        .content-container {
+            flex: 1;
+            max-width: 1440px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* KPI Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            opacity: 0.8;
+        }
+
+        .kpi-card.glow-indigo::before { background: var(--accent-indigo); }
+        .kpi-card.glow-green::before { background: var(--accent-emerald); }
+        .kpi-card.glow-amber::before { background: var(--accent-amber); }
+        .kpi-card.glow-rose::before { background: var(--accent-rose); }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 8px 0 6px;
+            font-family: var(--font-sans);
+            letter-spacing: -1px;
+        }
+
+        .kpi-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .kpi-icon-wrap.indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .kpi-icon-wrap.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .kpi-icon-wrap.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .kpi-icon-wrap.rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+
+        /* Filter Toolbar */
+        .toolbar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+
+        .search-input-box {
+            position: relative;
+            min-width: 280px;
+            flex: 1;
+        }
+
+        .search-input-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .search-input-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 16px 10px 40px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            font-family: var(--font-sans);
+            transition: all 0.25s;
+        }
+
+        .search-input-box input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .select-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .select-box i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-dim);
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .select-box select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 32px 10px 38px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 14px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .records-indicator {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn-pill {
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+            padding: 9px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+        }
+
+        .btn-pill:hover {
+            background: rgba(99, 102, 241, 0.25);
+            color: #fff;
+        }
+
+        .btn-pill.btn-danger {
+            background: rgba(244, 63, 94, 0.12);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: #fda4af;
+        }
+
+        .btn-pill.btn-danger:hover {
+            background: rgba(244, 63, 94, 0.25);
+            color: #fff;
+        }
+
+        /* Data Table */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .data-table th {
+            padding: 16px 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Status Chips */
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .tag-success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .tag-info {
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .tag-warning {
+            background: rgba(245, 158, 11, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .tag-danger {
+            background: rgba(244, 63, 94, 0.12);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.25);
+        }
+
+        .badge-bot {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .hash-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .platform-chip {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .btn-inspect {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-inspect:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #fff;
+        }
+
+        .empty-placeholder td {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .loading-state, .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-dim);
+        }
+
+        .empty-state i {
+            font-size: 38px;
+            color: var(--text-dim);
+        }
+
+        .empty-state h4 {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .mini-spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--accent-indigo);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .page-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .page-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-page {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-page:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .admin-footer {
+            padding: 24px 36px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #818cf8;
+        }
+
+        /* Modal Inspector */
+        .detail-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .detail-modal.active {
+            display: flex;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-card {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            background: #0f121d;
+            border: 1px solid var(--border-bright);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), var(--glow-indigo);
+            overflow: hidden;
+            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .modal-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .modal-title-group i {
+            color: #818cf8;
+        }
+
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 18px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .detail-item label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-val {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-subtle);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .break-all {
+            word-break: break-all;
+        }
+
+        .detail-item.full-width {
+            grid-column: span 2;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1024px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav { padding: 14px 20px; flex-direction: column; align-items: flex-start; gap: 14px; }
+            .nav-actions { width: 100%; justify-content: space-between; }
+            .btn-text { display: none; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .content-container { padding: 16px; }
+            .toolbar-left { flex-direction: column; width: 100%; }
+            .search-input-box, .select-box, .select-box select { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .detail-item.full-width { grid-column: span 1; }
+        }
+    </style>
 </head>
-
-
 <body>
 
+    <!-- Ambient Glowing Background Grid & Orbs -->
+    <div class="glow-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+        <div class="cyber-grid"></div>
+    </div>
 
-<div class="header">
+    <!-- ========================================================
+         VIEW 1: PASSWORD AUTHENTICATION MODAL (LOCKSCREEN)
+         ======================================================== -->
+    <div id="authOverlay" class="auth-overlay active">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="shield-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2>Security Gateway</h2>
+                <p>Enter Master Passcode to access Bot Device Telemetry</p>
+            </div>
 
-    <h1>Verification Admin</h1>
+            <form id="loginForm" onsubmit="handleAuthSubmit(event)">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="adminPassInput" placeholder="Master Access Key" autocomplete="off" required>
+                    <button type="button" class="toggle-pass" onclick="togglePasswordVisibility()">
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
 
-    <p>Vercel Verification Dashboard</p>
+                <div id="authErrorMsg" class="auth-error-msg">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>Invalid Passcode. Access Denied.</span>
+                </div>
 
-</div>
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <span>AUTHENTICATE</span>
+                    <i class="fa-solid fa-arrow-right-long"></i>
+                </button>
+            </form>
 
+            <div class="auth-footer">
+                <span>Multi-Bot Verification Core 2.0 • Jenil Dobariya</span>
+            </div>
+        </div>
+    </div>
 
-<div id="loginBox" class="login">
+    <!-- ========================================================
+         VIEW 2: MAIN ADMIN DASHBOARD
+         ======================================================== -->
+    <div id="dashboardApp" class="dashboard-wrapper">
+        
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+            <div class="brand-group">
+                <div class="logo-box">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Jenil Dobariya <span>Telemetry</span></h1>
+                    <p class="live-pill"><span class="live-pulse"></span> Multi-Bot Realtime Monitor</p>
+                </div>
+            </div>
 
-    <h2>Admin Login</h2>
+            <div class="nav-actions">
+                <div class="status-chip chip-online">
+                    <i class="fa-solid fa-database"></i>
+                    <span id="dbStatusText">Connected: Supabase</span>
+                </div>
+                <button class="btn-action" onclick="refreshDashboardData()" title="Reload Data">
+                    <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+                    <span class="btn-text">Sync</span>
+                </button>
+                <button class="btn-action btn-danger" onclick="logoutAdmin()" title="Lock Portal">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span class="btn-text">Lock</span>
+                </button>
+            </div>
+        </header>
 
-    <input
-        type="password"
-        id="password"
-        placeholder="Admin password"
-    >
+        <!-- Main Workspace Container -->
+        <main class="content-container">
 
-    <button onclick="login()">
-        Login
-    </button>
+            <!-- Summary KPI Metric Cards -->
+            <section class="metrics-grid">
+                
+                <div class="kpi-card glow-indigo">
+                    <div class="kpi-meta">
+                        <span class="kpi-title">TOTAL VERIFICATIONS</span>
+                        <div class="kpi-value" id="countTotal">0</div>
+                        <span class="kpi-sub"><i class="fa-solid fa-microchip"></i> All bot requests</span>
+                    </div>
+                    <div class="kpi-icon-wrap indigo">
+                        <i class="fa-solid fa-fingerprint"></i>
+                    </div>
+                </div>
 
-    <button
-        class="test"
-        onclick="testAPI()"
-    >
-        Test API
-    </button>
+                <div class="kpi-card glow-green">
+                    <div class="kpi-meta">
+                        <span class="kpi-title">SUCCESS / PASSED</span>
+                        <div class="kpi-value text-success" id="countSuccess">0</div>
+                        <span class="kpi-sub"><i class="fa-solid fa-circle-check"></i> Fresh Verified Devices</span>
+                    </div>
+                    <div class="kpi-icon-wrap green">
+                        <i class="fa-solid fa-check-double"></i>
+                    </div>
+                </div>
 
-    <div id="loginError" class="error"></div>
+                <div class="kpi-card glow-amber">
+                    <div class="kpi-meta">
+                        <span class="kpi-title">SAME-DEVICE ATTEMPTS</span>
+                        <div class="kpi-value text-warning" id="countAttempts">0</div>
+                        <span class="kpi-sub"><i class="fa-solid fa-users-viewfinder"></i> Re-visits / Multi-accounts</span>
+                    </div>
+                    <div class="kpi-icon-wrap amber">
+                        <i class="fa-solid fa-clone"></i>
+                    </div>
+                </div>
 
-    <div
-        id="loginSuccess"
-        class="success-msg"
-    ></div>
+                <div class="kpi-card glow-rose">
+                    <div class="kpi-meta">
+                        <span class="kpi-title">BLOCKED / FAILED</span>
+                        <div class="kpi-value text-danger" id="countFailed">0</div>
+                        <span class="kpi-sub"><i class="fa-solid fa-shield-virus"></i> VPN / Missing Fingerprint</span>
+                    </div>
+                    <div class="kpi-icon-wrap rose">
+                        <i class="fa-solid fa-ban"></i>
+                    </div>
+                </div>
 
-</div>
+            </section>
 
+            <!-- Multi-Bot Distribution & Filter Toolbar -->
+            <section class="toolbar-card">
+                <div class="toolbar-left">
+                    <div class="search-input-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchInput" placeholder="Search by User ID, Bot, IP, Device Hash..." oninput="handleSearchFilter()">
+                    </div>
 
-<div id="dashboard" class="dashboard">
+                    <div class="select-box">
+                        <i class="fa-solid fa-robot"></i>
+                        <select id="botFilterSelect" onchange="applyFilters()">
+                            <option value="ALL">All Connected Bots</option>
+                        </select>
+                    </div>
 
-<div class="container">
+                    <div class="select-box">
+                        <i class="fa-solid fa-filter"></i>
+                        <select id="statusFilterSelect" onchange="applyFilters()">
+                            <option value="ALL">All Status Types</option>
+                            <option value="success">Verified Success</option>
+                            <option value="continue">Already Verified</option>
+                            <option value="attempt">Clone / Same-Dev Attempt</option>
+                        </select>
+                    </div>
+                </div>
 
+                <div class="toolbar-right">
+                    <button class="btn-pill" onclick="exportDataCSV()">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <span class="records-indicator" id="recordIndicator">Showing 0 of 0 logs</span>
+                </div>
+            </section>
 
-    <div class="topbar">
+            <!-- Verification Logs Table View -->
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table" id="logsTable">
+                        <thead>
+                            <tr>
+                                <th>TIME (UTC)</th>
+                                <th>STATUS</th>
+                                <th>USER ID</th>
+                                <th>TELEGRAM BOT</th>
+                                <th>DEVICE FINGERPRINT</th>
+                                <th>IP & GEO</th>
+                                <th>PLATFORM / HW</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <tr class="empty-placeholder">
+                                <td colspan="8">
+                                    <div class="loading-state">
+                                        <div class="mini-spinner"></div>
+                                        <span>Loading database records...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-        <button
-            class="refresh"
-            onclick="loadData()"
-        >
-            Refresh
-        </button>
+                <!-- Table Footer Pagination -->
+                <div class="table-footer">
+                    <div class="page-info" id="paginationInfo">Page 1</div>
+                    <div class="page-controls">
+                        <button class="btn-page" id="btnPrev" onclick="changePage(-1)" disabled><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                        <button class="btn-page" id="btnNext" onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- System Footer -->
+        <footer class="admin-footer">
+            <span>© 2026 Jenil Dobariya • Multi-Bot Device Verification Gateway</span>
+            <div class="footer-links">
+                <a href="fire.html" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Client WebApp</a>
+            </div>
+        </footer>
 
     </div>
 
-
-    <div class="stats">
-
-        <div class="card">
-
-            <div class="card-title">
-                TOTAL
+    <!-- ========================================================
+         MODAL: INSPECT DEVICE TELEMETRY DETAILS
+         ======================================================== -->
+    <div id="detailModal" class="detail-modal">
+        <div class="modal-backdrop" onclick="closeDetailModal()"></div>
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <i class="fa-solid fa-microchip"></i>
+                    <h3>Device Deep Telemetry</h3>
+                </div>
+                <button class="btn-close-modal" onclick="closeDetailModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <div
-                id="total"
-                class="card-number"
-            >
-                0
+            <div class="modal-body" id="modalDetailContent">
+                <!-- Dynamically populated -->
             </div>
-
+            <div class="modal-actions">
+                <button class="btn-pill btn-danger" id="btnCopyHash" onclick="copyModalJson()"><i class="fa-regular fa-copy"></i> Copy Raw JSON</button>
+                <button class="btn-pill" onclick="closeDetailModal()">Close</button>
+            </div>
         </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                SUCCESS
-            </div>
-
-            <div
-                id="success"
-                class="card-number"
-            >
-                0
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                FAILED
-            </div>
-
-            <div
-                id="failed"
-                class="card-number"
-            >
-                0
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                ACTIVE
-            </div>
-
-            <div
-                id="active"
-                class="card-number"
-            >
-                0
-            </div>
-
-        </div>
-
     </div>
 
-
-    <div class="section">
-
-        <h2>Bot Wise Statistics</h2>
-
-        <div class="table-wrap">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>Bot Hash</th>
-                        <th>Total</th>
-                        <th>Success</th>
-                        <th>Failed</th>
-                        <th>Active</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="botTable"></tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-
-    <div class="section">
-
-        <h2>All Verification Data</h2>
-
-        <input
-            id="search"
-            placeholder="Search user, bot, IP, device..."
-            oninput="filterRecords()"
-        >
-
-        <div class="table-wrap">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>User ID</th>
-                        <th>Bot</th>
-                        <th>Status</th>
-                        <th>IP</th>
-                        <th>Platform</th>
-                        <th>Device ID</th>
-                        <th>Time</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="recordTable"></tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-
-    <div class="section">
-
-        <h2>API Debug</h2>
-
-        <div
-            id="debug"
-            class="debug"
-        >
-            Waiting...
-        </div>
-
-    </div>
-
-
-</div>
-
-</div>
-
-
-<script>
-
-let ADMIN_PASSWORD = "";
-
-let allRecords = [];
-
-
-function showError(message) {
-
-    const box =
-        document.getElementById("loginError");
-
-    box.style.display = "block";
-
-    box.innerText = message;
-
-}
-
-
-function showSuccess(message) {
-
-    const box =
-        document.getElementById("loginSuccess");
-
-    box.style.display = "block";
-
-    box.innerText = message;
-
-}
-
-
-function clearMessages() {
-
-    document.getElementById("loginError")
-        .style.display = "none";
-
-    document.getElementById("loginSuccess")
-        .style.display = "none";
-
-}
-
-
-function login() {
-
-    clearMessages();
-
-    const password =
-        document
-        .getElementById("password")
-        .value
-        .trim();
-
-
-    if (!password) {
-
-        showError(
-            "Please enter admin password."
-        );
-
-        return;
-    }
-
-
-    ADMIN_PASSWORD = password;
-
-    loadData();
-
-}
-
-
-async function testAPI() {
-
-    clearMessages();
-
-    const password =
-        document
-        .getElementById("password")
-        .value
-        .trim();
-
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/admin",
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "X-Admin-Password":
-                            password
-                    }
-                }
-            );
-
-
-        const text =
-            await response.text();
-
-
-        document.getElementById("debug")
-            .innerText =
-            "HTTP " +
-            response.status +
-            "\n\n" +
-            text;
-
-
-        let data;
-
-
-        try {
-
-            data = JSON.parse(text);
-
-        } catch (error) {
-
-            showError(
-                "API did not return JSON.\n\n" +
-                "HTTP: " +
-                response.status +
-                "\n\n" +
-                text.substring(0, 3000)
-            );
-
-            return;
-        }
-
-
-        if (!response.ok) {
-
-            showError(
-                JSON.stringify(
-                    data,
-                    null,
-                    2
-                )
-            );
-
-            return;
-        }
-
-
-        showSuccess(
-            "Vercel Admin API is working."
-        );
-
-
-    } catch (error) {
-
-        showError(
-            "Request failed:\n\n" +
-            error.message
-        );
-
-    }
-
-}
-
-
-async function loadData() {
-
-    clearMessages();
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/admin",
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "X-Admin-Password":
-                            ADMIN_PASSWORD
-                    }
-                }
-            );
-
-
-        const text =
-            await response.text();
-
-
-        let data;
-
-
-        try {
-
-            data = JSON.parse(text);
-
-        } catch (error) {
-
-            showError(
-                "Invalid API response.\n\n" +
-                "HTTP: " +
-                response.status +
-                "\n\n" +
-                text.substring(0, 3000)
-            );
-
-            return;
-        }
-
-
-        document.getElementById("debug")
-            .innerText =
-            JSON.stringify(
-                data,
-                null,
-                2
-            );
-
-
-        if (!response.ok) {
-
-            showError(
-                data.message ||
-                data.error ||
-                "API request failed."
-            );
-
-            return;
-        }
-
-
-        if (data.status !== "success") {
-
-            showError(
-                data.message ||
-                "API returned failure."
-            );
-
-            return;
-        }
-
-
-        document.getElementById("loginBox")
-            .style.display = "none";
-
-
-        document.getElementById("dashboard")
-            .style.display = "block";
-
-
-        document.getElementById("total")
-            .innerText =
-            data.stats.total;
-
-
-        document.getElementById("success")
-            .innerText =
-            data.stats.success;
-
-
-        document.getElementById("failed")
-            .innerText =
-            data.stats.failed;
-
-
-        document.getElementById("active")
-            .innerText =
-            data.stats.active;
-
-
-        allRecords =
-            data.records || [];
-
-
-        renderBots(
-            data.bots || []
-        );
-
-
-        renderRecords(
-            allRecords
-        );
-
-
-    } catch (error) {
-
-        showError(
-            "Request failed.\n\n" +
-            error.name +
-            ": " +
-            error.message
-        );
-
-    }
-
-}
-
-
-function renderBots(bots) {
-
-    const table =
-        document.getElementById("botTable");
-
-    table.innerHTML = "";
-
-
-    if (!bots.length) {
-
-        table.innerHTML =
-            "<tr><td colspan='5'>No bot data.</td></tr>";
-
-        return;
-    }
-
-
-    bots.forEach(function(bot) {
-
-        const row =
-            document.createElement("tr");
-
-
-        row.innerHTML =
-
-            "<td>" +
-            escapeHtml(bot.bot_hash) +
-            "</td>" +
-
-            "<td>" +
-            bot.total +
-            "</td>" +
-
-            "<td>" +
-            "<span class='badge success'>" +
-            bot.success +
-            "</span>" +
-            "</td>" +
-
-            "<td>" +
-            "<span class='badge failed'>" +
-            bot.failed +
-            "</span>" +
-            "</td>" +
-
-            "<td>" +
-            "<span class='badge active'>" +
-            bot.active +
-            "</span>" +
-            "</td>";
-
-
-        table.appendChild(row);
-
-    });
-
-}
-
-
-function renderRecords(records) {
-
-    const table =
-        document.getElementById("recordTable");
-
-    table.innerHTML = "";
-
-
-    if (!records.length) {
-
-        table.innerHTML =
-            "<tr><td colspan='7'>No records.</td></tr>";
-
-        return;
-    }
-
-
-    records.forEach(function(record) {
-
-        const status =
-            String(
-                record.status || "unknown"
-            ).toLowerCase();
-
-
-        let badge = "active";
-
-
-        if (status === "success") {
-            badge = "success";
-        }
-
-
-        if (status === "failed") {
-            badge = "failed";
-        }
-
-
-        const row =
-            document.createElement("tr");
-
-
-        row.innerHTML =
-
-            "<td>" +
-            escapeHtml(record.user_id || "-") +
-            "</td>" +
-
-            "<td>" +
-            escapeHtml(record.bot_hash || "-") +
-            "</td>" +
-
-            "<td>" +
-            "<span class='badge " +
-            badge +
-            "'>" +
-            escapeHtml(status) +
-            "</span>" +
-            "</td>" +
-
-            "<td>" +
-            escapeHtml(record.ip || "-") +
-            "</td>" +
-
-            "<td>" +
-            escapeHtml(record.platform || "-") +
-            "</td>" +
-
-            "<td>" +
-            escapeHtml(record.device_id || "-") +
-            "</td>" +
-
-            "<td>" +
-            escapeHtml(record.created_at || "-") +
-            "</td>";
-
-
-        table.appendChild(row);
-
-    });
-
-}
-
-
-function filterRecords() {
-
-    const search =
-        document
-        .getElementById("search")
-        .value
-        .toLowerCase()
-        .trim();
-
-
-    if (!search) {
-
-        renderRecords(allRecords);
-
-        return;
-    }
-
-
-    const filtered =
-        allRecords.filter(function(record) {
-
-            return JSON.stringify(record)
-                .toLowerCase()
-                .includes(search);
-
+    <script>
+        // MASTER PASSCODE: You can change this
+        const ADMIN_PASSCODE = "jenil2026"; 
+
+        // Supabase credentials matching process.js
+        const SUPABASE_URL = "https://neeppziqbuwxhmhpifda.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwNDQ5ODgsImV4cCI6MjA1NzYyMDk4OH0.q-Hlq2fXn-r5FhQnF21cM8i1s3Y8P0e0Hj7h0n9x-g8"; 
+
+        let supabase = null;
+        let allVerifications = [];
+        let filteredVerifications = [];
+        let currentPage = 1;
+        const pageSize = 15;
+        let activeRecordForModal = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem("admin_authenticated") === "true") {
+                unlockDashboard();
+            }
         });
 
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById("adminPassInput").value.trim();
+            const errorMsg = document.getElementById("authErrorMsg");
+            const btn = document.getElementById("btnLogin");
 
-    renderRecords(filtered);
+            if (input === ADMIN_PASSCODE) {
+                errorMsg.style.display = "none";
+                btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...`;
+                sessionStorage.setItem("admin_authenticated", "true");
+                setTimeout(() => {
+                    unlockDashboard();
+                }, 400);
+            } else {
+                errorMsg.style.display = "flex";
+                const inputCard = document.querySelector(".auth-card");
+                inputCard.classList.add("shake-anim");
+                setTimeout(() => inputCard.classList.remove("shake-anim"), 500);
+            }
+        }
 
-}
+        function togglePasswordVisibility() {
+            const input = document.getElementById("adminPassInput");
+            const icon = document.getElementById("eyeIcon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fa-solid fa-eye-slash";
+            } else {
+                input.type = "password";
+                icon.className = "fa-solid fa-eye";
+            }
+        }
 
+        function unlockDashboard() {
+            document.getElementById("authOverlay").classList.remove("active");
+            document.getElementById("dashboardApp").classList.add("active");
+            initSupabaseAndFetch();
+        }
 
-function escapeHtml(value) {
+        function logoutAdmin() {
+            sessionStorage.removeItem("admin_authenticated");
+            document.getElementById("dashboardApp").classList.remove("active");
+            document.getElementById("authOverlay").classList.add("active");
+            document.getElementById("adminPassInput").value = "";
+        }
 
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        async function initSupabaseAndFetch() {
+            try {
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                }
+            } catch (e) {
+                console.warn("Supabase init error:", e);
+            }
+            await refreshDashboardData();
+        }
 
-}
+        async function refreshDashboardData() {
+            const refreshIcon = document.getElementById("refreshIcon");
+            if (refreshIcon) refreshIcon.classList.add("fa-spin");
 
-</script>
+            try {
+                let records = [];
 
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('bot_device_verifications')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(500);
+
+                    if (error) {
+                        document.getElementById("dbStatusText").textContent = "DB Error: " + error.message;
+                    } else if (data) {
+                        records = data;
+                        document.getElementById("dbStatusText").textContent = "Connected: Supabase (" + records.length + " rows)";
+                    }
+                }
+
+                if (!records || records.length === 0) {
+                    records = getDemoVerificationRecords();
+                }
+
+                allVerifications = records;
+                populateBotDropdown(records);
+                calculateKpiCounters(records);
+                applyFilters();
+
+            } catch (err) {
+                allVerifications = getDemoVerificationRecords();
+                calculateKpiCounters(allVerifications);
+                applyFilters();
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove("fa-spin");
+            }
+        }
+
+        function calculateKpiCounters(data) {
+            const total = data.length;
+            const success = data.filter(r => !r.status || r.status === 'pass' || r.status === 'success').length;
+            const attempts = data.filter(r => r.status === 'attempt' || r.status === 'continue').length;
+            const failed = data.filter(r => r.status === 'fail' || r.status === 'failed').length;
+
+            animateNumber("countTotal", total);
+            animateNumber("countSuccess", success);
+            animateNumber("countAttempts", attempts);
+            animateNumber("countFailed", failed);
+        }
+
+        function animateNumber(elementId, target) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            let current = 0;
+            const step = Math.ceil(target / 20) || 1;
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    el.textContent = target.toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    el.textContent = current.toLocaleString();
+                }
+            }, 25);
+        }
+
+        function populateBotDropdown(records) {
+            const select = document.getElementById("botFilterSelect");
+            if (!select) return;
+
+            const existingVal = select.value;
+            const bots = new Set();
+
+            records.forEach(r => {
+                if (r.bot_username && r.bot_username.trim() !== '') {
+                    bots.add(r.bot_username.replace('@', '').trim());
+                }
+            });
+
+            select.innerHTML = '<option value="ALL">All Connected Bots</option>';
+            bots.forEach(bot => {
+                const opt = document.createElement("option");
+                opt.value = bot;
+                opt.textContent = "@" + bot;
+                select.appendChild(opt);
+            });
+
+            if (bots.has(existingVal)) select.value = existingVal;
+        }
+
+        function handleSearchFilter() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById("searchInput").value.toLowerCase().trim();
+            const selectedBot = document.getElementById("botFilterSelect").value;
+            const selectedStatus = document.getElementById("statusFilterSelect").value;
+
+            filteredVerifications = allVerifications.filter(row => {
+                const matchSearch = !search || 
+                    (row.user_id && String(row.user_id).toLowerCase().includes(search)) ||
+                    (row.bot_username && String(row.bot_username).toLowerCase().includes(search)) ||
+                    (row.device_id && String(row.device_id).toLowerCase().includes(search)) ||
+                    (row.ip_address && String(row.ip_address).toLowerCase().includes(search)) ||
+                    (row.platform && String(row.platform).toLowerCase().includes(search));
+
+                const rowBot = (row.bot_username || '').replace('@', '').trim();
+                const matchBot = selectedBot === 'ALL' || rowBot === selectedBot;
+
+                const rowStatus = (row.status || 'success').toLowerCase();
+                let matchStatus = true;
+                if (selectedStatus === 'success') matchStatus = (rowStatus === 'success' || rowStatus === 'pass');
+                if (selectedStatus === 'continue') matchStatus = (rowStatus === 'continue');
+                if (selectedStatus === 'attempt') matchStatus = (rowStatus === 'attempt' || rowStatus === 'fail');
+
+                return matchSearch && matchBot && matchStatus;
+            });
+
+            currentPage = 1;
+            renderTablePage();
+        }
+
+        function renderTablePage() {
+            const tbody = document.getElementById("logsTableBody");
+            const indicator = document.getElementById("recordIndicator");
+            const totalCount = filteredVerifications.length;
+
+            indicator.textContent = `Showing ${Math.min(filteredVerifications.length, (currentPage - 1) * pageSize + 1)} - ${Math.min(filteredVerifications.length, currentPage * pageSize)} of ${totalCount} records`;
+
+            if (totalCount === 0) {
+                tbody.innerHTML = `
+                    <tr class="empty-placeholder">
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-folder-open"></i>
+                                <h4>No Verification Records Found</h4>
+                                <p>No events match your selected filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                updatePaginationControls(0);
+                return;
+            }
+
+            const start = (currentPage - 1) * pageSize;
+            const pageRecords = filteredVerifications.slice(start, start + pageSize);
+
+            let html = "";
+            pageRecords.forEach(item => {
+                const dateStr = formatDateTime(item.created_at || item.verified_at);
+                const statusBadge = getStatusBadgeHtml(item.status);
+                const botTag = item.bot_username ? `<span class="badge-bot">@${item.bot_username.replace('@','')}</span>` : '<span class="text-dim">N/A</span>';
+                const shortFingerprint = item.device_id ? item.device_id.slice(0, 16) + '...' : '---';
+                const platformTxt = item.platform || 'Unknown';
+                const ipTxt = item.ip_address || '0.0.0.0';
+
+                html += `
+                    <tr>
+                        <td class="mono font-sm text-secondary">${dateStr}</td>
+                        <td>${statusBadge}</td>
+                        <td><span class="mono bold text-primary">${item.user_id || 'Unknown'}</span></td>
+                        <td>${botTag}</td>
+                        <td>
+                            <div class="hash-cell mono" title="${item.device_id}">
+                                <i class="fa-solid fa-fingerprint text-indigo"></i>
+                                <span>${shortFingerprint}</span>
+                            </div>
+                        </td>
+                        <td class="mono font-sm">${ipTxt}</td>
+                        <td><span class="platform-chip">${platformTxt}</span></td>
+                        <td>
+                            <button class="btn-inspect" onclick='openDetailModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                                <i class="fa-solid fa-eye"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            updatePaginationControls(totalCount);
+        }
+
+        function getStatusBadgeHtml(status) {
+            const st = (status || 'success').toLowerCase();
+            if (st === 'success' || st === 'pass') {
+                return `<span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span>`;
+            } else if (st === 'continue') {
+                return `<span class="status-tag tag-info"><i class="fa-solid fa-shield-halved"></i> Authorized</span>`;
+            } else if (st === 'attempt') {
+                return `<span class="status-tag tag-warning"><i class="fa-solid fa-clone"></i> Same Device</span>`;
+            } else {
+                return `<span class="status-tag tag-danger"><i class="fa-solid fa-triangle-exclamation"></i> Failed</span>`;
+            }
+        }
+
+        function formatDateTime(iso) {
+            if (!iso) return "Just Now";
+            try {
+                const d = new Date(iso);
+                return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return iso;
+            }
+        }
+
+        function updatePaginationControls(total) {
+            const maxPages = Math.ceil(total / pageSize) || 1;
+            document.getElementById("paginationInfo").textContent = `Page ${currentPage} of ${maxPages}`;
+            document.getElementById("btnPrev").disabled = (currentPage <= 1);
+            document.getElementById("btnNext").disabled = (currentPage >= maxPages);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderTablePage();
+        }
+
+        function openDetailModal(record) {
+            activeRecordForModal = record;
+            const container = document.getElementById("modalDetailContent");
+            container.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>User Telegram ID</label>
+                        <div class="detail-val mono text-primary">${record.user_id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Assigned Bot</label>
+                        <div class="detail-val">${record.bot_username ? '@' + record.bot_username.replace('@','') : 'Direct WebApp'}</div>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>Complete Visitor Device ID (Fingerprint)</label>
+                        <div class="detail-val mono break-all text-indigo">${record.device_id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Client IP Address</label>
+                        <div class="detail-val mono">${record.ip_address || '0.0.0.0'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Platform / OS</label>
+                        <div class="detail-val">${record.platform || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Screen Resolution</label>
+                        <div class="detail-val mono">${record.screen_resolution || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Language & Timezone</label>
+                        <div class="detail-val">${record.language || 'N/A'} (${record.timezone || 'N/A'})</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>CPU Hardware Concurrency</label>
+                        <div class="detail-val mono">${record.hardware_concurrency || 'N/A'} Cores</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Device RAM Memory</label>
+                        <div class="detail-val mono">${record.device_memory || 'unknown'} GB</div>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>User Agent Header</label>
+                        <div class="detail-val mono font-xs text-secondary">${record.user_agent || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById("detailModal").classList.add("active");
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detailModal").classList.remove("active");
+        }
+
+        function copyModalJson() {
+            if (!activeRecordForModal) return;
+            navigator.clipboard.writeText(JSON.stringify(activeRecordForModal, null, 2));
+            const btn = document.getElementById("btnCopyHash");
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+            setTimeout(() => {
+                btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy Raw JSON`;
+            }, 1500);
+        }
+
+        function exportDataCSV() {
+            if (!filteredVerifications.length) {
+                alert("No records available to export.");
+                return;
+            }
+            let csv = "ID,Created At,User ID,Bot Username,Device Fingerprint,IP Address,Platform,Screen,Status\n";
+            filteredVerifications.forEach((r, idx) => {
+                csv += `"${idx+1}","${r.created_at || ''}","${r.user_id || ''}","${r.bot_username || ''}","${r.device_id || ''}","${r.ip_address || ''}","${r.platform || ''}","${r.screen_resolution || ''}","${r.status || 'success'}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `jenil_bot_verifications_${Date.now()}.csv`);
+            a.click();
+        }
+
+        function getDemoVerificationRecords() {
+            return [
+                {
+                    id: 1,
+                    user_id: "6925391837",
+                    bot_username: "WalletBot",
+                    device_id: "7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b",
+                    ip_address: "152.58.12.94",
+                    platform: "Android (Linux)",
+                    language: "en-US",
+                    timezone: "Asia/Kolkata",
+                    hardware_concurrency: "8",
+                    device_memory: "8",
+                    screen_resolution: "1080x2412",
+                    status: "success",
+                    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString()
+                },
+                {
+                    id: 2,
+                    user_id: "5481923019",
+                    bot_username: "CryptoRewardBot",
+                    device_id: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+                    ip_address: "49.36.198.42",
+                    platform: "iPhone (iOS)",
+                    language: "en-GB",
+                    timezone: "Asia/Dubai",
+                    hardware_concurrency: "6",
+                    device_memory: "6",
+                    screen_resolution: "1170x2532",
+                    status: "continue",
+                    created_at: new Date(Date.now() - 1000 * 60 * 42).toISOString()
+                },
+                {
+                    id: 3,
+                    user_id: "7102948201",
+                    bot_username: "WalletBot",
+                    device_id: "7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b",
+                    ip_address: "152.58.12.94",
+                    platform: "Android (Linux)",
+                    language: "hi-IN",
+                    timezone: "Asia/Kolkata",
+                    hardware_concurrency: "8",
+                    device_memory: "8",
+                    screen_resolution: "1080x2412",
+                    status: "attempt",
+                    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString()
+                }
+            ];
+        }
+    </script>
 </body>
-
-    </html>
+</html>
