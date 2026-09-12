@@ -1,13 +1,12 @@
 {
-  "functions": {
-    "api/process.php": {
-      "runtime": "vercel-php@0.7.3"
-    }
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/process.php",
+      "destination": "/api/process"
+    },
+    {
+      "source": "/process.js",
+      "destination": "/api/process"
     }
   ]
 }
