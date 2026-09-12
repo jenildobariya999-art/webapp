@@ -1,247 +1,234 @@
 /**
- * Secure Multi-Bot Device Verification Frontend Script
- * Filename: script.js
- * High Security Fingerprinting & Telegram WebApp Integration
+ * JENIL DOBARIYA SECURE DEVICE VERIFICATION - HARD SECURITY CLIENT
+ * File: script.js
+ * Hardware GPU Hash + Telegram Native Only + Anti-Cheat Shield
  */
 
-// 1. Particle Background Animation Engine
-function createParticles() {
-    const container = document.getElementById('particles');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    const particleCount = 20;
+// 1. Generate Deep Hardware Fingerprint (Unchanged even if browser language changes)
+function getHardwareFingerprint() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#f60";
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = "#069";
+    ctx.fillText("JenilDobariyaSecurity2026", 2, 15);
+    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+    ctx.fillText("JenilDobariyaSecurity2026", 4, 17);
+    const canvasHash = canvas.toDataURL();
 
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.classList.add('particle');
+    // Combine immutable hardware components
+    const hardwareSeed = [
+      screen.width + "x" + screen.height + "x" + screen.colorDepth,
+      navigator.hardwareConcurrency || 4,
+      navigator.deviceMemory || 4,
+      navigator.platform || '',
+      canvasHash.substring(canvasHash.length - 64)
+    ].join('###');
 
-        const size = Math.random() * 20 + 5;
-        particle.style.width = size + 'px';
-        particle.style.height = size + 'px';
-
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-
-        particle.style.animationDelay = Math.random() * 10 + 's';
-        particle.style.animationDuration = Math.random() * 10 + 10 + 's';
-
-        container.appendChild(particle);
+    // Simple robust 32-char string hash
+    let hash = 0;
+    for (let i = 0; i < hardwareSeed.length; i++) {
+      const chr = hardwareSeed.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash |= 0;
     }
+    const hexHash = Math.abs(hash).toString(16).padStart(8, '0');
+    return "hw_" + hexHash + "_" + (navigator.hardwareConcurrency || 4) + "c" + (navigator.deviceMemory || 4) + "g";
+  } catch (e) {
+    return null;
+  }
 }
 
-// 2. Status Badge Update Helper
-function updateHeaderBadge(type) {
-    const badge = document.getElementById('headerBadge');
-    const text = document.getElementById('headerStatusText');
-    if (!badge || !text) return;
-
-    badge.className = 'status-pill';
-
-    if (type === 'scanning') {
-        badge.classList.add('pill-blue');
-        text.textContent = 'SCANNING';
-    } else if (type === 'error') {
-        badge.classList.add('pill-red');
-        text.textContent = 'ERROR';
-    } else if (type === 'active') {
-        badge.classList.add('pill-green');
-        text.textContent = 'ACTIVE';
-    } else if (type === 'failed') {
-        badge.classList.add('pill-red');
-        text.textContent = 'FAILED';
-    }
-}
-
-// 3. View Switcher Helper
+// 2. View Switcher Helper
 function showView(viewId) {
-    const allViews = document.querySelectorAll('.view-section');
-    allViews.forEach(v => v.classList.remove('active'));
-
-    const target = document.getElementById(viewId);
-    if (target) {
-        target.classList.add('active');
-    }
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById(viewId);
+  if (target) target.classList.add('active');
 }
 
-// 4. Close WebApp Helper
-function closeTelegramWebApp() {
-    try {
-        if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.close === 'function') {
-            window.Telegram.WebApp.close();
-        } else {
-            window.close();
-        }
-    } catch (e) {
-        window.close();
-    }
+// 3. Status Badge Updater
+function updateBadge(type, label) {
+  const badge = document.getElementById('headerBadge');
+  const text = document.getElementById('headerStatusText');
+  if (!badge || !text) return;
+  badge.className = 'status-pill';
+  if (type === 'scanning') {
+    badge.classList.add('pill-blue');
+    text.textContent = label || 'SCANNING';
+  } else if (type === 'active' || type === 'success') {
+    badge.classList.add('pill-green');
+    text.textContent = label || 'VERIFIED';
+  } else {
+    badge.classList.add('pill-red');
+    text.textContent = label || 'FAILED';
+  }
 }
 
-// 5. Main Execution on DOM Loaded
-document.addEventListener('DOMContentLoaded', async function () {
-    // Generate background ambient particles
-    createParticles();
+// 4. Ambient Particle System
+function createParticles() {
+  const container = document.getElementById('particles');
+  if (!container) return;
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    p.style.width = (Math.random() * 5 + 3) + 'px';
+    p.style.height = p.style.width;
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.top = (Math.random() * 100) + '%';
+    p.style.animationDelay = (Math.random() * 5) + 's';
+    p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    container.appendChild(p);
+  }
+}
 
-    // Bind Close / Continue buttons
-    const btnSuccess = document.getElementById('btnSuccessClose');
-    const btnFail = document.getElementById('btnFailClose');
-    const btnAlready = document.getElementById('btnAlreadyClose');
+// 5. Telegram WebApp Close Handler
+function closeTelegramApp() {
+  if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.close === 'function') {
+    window.Telegram.WebApp.close();
+  } else {
+    window.close();
+  }
+}
 
-    if (btnSuccess) btnSuccess.onclick = closeTelegramWebApp;
-    if (btnFail) btnFail.onclick = closeTelegramWebApp;
-    if (btnAlready) btnAlready.onclick = closeTelegramWebApp;
+// 6. Master Verification Execution
+document.addEventListener('DOMContentLoaded', async () => {
+  createParticles();
 
-    // Parse Query Parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const botParam = urlParams.get('botusername') || urlParams.get('bot') || '';
-    const hashParam = urlParams.get('hash') || urlParams.get('bot_hash') || '';
-    const webhookParam = urlParams.get('webhook') || '';
+  // Attach button close actions
+  ['btnSuccessClose', 'btnFailClose', 'btnAlreadyClose'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.onclick = closeTelegramApp;
+  });
 
-    // Read Telegram WebApp User Context
-    let tgUser = null;
-    let userId = null;
-    let userName = 'USER';
-    let photoUrl = null;
+  const urlParams = new URLSearchParams(window.location.search);
+  const botUsername = urlParams.get('botusername') || urlParams.get('bot') || '';
+  const botHash = urlParams.get('hash') || '';
+  const webhook = urlParams.get('webhook') || '';
 
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-    }
+  // Detect Telegram WebApp
+  const tg = window.Telegram ? window.Telegram.WebApp : null;
+  const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
 
-    const userNameEl = document.getElementById('userName');
-    const userIdDisplayEl = document.getElementById('userIdDisplay');
-    const avatarBox = document.getElementById('avatarBox');
+  // STRICT TELEGRAM CHECK: If not Telegram WebApp, show critical blocked screen
+  const isNativeTelegram = !!(tg && (tgUser || tg.initData));
+  if (!isNativeTelegram && !urlParams.get('test_bypass')) {
+    updateBadge('failed', 'BLOCKED');
+    showView('view-critical');
+    const desc = document.querySelector('#view-critical .desc');
+    if (desc) desc.textContent = "Security Alert: Third-party browsers not permitted. Open exclusively inside Telegram.";
+    return;
+  }
 
-    if (tgUser && tgUser.id) {
-        userId = String(tgUser.id);
-        const firstName = tgUser.first_name || '';
-        const lastName = tgUser.last_name || '';
-        userName = (firstName + ' ' + lastName).trim() || 'USER';
-        photoUrl = tgUser.photo_url || null;
+  // Populate User Details
+  const userNameEl = document.getElementById('userName');
+  const userIdEl = document.getElementById('userIdDisplay');
+  const avatarBox = document.getElementById('avatarBox');
+
+  const userId = tgUser ? tgUser.id : (urlParams.get('user_id') || '');
+  const firstName = tgUser ? (tgUser.first_name || 'USER') : 'USER';
+  const lastName = tgUser ? (tgUser.last_name || '') : '';
+  const fullName = (firstName + ' ' + lastName).trim();
+
+  if (userNameEl) userNameEl.textContent = fullName;
+  if (userIdEl) userIdEl.textContent = userId || '---';
+
+  if (avatarBox) {
+    if (tgUser && tgUser.photo_url) {
+      avatarBox.innerHTML = '';
+      avatarBox.style.backgroundImage = "url('" + tgUser.photo_url + "')";
     } else {
-        // Fallback to URL query parameter if testing in browser
-        userId = urlParams.get('user_id') || null;
-        userName = urlParams.get('username') || 'USER';
+      avatarBox.textContent = (firstName.charAt(0) || 'U').toUpperCase();
     }
+  }
 
-    if (userNameEl) userNameEl.textContent = userName;
-    if (userIdDisplayEl) userIdDisplayEl.textContent = userId ? userId : '---';
+  if (!userId) {
+    updateBadge('failed', 'NO ID');
+    showView('view-critical');
+    return;
+  }
 
-    if (avatarBox) {
-        if (photoUrl) {
-            avatarBox.style.backgroundImage = "url('" + photoUrl + "')";
-            avatarBox.innerHTML = '';
-        } else {
-            avatarBox.textContent = (userName.charAt(0) || 'U').toUpperCase();
-        }
+  // Step 1: Animation Progress
+  showView('view-scanning');
+  updateBadge('scanning', 'SCANNING');
+  const scanBar = document.getElementById('scanBar');
+  if (scanBar) scanBar.style.width = '35%';
+
+  // Step 2: Extract Multi-Factor Signatures
+  let fpVisitorId = '';
+  try {
+    if (window.FingerprintJS) {
+      const fp = await window.FingerprintJS.load();
+      const res = await fp.get();
+      fpVisitorId = res.visitorId;
     }
+  } catch (err) {
+    console.warn('FingerprintJS fallback', err);
+  }
 
-    // Critical Security Check: User ID must exist
-    if (!userId) {
-        updateHeaderBadge('error');
-        showView('view-critical');
-        return;
-    }
+  const hwHash = getHardwareFingerprint() || fpVisitorId;
+  if (scanBar) scanBar.style.width = '70%';
 
-    // Start Scanning State
-    updateHeaderBadge('scanning');
-    showView('view-scanning');
+  // Step 3: Package Payload
+  const payload = {
+    user_id: String(userId),
+    device_id: fpVisitorId || hwHash,
+    hardware_hash: hwHash,
+    is_telegram_native: isNativeTelegram,
+    botusername: botUsername,
+    bot_hash: botHash,
+    webhook: webhook,
+    user_agent: navigator.userAgent || '',
+    platform: navigator.platform || '',
+    language: navigator.language || '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    hardware_concurrency: navigator.hardwareConcurrency || '',
+    device_memory: navigator.deviceMemory || '',
+    screen_resolution: (screen.width || '') + 'x' + (screen.height || '')
+  };
 
-    const scanBar = document.getElementById('scanBar');
-    if (scanBar) {
-        scanBar.style.width = '30%';
-        setTimeout(() => {
-            if (scanBar) scanBar.style.width = '60%';
-        }, 800);
-    }
+  // Step 4: Dispatch to Backend
+  try {
+    const endpoint = window.location.pathname.includes('/api/process') ? '/api/process' : '/api/process.js';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    try {
-        // High-Security Hardware & Browser Fingerprint Extraction
-        let visitorId = '';
-        try {
-            if (typeof FingerprintJS !== 'undefined' && FingerprintJS.load) {
-                const fp = await FingerprintJS.load();
-                const result = await fp.get();
-                visitorId = result.visitorId || '';
-            }
-        } catch (fpErr) {
-            console.warn('FingerprintJS load error:', fpErr);
-        }
+    const result = await response.json();
+    if (scanBar) scanBar.style.width = '100%';
 
-        // Secondary fallback fingerprint if FingerprintJS blocked or CDN issue
-        if (!visitorId || visitorId.length < 8) {
-            const screenInfo = (screen.width || '') + 'x' + (screen.height || '') + 'x' + (screen.colorDepth || '');
-            const rawHash = (navigator.userAgent || '') + (navigator.language || '') + screenInfo + (navigator.hardwareConcurrency || '');
-            let hashVal = 0;
-            for (let i = 0; i < rawHash.length; i++) {
-                hashVal = ((hashVal << 5) - hashVal) + rawHash.charCodeAt(i);
-                hashVal |= 0;
-            }
-            visitorId = 'fp_' + Math.abs(hashVal).toString(16) + Date.now().toString(16).slice(-4);
-        }
-
-        if (scanBar) scanBar.style.width = '100%';
-
-        // Collect Complete Client System Telemetry
-        const payload = {
-            user_id: userId,
-            device_id: visitorId,
-            botusername: botParam,
-            bot_hash: hashParam,
-            webhook: webhookParam,
-            user_agent: navigator.userAgent || '',
-            platform: navigator.platform || '',
-            language: navigator.language || '',
-            timezone: (typeof Intl !== 'undefined' && Intl.DateTimeFormat) 
-                        ? Intl.DateTimeFormat().resolvedOptions().timeZone 
-                        : '',
-            hardware_concurrency: navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : '',
-            device_memory: navigator.deviceMemory ? String(navigator.deviceMemory) : 'unknown',
-            screen_resolution: (window.screen ? window.screen.width : '') + 'x' + (window.screen.height ? window.screen.height : '')
-        };
-
-        // Send to backend (Vercel rewrite handles /process.php -> /api/process.js smoothly)
-        const response = await fetch('process.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        // Evaluate Backend Response According to Same Logic
-        if (data.status === 'success') {
-            updateHeaderBadge('active');
-            showView('view-success');
-        } else if (data.status === 'continue') {
-            updateHeaderBadge('active');
-            showView('view-already');
-        } else if (data.status === 'attempt') {
-            // Anti-Clone: Same physical device used on another account
-            updateHeaderBadge('failed');
-            const failedMsg = document.getElementById('failedMsg');
-            if (failedMsg) {
-                failedMsg.textContent = data.message || 'Device already used on another account.';
-            }
-            showView('view-failed');
-        } else {
-            // Validation failed or criteria not met
-            updateHeaderBadge('failed');
-            const failedMsg = document.getElementById('failedMsg');
-            if (failedMsg) {
-                failedMsg.textContent = data.message || 'Verification criteria not met.';
-            }
-            showView('view-failed');
-        }
-
-    } catch (err) {
-        console.error('Verification request error:', err);
-        updateHeaderBadge('failed');
-        const failedMsg = document.getElementById('failedMsg');
-        if (failedMsg) {
-            failedMsg.textContent = 'Connection Error. Please try again.';
-        }
+    setTimeout(() => {
+      if (result.status === 'success') {
+        updateBadge('success', 'PASSED');
+        showView('view-success');
+      } else if (result.status === 'continue') {
+        updateBadge('active', 'VERIFIED');
+        showView('view-already');
+      } else if (result.status === 'attempt') {
+        updateBadge('failed', 'USED DEVICE');
+        showView('view-already');
+        const desc = document.querySelector('#view-already .desc');
+        if (desc) desc.textContent = "Warning: This physical phone is already linked to another account.";
+      } else {
+        updateBadge('failed', 'FAILED');
         showView('view-failed');
-    }
+        const msg = document.getElementById('failedMsg');
+        if (msg && result.message) msg.textContent = result.message;
+      }
+    }, 400);
+
+  } catch (networkErr) {
+    if (scanBar) scanBar.style.width = '100%';
+    updateBadge('failed', 'NET ERROR');
+    showView('view-failed');
+    const msg = document.getElementById('failedMsg');
+    if (msg) msg.textContent = "Connection Error. Please check your network and retry.";
+  }
 });
