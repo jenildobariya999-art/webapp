@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Vercel Serverless Function (Node.js) - process.js / api/process.js
+// api/process.js - Vercel Serverless Function (Multi-Bot Isolated Verification)
 export default async function handler(req, res) {
-  // CORS Headers
+  // 1. CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -35,17 +35,22 @@ export default async function handler(req, res) {
       screen_resolution
     } = data;
 
-    const botUser = botusername || req.query.botusername || '';
-    const hash = bot_hash || req.query.hash || '';
-    const webhookUrl = webhook || req.query.webhook || '';
+    // Normalizing bot handle (removes @ and spaces if any)
+    let botUser = (botusername || req.query.botusername || '').trim();
+    if (botUser.startsWith('@')) {
+      botUser = botUser.substring(1);
+    }
 
-    // Client IP detection
+    const hash = (bot_hash || req.query.hash || '').trim();
+    const webhookUrl = (webhook || req.query.webhook || '').trim();
+
+    // Client IP Detection
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
                      req.headers['x-real-ip'] || 
                      req.socket?.remoteAddress || 
                      '0.0.0.0';
 
-    // Mandatory Security & Criteria Validation
+    // 2. Mandatory Validations
     if (!user_id || !device_id) {
       return res.status(200).json({
         status: 'failed',
@@ -60,26 +65,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // Connect to Supabase using Vercel Environment Variables
+    // 3. Connect to Supabase
     const supabaseUrl = process.env.SUPABASE_URL || 'https://neeppziqbuwxhmhpifda.supabase.co';
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseKey) {
       return res.status(500).json({
         status: 'failed',
-        message: 'Database configuration missing. Please set SUPABASE_KEY or SUPABASE_SERVICE_ROLE_KEY in Vercel.'
+        message: 'Database configuration missing: Set SUPABASE_KEY or SUPABASE_SERVICE_ROLE_KEY in Vercel.'
       });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // CHECK 1: Same user returning on the exact same verified device
-    const { data: selfCheck } = await supabase
+    // =========================================================================
+    // CHECK 1: SAME USER RETURNING ON THE SAME BOT + SAME DEVICE
+    // (Already Verified ONLY if this user has already verified ON THIS EXACT BOT)
+    // =========================================================================
+    let selfQuery = supabase
       .from('bot_device_verifications')
       .select('id')
       .eq('device_id', device_id)
-      .eq('user_id', String(user_id))
-      .limit(1);
+      .eq('user_id', String(user_id));
+
+    if (botUser) {
+      selfQuery = selfQuery.or(`bot_username.eq.${botUser},bot_username.eq.@${botUser}`);
+    }
+
+    const { data: selfCheck } = await selfQuery.limit(1);
 
     if (selfCheck && selfCheck.length > 0) {
       await sendWebhook(webhookUrl, {
@@ -92,18 +105,25 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: 'continue',
-        message: 'Device already verified.'
+        message: 'Device already verified on this bot.'
       });
     }
 
-    // CHECK 2: Same physical device used by another account (Anti-Clone / Multi-Account Fraud)
-    const { data: otherCheck } = await supabase
+    // =========================================================================
+    // CHECK 2: ANTI-CLONE FRAUD (Same device used by ANOTHER account ON THIS BOT)
+    // =========================================================================
+    let cloneQuery = supabase
       .from('bot_device_verifications')
       .select('user_id')
-      .eq('device_id', device_id)
-      .limit(1);
+      .eq('device_id', device_id);
 
-    if (otherCheck && otherCheck.length > 0 && String(otherCheck[0].user_id) !== String(user_id)) {
+    if (botUser) {
+      cloneQuery = cloneQuery.or(`bot_username.eq.${botUser},bot_username.eq.@${botUser}`);
+    }
+
+    const { data: cloneCheck } = await cloneQuery.limit(1);
+
+    if (cloneCheck && cloneCheck.length > 0 && String(cloneCheck[0].user_id) !== String(user_id)) {
       await sendWebhook(webhookUrl, {
         status: 'fail',
         message: 'Device already used',
@@ -114,11 +134,13 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: 'attempt',
-        message: 'Device already used on another account.'
+        message: 'Device already used on another account for this bot.'
       });
     }
 
-    // CHECK 3: Fresh device -> Insert record
+    // =========================================================================
+    // CHECK 3: FRESH VERIFICATION FOR THIS BOT -> INSERT RECORD
+    // =========================================================================
     const { error: insertError } = await supabase
       .from('bot_device_verifications')
       .insert([
@@ -146,7 +168,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Notify Bot Webhook
+    // Notify Bot Webhook -> Success!
     await sendWebhook(webhookUrl, {
       status: 'pass',
       message: 'Verified Successfully',
