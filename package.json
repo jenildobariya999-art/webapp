@@ -1,1 +1,8 @@
-json { "name": "jenil-verification-backend", "version": "1.0.0", "type": "module", "dependencies": { "@supabase/supabase-js": "^2.48.1" } }
+{
+  "name": "jenil-verification-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1"
+  }
+}
