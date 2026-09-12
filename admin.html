@@ -10,8 +10,6 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<!-- Supabase JS Client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Tailwind Custom Configuration -->
 <script>
     tailwind.config = {
@@ -79,7 +77,7 @@
 <body class="bg-[#f8fafc] text-slate-800 min-h-screen font-sans pb-12 antialiased selection:bg-blue-100 selection:text-blue-900">
 <!-- BEGIN: MainHeader -->
 <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-<div class="max-w-4xl mx-auto px-4 py-3.5 sm:px-6">
+<div class="max-w-7xl mx-auto px-4 py-3.5 sm:px-6">
 <div class="flex items-start justify-between gap-3">
 <!-- User profile details & Avatar -->
 <div class="flex items-start space-x-3">
@@ -107,7 +105,7 @@
 <!-- Action Control Buttons -->
 <div class="flex items-center space-x-2 shrink-0">
 <!-- Sync Button -->
-<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors" data-purpose="refresh-data" id="sync-btn" type="button">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer" data-purpose="refresh-data" id="sync-btn" type="button">
 <svg class="w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" id="sync-spinner-icon" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
@@ -126,9 +124,9 @@
 </header>
 <!-- END: MainHeader -->
 <!-- BEGIN: DashboardContent -->
-<main class="max-w-4xl mx-auto px-4 pt-5 sm:px-6 space-y-4">
+<main class="max-w-7xl mx-auto px-4 pt-5 sm:px-6 space-y-4">
 <!-- BEGIN: TopMetricsGrid -->
-<section class="grid grid-cols-1 gap-3.5" data-purpose="kpi-cards-group">
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" data-purpose="kpi-cards-group">
 <!-- Card 1: TOTAL USERS -->
 <article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden" data-purpose="metric-total-users">
 <div class="metric-top-bar"></div>
@@ -249,8 +247,8 @@
 <!-- Header row with title & record count badge -->
 <div class="flex items-center justify-between gap-2">
 <div class="flex items-center space-x-2">
-<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>
-<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 -ml-4 inline-block"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" id="status-live-ping"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 -ml-4 inline-block" id="status-live-dot"></span>
 <h2 class="text-base font-bold text-slate-900 tracking-tight">
               Live Telemetry Records
             </h2>
@@ -261,7 +259,7 @@
 </div>
 <!-- Monospace caption from database schema note -->
 <p class="mt-2 text-xs font-mono text-slate-500 leading-relaxed break-words">
-          Real-time device signatures streamed from table <span class="text-slate-700 font-semibold underline decoration-slate-300">bot_device_verifications</span>
+          Real-time device signatures streamed via endpoint <span class="text-slate-700 font-semibold underline decoration-slate-300">/api/admin</span>
 </p>
 <!-- Filters controls: search bar and dropdown selectors -->
 <div class="mt-4 space-y-2.5">
@@ -272,7 +270,7 @@
 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
 </div>
-<input class="w-full pl-9 pr-4 py-2 text-xs text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="filter-query" placeholder="Filter Telegram ID, Device, Bot..." type="text"/>
+<input class="w-full pl-9 pr-4 py-2 text-xs text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" id="filter-query" placeholder="Filter Telegram ID, Device, Bot, IP, Platform..." type="text"/>
 </div>
 <!-- Dropdowns for bot selection and status -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -291,9 +289,9 @@
 <div class="relative">
 <select class="w-full text-xs text-slate-700 bg-white border border-slate-200 rounded-xl py-2 px-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer" id="filter-status">
 <option selected="" value="ALL">All Statuses</option>
-<option value="verified">Verified</option>
-<option value="flagged">Flagged</option>
-<option value="pending">Pending</option>
+<option value="pass">PASS (Verified)</option>
+<option value="fail">FAIL / BLOCKED</option>
+<option value="attempt">ATTEMPT / PENDING</option>
 </select>
 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
@@ -312,12 +310,23 @@
 <th class="py-3 px-4" scope="col">ROW ID / TIME</th>
 <th class="py-3 px-4" scope="col">TELEGRAM USER</th>
 <th class="py-3 px-4" scope="col">ASSIGNED BOT</th>
+<th class="py-3 px-4" scope="col">STATUS</th>
+<th class="py-3 px-4" scope="col">DEVICE FINGERPRINT</th>
+<th class="py-3 px-4" scope="col">PLATFORM &amp; SCREEN</th>
+<th class="py-3 px-4" scope="col">IP / TIMEZONE</th>
+<th class="py-3 px-4 text-center" scope="col">ACTION</th>
 </tr>
 </thead>
 <tbody class="divide-y divide-slate-100 text-xs" id="telemetry-tbody">
 <tr id="empty-state-row">
-<td class="py-8 px-4 text-center text-slate-400 font-mono text-xs" colspan="3">
-Awaiting real Supabase data stream... (No fake records)
+<td class="py-8 px-4 text-center text-slate-400 font-mono text-xs" colspan="8">
+<div class="flex items-center justify-center gap-2">
+<svg class="w-4 h-4 animate-spin text-slate-400" fill="none" viewbox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8v8H4z" fill="currentColor"></path>
+</svg>
+<span>Connecting to /api/admin...</span>
+</div>
 </td>
 </tr>
 </tbody>
@@ -326,9 +335,12 @@ Awaiting real Supabase data stream... (No fake records)
 <!-- Card Table Bottom Pagination/Refresh Bar -->
 <div class="p-3.5 bg-slate-50/40 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
 <span class="text-slate-500 text-center sm:text-left" id="telemetry-footer-summary">
-          Awaiting real Supabase data...
+          Connecting to /api/admin...
         </span>
-<button class="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer" data-purpose="refresh-stream" id="refresh-stream-btn" type="button">
+<button class="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5" data-purpose="refresh-stream" id="refresh-stream-btn" type="button">
+<svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
           Refresh Stream
         </button>
 </div>
@@ -336,9 +348,35 @@ Awaiting real Supabase data stream... (No fake records)
 <!-- END: LiveTelemetryStreamSection -->
 </main>
 <!-- END: DashboardContent -->
+<!-- BEGIN: InspectModal -->
+<div class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" id="inspect-modal">
+<div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+<div class="p-4 border-b border-slate-100 flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-blue-600"></span>
+<h3 class="text-sm font-bold text-slate-900" id="inspect-modal-title">Telemetry Record Details</h3>
+</div>
+<button class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors" id="inspect-modal-close" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<div class="p-4 overflow-y-auto flex-1 font-mono text-xs bg-slate-900 text-emerald-400">
+<pre class="whitespace-pre-wrap break-all" id="inspect-modal-content">{}</pre>
+</div>
+<div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+<span class="text-slate-500">Row ID: <span class="font-mono text-slate-800 font-semibold" id="inspect-modal-id">--</span></span>
+<button class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors cursor-pointer" id="inspect-copy-btn" type="button">
+Copy JSON
+</button>
+</div>
+</div>
+</div>
+<!-- END: InspectModal -->
 <!-- BEGIN: PageFooter -->
 <footer class="mt-8 border-t border-slate-200 bg-white py-6">
-<div class="max-w-4xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500 space-y-1.5">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 text-center text-xs text-slate-500 space-y-1.5">
 <div class="flex flex-wrap items-center justify-center gap-2 font-medium text-slate-700">
 <span>Jenil Dobariya Admin</span>
 <span class="text-slate-300">•</span>
@@ -350,21 +388,23 @@ Awaiting real Supabase data stream... (No fake records)
 </div>
 </footer>
 <!-- END: PageFooter -->
-<!-- BEGIN: Supabase Realtime & Dashboard Logic -->
-<script data-purpose="supabase-realtime-logic">
+<!-- BEGIN: Admin API Logic -->
+<script data-purpose="admin-api-logic">
     (function () {
-      // Configuration: Uses window.ENV overrides or exact real Supabase endpoint
-      const SUPABASE_URL = window.SUPABASE_URL || 'https://neeppziqbuwxhmhpifda.supabase.co';
-      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummyKey';
+      // Direct Serverless API Endpoint
+      const ADMIN_API_ENDPOINT = '/api/admin';
 
-      // Store fetched records strictly from Supabase
+      // Store fetched records strictly from /api/admin
       let records = [];
       let isInitialFetchDone = false;
+      let lastErrorMessage = null;
 
       // DOM Elements
       const statusBadge = document.getElementById('header-status-badge');
       const statusDot = document.getElementById('header-status-dot');
       const statusText = document.getElementById('header-status-text');
+      const statusLivePing = document.getElementById('status-live-ping');
+      const statusLiveDot = document.getElementById('status-live-dot');
       const tbody = document.getElementById('telemetry-tbody');
       const recordsCounterBadge = document.getElementById('records-counter-badge');
       const footerSummary = document.getElementById('telemetry-footer-summary');
@@ -383,13 +423,22 @@ Awaiting real Supabase data stream... (No fake records)
       const botFilter = document.getElementById('filter-bot');
       const statusFilter = document.getElementById('filter-status');
 
+      // Modal Elements
+      const inspectModal = document.getElementById('inspect-modal');
+      const inspectModalClose = document.getElementById('inspect-modal-close');
+      const inspectModalContent = document.getElementById('inspect-modal-content');
+      const inspectModalId = document.getElementById('inspect-modal-id');
+      const inspectCopyBtn = document.getElementById('inspect-copy-btn');
+
       // Update UI Status Badge
-      function setConnectionStatus(status) {
+      function setConnectionStatus(status, detail) {
         if (!statusBadge || !statusDot || !statusText) return;
         if (status === 'connected') {
           statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 transition-colors duration-300';
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping';
           statusText.textContent = 'Connected';
+          if (statusLivePing) statusLivePing.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block';
+          if (statusLiveDot) statusLiveDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 -ml-4 inline-block';
           if (valFleetStatusDot && valFleetStatusLabel) {
             valFleetStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block';
             valFleetStatusLabel.textContent = records.length > 0 ? 'Active Telemetry' : 'Connected (No Records)';
@@ -398,13 +447,17 @@ Awaiting real Supabase data stream... (No fake records)
           statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 transition-colors duration-300';
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse';
           statusText.textContent = 'Connecting...';
-        } else if (status === 'disconnected') {
+          if (statusLivePing) statusLivePing.className = 'w-2.5 h-2.5 rounded-full bg-slate-400 animate-ping inline-block';
+          if (statusLiveDot) statusLiveDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400 -ml-4 inline-block';
+        } else if (status === 'error') {
           statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 transition-colors duration-300';
           statusDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500';
-          statusText.textContent = 'Reconnecting...';
+          statusText.textContent = detail ? `Error (${detail})` : 'Error';
+          if (statusLivePing) statusLivePing.className = 'hidden';
+          if (statusLiveDot) statusLiveDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 inline-block';
           if (valFleetStatusDot && valFleetStatusLabel) {
-            valFleetStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 inline-block';
-            valFleetStatusLabel.textContent = 'Awaiting Sync';
+            valFleetStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500 inline-block';
+            valFleetStatusLabel.textContent = 'Endpoint Error';
           }
         }
       }
@@ -419,7 +472,7 @@ Awaiting real Supabase data stream... (No fake records)
           if (valRejectedDevices) valRejectedDevices.textContent = '-- rejected';
           if (valFingerprintValidity) valFingerprintValidity.textContent = '--';
           if (recordsCounterBadge) recordsCounterBadge.textContent = '(-- records)';
-          if (footerSummary) footerSummary.textContent = 'Awaiting real Supabase data stream...';
+          if (footerSummary) footerSummary.textContent = 'Connecting to /api/admin...';
           return;
         }
 
@@ -429,22 +482,31 @@ Awaiting real Supabase data stream... (No fake records)
         let verifiedCount = 0;
         let blockedCount = 0;
 
-        records.forEach(rec => {
-          const uId = rec.telegram_id || rec.user_id;
-          if (uId) uniqueUserIds.add(uId);
+        const todayDateStr = new Date().toISOString().slice(0, 10);
 
-          const bot = rec.assigned_bot || rec.bot_username;
+        records.forEach(rec => {
+          const uId = rec.user_id ?? rec.telegram_id;
+          if (uId !== undefined && uId !== null && uId !== '') uniqueUserIds.add(String(uId));
+
+          const bot = rec.bot_username ?? rec.assigned_bot;
           if (bot) activeBotsSet.add(bot);
 
-          const st = (rec.status || rec.verification_status || '').toLowerCase();
-          if (st.includes('flag') || st.includes('block') || rec.is_flagged === true) {
+          const st = String(rec.status ?? rec.verification_status ?? '').toLowerCase();
+          const recDateStr = (rec.created_at || rec.verified_at || rec.last_seen_at || '').slice(0, 10);
+
+          if (st === 'fail' || st.includes('flag') || st.includes('block') || rec.is_flagged === true) {
             blockedCount++;
-          } else if (st.includes('verify') || st === 'passed' || st === 'active') {
-            verifiedCount++;
+          } else if (st === 'pass' || st.includes('verify') || st === 'passed' || st === 'success') {
+            // Count verified today if date matches, or all passed if single day snapshot
+            if (!rec.created_at || recDateStr === todayDateStr) {
+              verifiedCount++;
+            } else {
+              verifiedCount++;
+            }
           }
         });
 
-        if (valTotalUsers) valTotalUsers.textContent = count > 0 ? count.toLocaleString() : '0';
+        if (valTotalUsers) valTotalUsers.textContent = count > 0 ? (uniqueUserIds.size > 0 ? uniqueUserIds.size.toLocaleString() : count.toLocaleString()) : '0';
         if (valActiveBots) valActiveBots.textContent = activeBotsSet.size.toString();
         if (valVerifiedToday) valVerifiedToday.textContent = verifiedCount.toLocaleString();
         if (valBlockedFlagged) valBlockedFlagged.textContent = blockedCount.toLocaleString();
@@ -452,44 +514,22 @@ Awaiting real Supabase data stream... (No fake records)
         if (valRejectedDevices) valRejectedDevices.textContent = `${blockedCount} rejected`;
         if (valFingerprintValidity) valFingerprintValidity.textContent = count > 0 ? `${Math.round((verifiedCount / count) * 100)}%` : '--';
         if (recordsCounterBadge) recordsCounterBadge.textContent = `(${count} records)`;
-        if (footerSummary) footerSummary.textContent = `Showing ${count} telemetry verification events`;
+        if (footerSummary) footerSummary.textContent = count > 0 ? `Showing ${count} telemetry verification events from /api/admin` : 'No verification records found in database';
       }
 
       function formatRowTime(timestamp) {
         if (!timestamp) return '--:--';
         try {
           const d = new Date(timestamp);
-          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          if (isNaN(d.getTime())) return '--:--';
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
         } catch {
           return '--:--';
         }
       }
 
-      function createTableRowHtml(record) {
-        const id = record.id ?? '--';
-        const timeStr = formatRowTime(record.created_at || record.verified_at);
-        const username = record.telegram_username ? `@${record.telegram_username.replace(/^@/, '')}` : (record.user_name || 'User');
-        const telegramId = record.telegram_id ? `ID: ${record.telegram_id}` : (record.user_id ? `ID: ${record.user_id}` : 'ID: N/A');
-        const botName = record.assigned_bot || record.bot_username || 'N/A';
-
-        return `
-          <td class="py-3.5 px-4 whitespace-nowrap">
-            <div class="font-bold text-slate-900 text-sm">${id}</div>
-            <div class="text-[11px] text-slate-400 font-normal font-mono">${timeStr}</div>
-          </td>
-          <td class="py-3.5 px-4 whitespace-nowrap">
-            <div class="font-bold text-slate-900">${escapeHtml(username)}</div>
-            <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(telegramId)}</div>
-          </td>
-          <td class="py-3.5 px-4 whitespace-nowrap">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-              ${escapeHtml(botName)}
-            </span>
-          </td>
-        `;
-      }
-
       function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({
           '&': '&amp;',
           '<': '&lt;',
@@ -499,16 +539,129 @@ Awaiting real Supabase data stream... (No fake records)
         }[tag] || tag));
       }
 
+      function createTableRowHtml(record, index) {
+        const id = record.id ?? index + 1;
+        const timeStr = formatRowTime(record.created_at || record.verified_at || record.last_seen_at);
+        const userId = record.user_id ?? record.telegram_id ?? 'N/A';
+        const username = record.telegram_username ? `@${record.telegram_username.replace(/^@/, '')}` : (record.user_name || null);
+        const botName = record.bot_username ?? record.assigned_bot ?? 'N/A';
+        const botDisplay = botName.startsWith('@') ? botName : `@${botName}`;
+
+        const statusRaw = String(record.status ?? record.verification_status ?? 'pass').toLowerCase();
+        const isBlocked = statusRaw === 'fail' || statusRaw.includes('block') || statusRaw.includes('flag') || record.is_flagged === true;
+        const statusLabel = isBlocked ? 'BLOCKED' : (statusRaw === 'attempt' ? 'PENDING' : 'PASS');
+        const statusBadgeClass = isBlocked
+          ? 'bg-red-50 text-red-700 border-red-200'
+          : (statusRaw === 'attempt' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+
+        const deviceId = record.device_id ?? record.fingerprint ?? 'N/A';
+        const shortDeviceId = deviceId.length > 14 ? `${deviceId.slice(0, 8)}...${deviceId.slice(-4)}` : deviceId;
+
+        const platform = record.platform ?? record.os ?? 'Unknown';
+        const resolution = record.screen_resolution ?? record.resolution ?? (record.screen_width && record.screen_height ? `${record.screen_width}x${record.screen_height}` : 'N/A');
+
+        const ip = record.ip_address ?? record.ip ?? 'N/A';
+        const timezone = record.timezone ?? record.tz ?? 'UTC';
+
+        return `
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900 text-xs font-mono">#${id}</div>
+            <div class="text-[11px] text-slate-400 font-normal font-mono">${timeStr}</div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-bold text-slate-900 text-xs font-mono">ID: ${escapeHtml(userId)}</div>
+            ${username ? `<div class="text-[11px] text-slate-400">${escapeHtml(username)}</div>` : ''}
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              ${escapeHtml(botDisplay)}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${statusBadgeClass}">
+              ${statusLabel}
+            </span>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap font-mono text-xs">
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-700" title="${escapeHtml(deviceId)}">${escapeHtml(shortDeviceId)}</span>
+              ${deviceId !== 'N/A' ? `
+                <button class="text-slate-400 hover:text-slate-600 p-0.5 copy-fingerprint-btn" data-fingerprint="${escapeHtml(deviceId)}" title="Copy fingerprint" type="button">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="text-slate-800 text-xs font-medium">${escapeHtml(platform)}</div>
+            <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(resolution)}</div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="text-slate-800 text-xs font-mono">${escapeHtml(ip)}</div>
+            <div class="text-[11px] text-slate-400">${escapeHtml(timezone)}</div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap text-center">
+            <button class="px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors inspect-row-btn" data-row-index="${index}" type="button">
+              Inspect
+            </button>
+          </td>
+        `;
+      }
+
       function renderTableRows() {
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (!isInitialFetchDone || records.length === 0) {
+        if (!isInitialFetchDone) {
           const tr = document.createElement('tr');
           tr.id = 'empty-state-row';
           tr.innerHTML = `
-            <td colspan="3" class="py-8 px-4 text-center text-slate-400 font-mono text-xs">
-              Awaiting real Supabase data stream... (No fake records)
+            <td colspan="8" class="py-8 px-4 text-center text-slate-400 font-mono text-xs">
+              <div class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Fetching data from /api/admin...</span>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          return;
+        }
+
+        if (lastErrorMessage) {
+          const tr = document.createElement('tr');
+          tr.id = 'empty-state-row';
+          tr.innerHTML = `
+            <td colspan="8" class="py-8 px-4 text-center">
+              <div class="flex flex-col items-center justify-center space-y-2">
+                <div class="text-rose-600 font-semibold text-xs flex items-center gap-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                  </svg>
+                  <span>Failed to load /api/admin (${escapeHtml(lastErrorMessage)})</span>
+                </div>
+                <button id="retry-fetch-btn" type="button" class="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-xs cursor-pointer">
+                  Retry Connection
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          const retryBtn = document.getElementById('retry-fetch-btn');
+          if (retryBtn) retryBtn.addEventListener('click', () => fetchAdminData());
+          return;
+        }
+
+        if (records.length === 0) {
+          const tr = document.createElement('tr');
+          tr.id = 'empty-state-row';
+          tr.innerHTML = `
+            <td colspan="8" class="py-8 px-4 text-center text-slate-400 font-mono text-xs">
+              0 records: No verification records found in database
             </td>
           `;
           tbody.appendChild(tr);
@@ -521,29 +674,85 @@ Awaiting real Supabase data stream... (No fake records)
           botFilter.innerHTML = '<option value="ALL">All Connected Bots</option>';
           const botSet = new Set();
           records.forEach(r => {
-            const bot = r.assigned_bot || r.bot_username;
+            const bot = r.bot_username ?? r.assigned_bot;
             if (bot) botSet.add(bot);
           });
           botSet.forEach(bot => {
             const opt = document.createElement('option');
             opt.value = bot;
-            opt.textContent = bot;
+            opt.textContent = bot.startsWith('@') ? bot : `@${bot}`;
             if (bot === currentSelectedBot) opt.selected = true;
             botFilter.appendChild(opt);
           });
         }
 
-        records.forEach(rec => {
+        records.forEach((rec, index) => {
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50/60 transition-colors';
-          tr.setAttribute('data-row-id', rec.id);
-          tr.setAttribute('data-bot', rec.assigned_bot || rec.bot_username || '');
-          tr.setAttribute('data-status', (rec.status || rec.verification_status || 'verified').toLowerCase());
-          tr.innerHTML = createTableRowHtml(rec);
+          tr.setAttribute('data-row-id', rec.id ?? index);
+          const botName = rec.bot_username ?? rec.assigned_bot ?? '';
+          tr.setAttribute('data-bot', botName);
+          const st = String(rec.status ?? rec.verification_status ?? 'pass').toLowerCase();
+          tr.setAttribute('data-status', st);
+          tr.innerHTML = createTableRowHtml(rec, index);
           tbody.appendChild(tr);
         });
 
+        // Add copy listeners
+        tbody.querySelectorAll('.copy-fingerprint-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fp = btn.getAttribute('data-fingerprint');
+            if (fp && navigator.clipboard) {
+              navigator.clipboard.writeText(fp);
+              const originalHtml = btn.innerHTML;
+              btn.innerHTML = `<span class="text-emerald-500 font-sans text-[10px] font-bold">✓</span>`;
+              setTimeout(() => { btn.innerHTML = originalHtml; }, 1500);
+            }
+          });
+        });
+
+        // Add inspect modal listeners
+        tbody.querySelectorAll('.inspect-row-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-row-index'), 10);
+            const rowData = records[idx];
+            if (rowData) {
+              openInspectModal(rowData);
+            }
+          });
+        });
+
         applyRowFilters();
+      }
+
+      function openInspectModal(rowData) {
+        if (!inspectModal || !inspectModalContent) return;
+        inspectModalId.textContent = rowData.id ?? 'N/A';
+        inspectModalContent.textContent = JSON.stringify(rowData, null, 2);
+        inspectModal.classList.remove('hidden');
+      }
+
+      function closeInspectModal() {
+        if (!inspectModal) return;
+        inspectModal.classList.add('hidden');
+      }
+
+      if (inspectModalClose) inspectModalClose.addEventListener('click', closeInspectModal);
+      if (inspectModal) {
+        inspectModal.addEventListener('click', (e) => {
+          if (e.target === inspectModal) closeInspectModal();
+        });
+      }
+      if (inspectCopyBtn) {
+        inspectCopyBtn.addEventListener('click', () => {
+          if (inspectModalContent && navigator.clipboard) {
+            navigator.clipboard.writeText(inspectModalContent.textContent);
+            const original = inspectCopyBtn.textContent;
+            inspectCopyBtn.textContent = 'Copied!';
+            setTimeout(() => { inspectCopyBtn.textContent = original; }, 1500);
+          }
+        });
       }
 
       function applyRowFilters() {
@@ -559,134 +768,61 @@ Awaiting real Supabase data stream... (No fake records)
 
           const matchesQuery = !query || text.includes(query);
           const matchesBot = selectedBot === 'ALL' || rowBot === selectedBot.toLowerCase();
-          const matchesStatus = selectedStatus === 'ALL' || rowStatus.includes(selectedStatus);
+          
+          let matchesStatus = true;
+          if (selectedStatus === 'pass') {
+            matchesStatus = rowStatus === 'pass' || rowStatus.includes('verify') || rowStatus === 'success';
+          } else if (selectedStatus === 'fail') {
+            matchesStatus = rowStatus === 'fail' || rowStatus.includes('block') || rowStatus.includes('flag');
+          } else if (selectedStatus === 'attempt') {
+            matchesStatus = rowStatus === 'attempt' || rowStatus.includes('pending');
+          }
 
           row.style.display = (matchesQuery && matchesBot && matchesStatus) ? '' : 'none';
         });
       }
 
-      // Handle real-time telemetry events from Postgres
-      function handleRealtimeEvent(payload) {
-        const { eventType, new: newRecord, old: oldRecord } = payload;
-        
-        if (eventType === 'INSERT') {
-          records.unshift(newRecord);
-          renderTableRows();
-          updateMetricsFromRealData();
-          const newTr = tbody.querySelector(`tr[data-row-id="${newRecord.id}"]`);
-          if (newTr) {
-            newTr.classList.add('row-highlight');
-          }
-        } else if (eventType === 'UPDATE') {
-          const index = records.findIndex(r => r.id === newRecord.id);
-          if (index !== -1) {
-            records[index] = newRecord;
-          } else {
-            records.unshift(newRecord);
-          }
-          renderTableRows();
-          updateMetricsFromRealData();
-          const updTr = tbody.querySelector(`tr[data-row-id="${newRecord.id}"]`);
-          if (updTr) {
-            updTr.classList.add('row-highlight');
-          }
-        } else if (eventType === 'DELETE') {
-          records = records.filter(r => r.id !== oldRecord?.id);
-          renderTableRows();
-          updateMetricsFromRealData();
-        }
-      }
-
-      // Fetch real Supabase initial records
-      async function fetchRealSupabaseRecords(supabaseClient) {
+      // Fetch purely from /api/admin
+      async function fetchAdminData() {
+        setConnectionStatus('connecting');
+        lastErrorMessage = null;
         try {
-          setConnectionStatus('connecting');
-          const { data, error } = await supabaseClient
-            .from('bot_device_verifications')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
+          const res = await fetch(ADMIN_API_ENDPOINT, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
 
-          if (error) {
-            console.warn('Supabase fetch returned error or table not queryable:', error);
-            isInitialFetchDone = true;
-            setConnectionStatus('disconnected');
-            updateMetricsFromRealData();
-            renderTableRows();
-            return;
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText || 'Server Error'}`);
           }
 
-          records = Array.isArray(data) ? data : [];
+          const json = await res.json();
+          // The API might return an array directly, or { data: [...] }, or { records: [...] }
+          let rows = [];
+          if (Array.isArray(json)) {
+            rows = json;
+          } else if (Array.isArray(json.data)) {
+            rows = json.data;
+          } else if (Array.isArray(json.records)) {
+            rows = json.records;
+          } else if (json.record && typeof json.record === 'object') {
+            rows = [json.record];
+          } else {
+            rows = [];
+          }
+
+          records = rows;
           isInitialFetchDone = true;
           setConnectionStatus('connected');
           updateMetricsFromRealData();
           renderTableRows();
         } catch (err) {
-          console.error('Error fetching records:', err);
+          console.error('Error fetching /api/admin:', err);
           isInitialFetchDone = true;
-          setConnectionStatus('disconnected');
-          updateMetricsFromRealData();
-          renderTableRows();
-        }
-      }
-
-      // Initialize Supabase Client and Postgres Realtime subscription
-      function initSupabaseRealtime() {
-        if (!window.supabase) {
-          console.warn('Supabase JS library not loaded. Metrics remaining at -- with no fake data.');
-          setConnectionStatus('disconnected');
-          isInitialFetchDone = true;
-          updateMetricsFromRealData();
-          renderTableRows();
-          return;
-        }
-
-        try {
-          const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          setConnectionStatus('connecting');
-
-          fetchRealSupabaseRecords(supabase);
-
-          const channel = supabase
-            .channel('realtime:bot_device_verifications')
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'bot_device_verifications'
-              },
-              (payload) => {
-                console.log('Realtime telemetry received:', payload);
-                handleRealtimeEvent(payload);
-              }
-            )
-            .subscribe((status, err) => {
-              if (status === 'SUBSCRIBED') {
-                setConnectionStatus('connected');
-              } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                setConnectionStatus('disconnected');
-                if (err) console.error('Supabase subscription error:', err);
-              } else if (status === 'TIMED_OUT') {
-                setConnectionStatus('disconnected');
-              }
-            });
-
-          // Keep-alive/reconnect handler if browser goes offline/online
-          window.addEventListener('online', () => {
-            setConnectionStatus('connecting');
-            channel.subscribe();
-            fetchRealSupabaseRecords(supabase);
-          });
-          window.addEventListener('offline', () => {
-            setConnectionStatus('disconnected');
-          });
-
-          return supabase;
-        } catch (error) {
-          console.error('Supabase Realtime setup exception:', error);
-          setConnectionStatus('disconnected');
-          isInitialFetchDone = true;
+          lastErrorMessage = err.message || 'Network Request Failed';
+          setConnectionStatus('error', err.message);
           updateMetricsFromRealData();
           renderTableRows();
         }
@@ -699,7 +835,7 @@ Awaiting real Supabase data stream... (No fake records)
 
       // Refresh Buttons
       if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
+        syncBtn.addEventListener('click', async () => {
           const original = syncBtn.innerHTML;
           syncBtn.disabled = true;
           syncBtn.innerHTML = `
@@ -708,56 +844,31 @@ Awaiting real Supabase data stream... (No fake records)
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg> Syncing...
           `;
-          if (window.supabase) {
-            try {
-              const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-              fetchRealSupabaseRecords(client).finally(() => {
-                syncBtn.disabled = false;
-                syncBtn.innerHTML = original;
-              });
-            } catch {
-              syncBtn.disabled = false;
-              syncBtn.innerHTML = original;
-            }
-          } else {
-            setTimeout(() => {
-              syncBtn.disabled = false;
-              syncBtn.innerHTML = original;
-            }, 600);
-          }
+          await fetchAdminData();
+          syncBtn.disabled = false;
+          syncBtn.innerHTML = original;
         });
       }
 
       if (refreshStreamBtn) {
-        refreshStreamBtn.addEventListener('click', () => {
+        refreshStreamBtn.addEventListener('click', async () => {
           refreshStreamBtn.innerText = 'Refreshing...';
           refreshStreamBtn.disabled = true;
-          if (window.supabase) {
-            try {
-              const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-              fetchRealSupabaseRecords(client).finally(() => {
-                refreshStreamBtn.innerText = 'Refresh Stream';
-                refreshStreamBtn.disabled = false;
-              });
-            } catch {
-              refreshStreamBtn.innerText = 'Refresh Stream';
-              refreshStreamBtn.disabled = false;
-            }
-          } else {
-            setTimeout(() => {
-              refreshStreamBtn.innerText = 'Refresh Stream';
-              refreshStreamBtn.disabled = false;
-              applyRowFilters();
-            }, 600);
-          }
+          await fetchAdminData();
+          refreshStreamBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+            </svg> Refresh Stream
+          `;
+          refreshStreamBtn.disabled = false;
         });
       }
 
-      // Initial state setup
+      // Initial state setup: show clean '--'
       updateMetricsFromRealData();
-      // Launch connection
-      initSupabaseRealtime();
+      // Execute initial pure fetch to /api/admin
+      fetchAdminData();
     })();
   </script>
-<!-- END: Supabase Realtime & Dashboard Logic -->
+<!-- END: Admin API Logic -->
 </body></html>
