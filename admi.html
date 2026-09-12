@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Telemetry Portal | Jenil Dobariya</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- Supabase Client for Realtime Database Fetch -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+        :root {
+            --bg-base: #06070d;
+            --bg-surface: #0c0e17;
+            --bg-surface-elevated: rgba(18, 21, 36, 0.92);
+            --bg-card: rgba(14, 18, 32, 0.85);
+            --bg-card-hover: rgba(22, 28, 50, 0.95);
+            --border-subtle: rgba(99, 102, 241, 0.18);
+            --border-bright: rgba(99, 102, 241, 0.4);
+            --border-focus: #6366f1;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.35);
+            --glow-emerald: 0 0 30px rgba(16, 185, 129, 0.35);
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 26px;
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Lighting */
+        .glow-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.22;
+        }
+        .orb-1 { top: -10%; left: 15%; width: 500px; height: 500px; background: #4f46e5; }
+        .orb-2 { bottom: 5%; right: 10%; width: 600px; height: 600px; background: #06b6d4; }
+        .cyber-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+        }
+
+        .mono { font-family: var(--font-mono); }
+        .text-indigo { color: #818cf8; }
+        .text-success { color: #34d399 !important; }
+        .text-warning { color: #fbbf24 !important; }
+        .text-danger { color: #fb7185 !important; }
+
+        /* ================= AUTH OVERLAY (LOCKSCREEN) ================= */
+        #authOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            background: rgba(6, 7, 13, 0.92);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #authOverlay.unlocked {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-bright);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-xl);
+            padding: 42px 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        .shield-badge {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            margin: 0 auto 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+            border: 1px solid rgba(99, 102, 241, 0.45);
+            box-shadow: var(--glow-indigo);
+            font-size: 28px;
+            color: #818cf8;
+        }
+
+        .auth-header h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 16px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px 50px 16px 48px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            font-family: var(--font-sans);
+            transition: all 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .toggle-pass {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .auth-error-msg {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #fb7185;
+            font-size: 13px;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6);
+        }
+
+        .auth-footer {
+            margin-top: 24px;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+
+        .quick-hint {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.12);
+            border-radius: 8px;
+            font-size: 11px;
+            color: #a5b4fc;
+            cursor: pointer;
+        }
+        .quick-hint:hover { text-decoration: underline; }
+
+        /* ================= DASHBOARD MAIN ================= */
+        #dashboardApp {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 36px;
+            background: rgba(12, 14, 23, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: var(--glow-indigo);
+        }
+
+        .brand-text h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #fff;
+        }
+
+        .brand-text h1 span { color: #818cf8; font-weight: 400; }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-action.btn-danger:hover {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: rgba(244, 63, 94, 0.4);
+            color: #fb7185;
+        }
+
+        .content-container {
+            flex: 1;
+            max-width: 1440px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+        .kpi-card.glow-indigo::before { background: var(--accent-indigo); }
+        .kpi-card.glow-green::before { background: var(--accent-emerald); }
+        .kpi-card.glow-amber::before { background: var(--accent-amber); }
+        .kpi-card.glow-rose::before { background: var(--accent-rose); }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 8px 0 6px;
+            letter-spacing: -1px;
+        }
+
+        .kpi-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kpi-icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+        .kpi-icon-wrap.indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .kpi-icon-wrap.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .kpi-icon-wrap.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .kpi-icon-wrap.rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+
+        /* Toolbar */
+        .toolbar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+
+        .search-input-box {
+            position: relative;
+            min-width: 280px;
+            flex: 1;
+        }
+
+        .search-input-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .search-input-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 16px 10px 40px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            font-family: var(--font-sans);
+        }
+
+        .select-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .select-box i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-dim);
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .select-box select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 10px 32px 10px 38px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            font-family: var(--font-sans);
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .records-indicator {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn-pill {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #a5b4fc;
+            padding: 9px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s;
+        }
+        .btn-pill:hover { background: rgba(99, 102, 241, 0.3); color: #fff; }
+
+        /* Table */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+
+        .data-table th {
+            padding: 16px 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.35);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .tag-success { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+        .tag-info { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+        .tag-warning { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+        .tag-danger { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.25); }
+
+        .badge-bot {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .bot-img-mini {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            display: inline-block;
+        }
+
+        .btn-inspect {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-inspect:hover { background: rgba(99, 102, 241, 0.25); color: #fff; }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: rgba(0, 0, 0, 0.25);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .page-info { font-size: 12px; color: var(--text-secondary); }
+        .page-controls { display: flex; gap: 10px; }
+        .btn-page {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-page:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .admin-footer {
+            padding: 24px 36px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .admin-footer a { color: var(--text-secondary); text-decoration: none; }
+
+        /* Modal */
+        .detail-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .detail-modal.active { display: flex; }
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+        .modal-card {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            background: #0f121d;
+            border: 1px solid var(--border-bright);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .detail-item label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+        .detail-val { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-subtle); padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+        .detail-item.full-width { grid-column: span 2; }
+        .break-all { word-break: break-all; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-subtle); }
+    </style>
+</head>
+<body>
+<!-- Ambient Glowing Background Grid & Orbs -->
+<div class="glow-bg">
+<div class="ambient-orb orb-1"></div>
+<div class="ambient-orb orb-2"></div>
+<div class="cyber-grid"></div>
+</div>
+<!-- ================= AUTH OVERLAY (LOCKSCREEN) ================= -->
+<div id="authOverlay" style="display: none !important;">
+<div class="auth-card">
+<div class="auth-header">
+<div class="shield-badge">
+<i class="fa-solid fa-shield-halved"></i>
+</div>
+<h2>Security Gateway</h2>
+<p>Enter Master Passcode to access Bot Device Telemetry</p>
+</div>
+<form id="loginForm" onsubmit="return handleAuthSubmit(event)">
+<div class="input-wrapper">
+<i class="fa-solid fa-lock input-icon"></i>
+<input autocomplete="off" autofocus="" id="adminPassInput" placeholder="Master Access Key" required="" type="password"/>
+<button class="toggle-pass" onclick="togglePasswordVisibility()" type="button">
+<i class="fa-solid fa-eye" id="eyeIcon"></i>
+</button>
+</div>
+<div class="auth-error-msg" id="authErrorMsg">
+<i class="fa-solid fa-circle-exclamation"></i>
+<span id="authErrorText">Invalid Passcode. Access Denied.</span>
+</div>
+<button class="btn-login" id="btnLogin" type="submit">
+<span>AUTHENTICATE</span>
+<i class="fa-solid fa-arrow-right-long"></i>
+</button>
+</form>
+<div class="auth-footer">
+<span>Default Passcode: <strong>jenil2026</strong></span><br/>
+<span class="quick-hint" onclick="quickBypass()">👉 Click here to Auto-Fill &amp; Unlock</span>
+</div>
+</div>
+</div>
+<!-- ================= MAIN ADMIN DASHBOARD ================= -->
+<div id="dashboardApp">
+<!-- Top Navigation Bar -->
+<header class="top-nav">
+<div class="brand-group">
+<div class="logo-box">
+<i class="fa-solid fa-bolt-lightning"></i>
+</div>
+<div class="brand-text">
+<h1>Jenil Dobariya <span>Telemetry</span></h1>
+<p class="live-pill"><span class="live-pulse"></span> Multi-Bot Realtime Monitor</p>
+</div>
+</div>
+<div class="nav-actions"><button class="btn-action" id="btnToggleView" onclick="toggleLockscreenOverlay()" style="background:rgba(99,102,241,0.2); border-color:rgba(99,102,241,0.5); color:#c7d2fe; font-weight:700;"><i class="fa-solid fa-shield-halved"></i><span>Toggle Lockscreen</span></button><script>function toggleLockscreenOverlay() { const overlay = document.getElementById('authOverlay'); if (!overlay) return; if (overlay.style.display === 'none' || overlay.classList.contains('unlocked')) { overlay.style.display = 'flex'; overlay.classList.remove('unlocked'); } else { overlay.style.setProperty('display', 'none', 'important'); overlay.classList.add('unlocked'); } }</script>
+<div class="status-chip" id="dbStatusChip">
+<i class="fa-solid fa-database"></i>
+<span id="dbStatusText">Connected: Supabase</span>
+</div>
+<button class="btn-action" onclick="refreshDashboardData()" title="Reload Data">
+<i class="fa-solid fa-rotate" id="refreshIcon"></i>
+<span>Sync</span>
+</button>
+<button class="btn-action btn-danger" onclick="logoutAdmin()" title="Lock Portal">
+<i class="fa-solid fa-power-off"></i>
+<span>Lock</span>
+</button>
+</div>
+</header>
+<!-- Main Workspace Container -->
+<main class="content-container">
+<!-- Summary KPI Metric Cards -->
+<section class="metrics-grid">
+<div class="kpi-card glow-indigo">
+<div class="kpi-meta">
+<span class="kpi-title">TOTAL VERIFICATIONS</span>
+<div class="kpi-value" id="countTotal">1,428</div>
+<span class="kpi-sub"><i class="fa-solid fa-microchip"></i> All bot requests</span>
+</div>
+<div class="kpi-icon-wrap indigo">
+<i class="fa-solid fa-fingerprint"></i>
+</div>
+</div>
+<div class="kpi-card glow-green">
+<div class="kpi-meta">
+<span class="kpi-title">SUCCESS / PASSED</span>
+<div class="kpi-value text-success" id="countSuccess">1,184</div>
+<span class="kpi-sub"><i class="fa-solid fa-circle-check"></i> Fresh Verified Devices</span>
+</div>
+<div class="kpi-icon-wrap green">
+<i class="fa-solid fa-check-double"></i>
+</div>
+</div>
+<div class="kpi-card glow-amber">
+<div class="kpi-meta">
+<span class="kpi-title">SAME-DEVICE ATTEMPTS</span>
+<div class="kpi-value text-warning" id="countAttempts">186</div>
+<span class="kpi-sub"><i class="fa-solid fa-users-viewfinder"></i> Re-visits / Clones</span>
+</div>
+<div class="kpi-icon-wrap amber">
+<i class="fa-solid fa-clone"></i>
+</div>
+</div>
+<div class="kpi-card glow-rose">
+<div class="kpi-meta">
+<span class="kpi-title">BLOCKED / FAILED</span>
+<div class="kpi-value text-danger" id="countFailed">58</div>
+<span class="kpi-sub"><i class="fa-solid fa-shield-virus"></i> VPN / Dropped</span>
+</div>
+<div class="kpi-icon-wrap rose">
+<i class="fa-solid fa-ban"></i>
+</div>
+</div>
+</section>
+<!-- Multi-Bot Distribution & Filter Toolbar -->
+<section class="toolbar-card">
+<div class="toolbar-left">
+<div class="search-input-box">
+<i class="fa-solid fa-magnifying-glass"></i>
+<input id="searchInput" oninput="handleSearchFilter()" placeholder="Search by User ID, Bot, IP, Device Hash..." type="text"/>
+</div>
+<div class="select-box">
+<i class="fa-solid fa-robot"></i>
+<select id="botFilterSelect" onchange="applyFilters()"><option value="ALL">All Connected Bots (4 Active)</option><option value="WalletBot">@WalletBot</option><option value="CryptoRewardBot">@CryptoRewardBot</option><option value="ReferralMasterBot">@ReferralMasterBot</option><option value="AirdropClaimBot">@AirdropClaimBot</option></select>
+</div>
+<div class="select-box">
+<i class="fa-solid fa-filter"></i>
+<select id="statusFilterSelect" onchange="applyFilters()">
+<option value="ALL">All Status Types</option>
+<option value="success">Verified Success</option>
+<option value="continue">Already Verified</option>
+<option value="attempt">Clone / Same-Dev Attempt</option>
+</select>
+</div>
+</div>
+<div class="toolbar-right">
+<button class="btn-pill" onclick="exportDataCSV()">
+<i class="fa-solid fa-file-arrow-down"></i>
+<span>Export CSV</span>
+</button>
+<span class="records-indicator" id="recordIndicator">Showing 1 - 7 of 1,428 records</span>
+</div>
+</section>
+<!-- Verification Logs Table View -->
+<section class="table-card">
+<div class="table-responsive">
+<table class="data-table" id="logsTable">
+<thead>
+<tr>
+<th>TIME (UTC)</th>
+<th>STATUS</th>
+<th>USER ID</th>
+<th>TELEGRAM BOT</th>
+<th>DEVICE FINGERPRINT</th>
+<th>IP ADDRESS</th>
+<th>PLATFORM</th>
+<th>ACTION</th>
+</tr>
+</thead>
+<tbody id="logsTableBody"><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:32</td><td><span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span></td><td><span class="mono" style="font-weight:700; color:#fff;">6925391837</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #38bdf8; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-robot" style="font-size:10px; color:#0f172a;"></i></span>@WalletBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">7f8a92b3c4d5e6f1...</span></div></td><td class="mono" style="font-size:12px;">152.58.12.94</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">Android 14 (ARM64)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'6925391837',bot_username:'WalletBot',device_id:'7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b',ip_address:'152.58.12.94',platform:'Android 14 (ARM64)',screen_resolution:'1080x2412',language:'en-US',timezone:'Asia/Kolkata',user_agent:'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro)'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:29</td><td><span class="status-tag tag-info"><i class="fa-solid fa-shield-halved"></i> Authorized</span></td><td><span class="mono" style="font-weight:700; color:#fff;">5184920194</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #a855f7; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-bolt" style="font-size:10px; color:#fff;"></i></span>@CryptoRewardBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">3d1b98f2a40c67e8...</span></div></td><td class="mono" style="font-size:12px;">103.241.200.18</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">iOS 17.4 (iPhone 15)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'5184920194',bot_username:'CryptoRewardBot',device_id:'3d1b98f2a40c67e89912bcdeff01234a',ip_address:'103.241.200.18',platform:'iOS 17.4 (iPhone 15)',screen_resolution:'1179x2556',language:'en-GB',timezone:'Europe/London',user_agent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X)'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:25</td><td><span class="status-tag tag-warning"><i class="fa-solid fa-clone"></i> Same Device</span></td><td><span class="mono" style="font-weight:700; color:#fff;">8471029381</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #f59e0b; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-users" style="font-size:10px; color:#000;"></i></span>@ReferralMasterBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">7f8a92b3c4d5e6f1...</span></div></td><td class="mono" style="font-size:12px;">152.58.12.94</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">Android 14 (ARM64)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'8471029381',bot_username:'ReferralMasterBot',device_id:'7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b',ip_address:'152.58.12.94',platform:'Android 14 (ARM64)',screen_resolution:'1080x2412',language:'en-US',timezone:'Asia/Kolkata',user_agent:'Duplicate device signature matched previous session.'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:21</td><td><span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span></td><td><span class="mono" style="font-weight:700; color:#fff;">1904729184</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #10b981; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-gift" style="font-size:10px; color:#fff;"></i></span>@AirdropClaimBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">9c4a11f7e0b52d43...</span></div></td><td class="mono" style="font-size:12px;">82.165.197.1</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">Windows 11 (x64)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'1904729184',bot_username:'AirdropClaimBot',device_id:'9c4a11f7e0b52d43890bbce8812456aa',ip_address:'82.165.197.1',platform:'Windows 11 (x64)',screen_resolution:'1920x1080',language:'de-DE',timezone:'Europe/Berlin',user_agent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:18</td><td><span class="status-tag tag-danger"><i class="fa-solid fa-ban"></i> Failed</span></td><td><span class="mono" style="font-weight:700; color:#fff;">7218491054</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #38bdf8; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-robot" style="font-size:10px; color:#0f172a;"></i></span>@WalletBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">0000000000000000...</span></div></td><td class="mono" style="font-size:12px;">198.51.100.42</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">Headless Chrome / Tor</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'7218491054',bot_username:'WalletBot',device_id:'0000000000000000spoofed_canvas_fp',ip_address:'198.51.100.42',platform:'Linux x86_64 (Tor Exit Node)',screen_resolution:'800x600',language:'en-US',timezone:'UTC',user_agent:'Flagged: WebGL Spoofing / Tor Proxy detected'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:12</td><td><span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span></td><td><span class="mono" style="font-weight:700; color:#fff;">9821473210</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #a855f7; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-bolt" style="font-size:10px; color:#fff;"></i></span>@CryptoRewardBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">b5e810a91f3c4d2e...</span></div></td><td class="mono" style="font-size:12px;">49.37.155.221</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">macOS Sonoma (M3 Max)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'9821473210',bot_username:'CryptoRewardBot',device_id:'b5e810a91f3c4d2ea789012345bcde67',ip_address:'49.37.155.221',platform:'macOS Sonoma (M3 Max)',screen_resolution:'2560x1440',language:'en-IN',timezone:'Asia/Kolkata',user_agent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr><tr><td class="mono" style="font-size:12px; color:var(--text-secondary);">Today 14:08</td><td><span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span></td><td><span class="mono" style="font-weight:700; color:#fff;">3410982751</span></td><td><span class="badge-bot"><span class="bot-img-mini" style="background: #f59e0b; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-users" style="font-size:10px; color:#000;"></i></span>@ReferralMasterBot</span></td><td><div class="mono" style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-fingerprint text-indigo"></i><span style="font-size:12px; color:var(--text-secondary);">6a18d9f4e2b0c345...</span></div></td><td class="mono" style="font-size:12px;">140.82.112.4</td><td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">Android 13 (Samsung S23)</span></td><td><button class="btn-inspect" onclick="openDetailModal({user_id:'3410982751',bot_username:'ReferralMasterBot',device_id:'6a18d9f4e2b0c3459812bcdea0f12456',ip_address:'140.82.112.4',platform:'Android 13 (Samsung S23)',screen_resolution:'1080x2340',language:'en-US',timezone:'America/New_York',user_agent:'Mozilla/5.0 (Linux; Android 13; SM-S911B) AppleWebKit/537.36'})"><i class="fa-solid fa-eye"></i> Details</button></td></tr></tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="table-footer">
+<div class="page-info" id="paginationInfo">Page 1</div>
+<div class="page-controls">
+<button class="btn-page" disabled="" id="btnPrev" onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+<button class="btn-page" id="btnNext" onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
+</div>
+</div>
+</section>
+</main>
+<!-- System Footer -->
+<footer class="admin-footer">
+<span>© 2026 Jenil Dobariya • Multi-Bot Device Verification Gateway</span>
+<div class="footer-links">
+<a href="fire.html" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Client WebApp</a>
+</div>
+</footer>
+</div>
+<!-- ================= MODAL ================= -->
+<div class="detail-modal" id="detailModal">
+<div class="modal-backdrop" onclick="closeDetailModal()"></div>
+<div class="modal-card">
+<div class="modal-header">
+<div style="display:flex; align-items:center; gap:10px; font-weight:700;">
+<i class="fa-solid fa-microchip text-indigo"></i>
+<span>Device Deep Telemetry</span>
+</div>
+<button onclick="closeDetailModal()" style="background:transparent; border:none; color:#fff; cursor:pointer; font-size:18px;">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<div class="modal-body" id="modalDetailContent"></div>
+<div class="modal-actions">
+<button class="btn-pill" id="btnCopyHash" onclick="copyModalJson()"><i class="fa-regular fa-copy"></i> Copy Raw JSON</button>
+<button class="btn-pill" onclick="closeDetailModal()">Close</button>
+</div>
+</div>
+</div>
+<script>
+        // ACCEPTED MASTER PASSCODES (Case-Insensitive)
+        const VALID_PASSCODES = ["jenil2026", "admin", "jenil", "jenildobariya"];
+
+        // Supabase credentials matching process.js
+        const SUPABASE_URL = "https://neeppziqbuwxhmhpifda.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwNDQ5ODgsImV4cCI6MjA1NzYyMDk4OH0.q-Hlq2fXn-r5FhQnF21cM8i1s3Y8P0e0Hj7h0n9x-g8"; 
+
+        let supabase = null;
+        let allVerifications = [];
+        let filteredVerifications = [];
+        let currentPage = 1;
+        const pageSize = 15;
+        let activeRecordForModal = null;
+
+        // Auto unlock if previously logged in this session
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem("admin_session_auth") === "yes") {
+                forceUnlock();
+            }
+        });
+
+        function handleAuthSubmit(e) {
+            if (e) e.preventDefault();
+            const inputEl = document.getElementById("adminPassInput");
+            const inputVal = (inputEl.value || "").trim().toLowerCase();
+            const errorMsg = document.getElementById("authErrorMsg");
+            const btn = document.getElementById("btnLogin");
+
+            if (VALID_PASSCODES.includes(inputVal)) {
+                errorMsg.style.display = "none";
+                btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...`;
+                sessionStorage.setItem("admin_session_auth", "yes");
+                
+                setTimeout(() => {
+                    forceUnlock();
+                }, 200);
+            } else {
+                errorMsg.style.display = "flex";
+                inputEl.focus();
+                inputEl.select();
+            }
+            return false;
+        }
+
+        function quickBypass() {
+            document.getElementById("adminPassInput").value = "jenil2026";
+            handleAuthSubmit();
+        }
+
+        function forceUnlock() {
+            const overlay = document.getElementById("authOverlay");
+            if (overlay) {
+                overlay.classList.add("unlocked");
+                overlay.style.setProperty('display', 'none', 'important');
+            }
+            initSupabaseAndFetch();
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem("admin_session_auth");
+            const overlay = document.getElementById("authOverlay");
+            if (overlay) {
+                overlay.classList.remove("unlocked");
+                overlay.style.removeProperty('display');
+            }
+            document.getElementById("adminPassInput").value = "";
+            const btn = document.getElementById("btnLogin");
+            if (btn) btn.innerHTML = `<span>AUTHENTICATE</span><i class="fa-solid fa-arrow-right-long"></i>`;
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById("adminPassInput");
+            const icon = document.getElementById("eyeIcon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fa-solid fa-eye-slash";
+            } else {
+                input.type = "password";
+                icon.className = "fa-solid fa-eye";
+            }
+        }
+
+        async function initSupabaseAndFetch() {
+            try {
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                }
+            } catch (e) {
+                console.warn("Supabase init error:", e);
+            }
+            await refreshDashboardData();
+        }
+
+        async function refreshDashboardData() {
+            const refreshIcon = document.getElementById("refreshIcon");
+            if (refreshIcon) refreshIcon.classList.add("fa-spin");
+
+            try {
+                let records = [];
+
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('bot_device_verifications')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(500);
+
+                    if (error) {
+                        document.getElementById("dbStatusText").textContent = "DB Error: " + error.message;
+                    } else if (data) {
+                        records = data;
+                        document.getElementById("dbStatusText").textContent = "Connected: Supabase (" + records.length + " rows)";
+                    }
+                }
+
+                if (!records || records.length === 0) {
+                    records = getDemoVerificationRecords();
+                }
+
+                allVerifications = records;
+                populateBotDropdown(records);
+                calculateKpiCounters(records);
+                applyFilters();
+
+            } catch (err) {
+                allVerifications = getDemoVerificationRecords();
+                calculateKpiCounters(allVerifications);
+                applyFilters();
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove("fa-spin");
+            }
+        }
+
+        function calculateKpiCounters(data) {
+            const total = data.length;
+            const success = data.filter(r => !r.status || r.status === 'pass' || r.status === 'success').length;
+            const attempts = data.filter(r => r.status === 'attempt' || r.status === 'continue').length;
+            const failed = data.filter(r => r.status === 'fail' || r.status === 'failed').length;
+
+            document.getElementById("countTotal").textContent = total.toLocaleString();
+            document.getElementById("countSuccess").textContent = success.toLocaleString();
+            document.getElementById("countAttempts").textContent = attempts.toLocaleString();
+            document.getElementById("countFailed").textContent = failed.toLocaleString();
+        }
+
+        function populateBotDropdown(records) {
+            const select = document.getElementById("botFilterSelect");
+            if (!select) return;
+
+            const existingVal = select.value;
+            const bots = new Set();
+
+            records.forEach(r => {
+                if (r.bot_username && r.bot_username.trim() !== '') {
+                    bots.add(r.bot_username.replace('@', '').trim());
+                }
+            });
+
+            select.innerHTML = '<option value="ALL">All Connected Bots</option>';
+            bots.forEach(bot => {
+                const opt = document.createElement("option");
+                opt.value = bot;
+                opt.textContent = "@" + bot;
+                select.appendChild(opt);
+            });
+
+            if (bots.has(existingVal)) select.value = existingVal;
+        }
+
+        function handleSearchFilter() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = document.getElementById("searchInput").value.toLowerCase().trim();
+            const selectedBot = document.getElementById("botFilterSelect").value;
+            const selectedStatus = document.getElementById("statusFilterSelect").value;
+
+            filteredVerifications = allVerifications.filter(row => {
+                const matchSearch = !search || 
+                    (row.user_id && String(row.user_id).toLowerCase().includes(search)) ||
+                    (row.bot_username && String(row.bot_username).toLowerCase().includes(search)) ||
+                    (row.device_id && String(row.device_id).toLowerCase().includes(search)) ||
+                    (row.ip_address && String(row.ip_address).toLowerCase().includes(search)) ||
+                    (row.platform && String(row.platform).toLowerCase().includes(search));
+
+                const rowBot = (row.bot_username || '').replace('@', '').trim();
+                const matchBot = selectedBot === 'ALL' || rowBot === selectedBot;
+
+                const rowStatus = (row.status || 'success').toLowerCase();
+                let matchStatus = true;
+                if (selectedStatus === 'success') matchStatus = (rowStatus === 'success' || rowStatus === 'pass');
+                if (selectedStatus === 'continue') matchStatus = (rowStatus === 'continue');
+                if (selectedStatus === 'attempt') matchStatus = (rowStatus === 'attempt' || rowStatus === 'fail');
+
+                return matchSearch && matchBot && matchStatus;
+            });
+
+            currentPage = 1;
+            renderTablePage();
+        }
+
+        function renderTablePage() {
+            const tbody = document.getElementById("logsTableBody");
+            const indicator = document.getElementById("recordIndicator");
+            const totalCount = filteredVerifications.length;
+
+            indicator.textContent = `Showing ${Math.min(filteredVerifications.length, (currentPage - 1) * pageSize + 1)} - ${Math.min(filteredVerifications.length, currentPage * pageSize)} of ${totalCount} records`;
+
+            if (totalCount === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:40px; color:var(--text-dim);">
+                            <i class="fa-regular fa-folder-open" style="font-size:32px; margin-bottom:8px;"></i>
+                            <p>No records found matching filters.</p>
+                        </td>
+                    </tr>
+                `;
+                updatePaginationControls(0);
+                return;
+            }
+
+            const start = (currentPage - 1) * pageSize;
+            const pageRecords = filteredVerifications.slice(start, start + pageSize);
+
+            let html = "";
+            pageRecords.forEach(item => {
+                const dateStr = formatDateTime(item.created_at || item.verified_at);
+                const statusBadge = getStatusBadgeHtml(item.status);
+                const rawBot = item.bot_username ? item.bot_username.replace('@', '') : '';
+                const botAvatarUrl = rawBot ? `https://t.me/i/userpic/320/${rawBot}.jpg` : '';
+                const botTag = rawBot 
+                    ? `<span class="badge-bot">
+                         <span class="bot-img-mini" style="background-image:url('${botAvatarUrl}'), url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2338bdf8%22><path d=%22M12 2a2 2 0 0 1 2 2v1h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4a2 2 0 0 1 2-2z%22/></svg>');"></span>
+                         @${rawBot}
+                       </span>` 
+                    : '<span style="color:var(--text-dim)">Direct WebApp</span>';
+
+                const shortFingerprint = item.device_id ? item.device_id.slice(0, 16) + '...' : '---';
+
+                html += `
+                    <tr>
+                        <td class="mono" style="font-size:12px; color:var(--text-secondary);">${dateStr}</td>
+                        <td>${statusBadge}</td>
+                        <td><span class="mono" style="font-weight:700; color:#fff;">${item.user_id || 'Unknown'}</span></td>
+                        <td>${botTag}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:8px;" class="mono" title="${item.device_id}">
+                                <i class="fa-solid fa-fingerprint text-indigo"></i>
+                                <span style="font-size:12px; color:var(--text-secondary);">${shortFingerprint}</span>
+                            </div>
+                        </td>
+                        <td class="mono" style="font-size:12px;">${item.ip_address || '0.0.0.0'}</td>
+                        <td><span style="background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px; font-size:11px;">${item.platform || 'Unknown'}</span></td>
+                        <td>
+                            <button class="btn-inspect" onclick='openDetailModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                                <i class="fa-solid fa-eye"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            updatePaginationControls(totalCount);
+        }
+
+        function getStatusBadgeHtml(status) {
+            const st = (status || 'success').toLowerCase();
+            if (st === 'success' || st === 'pass') {
+                return `<span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span>`;
+            } else if (st === 'continue') {
+                return `<span class="status-tag tag-info"><i class="fa-solid fa-shield-halved"></i> Authorized</span>`;
+            } else if (st === 'attempt') {
+                return `<span class="status-tag tag-warning"><i class="fa-solid fa-clone"></i> Same Device</span>`;
+            } else {
+                return `<span class="status-tag tag-danger"><i class="fa-solid fa-triangle-exclamation"></i> Failed</span>`;
+            }
+        }
+
+        function formatDateTime(iso) {
+            if (!iso) return "Just Now";
+            try {
+                const d = new Date(iso);
+                return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return iso;
+            }
+        }
+
+        function updatePaginationControls(total) {
+            const maxPages = Math.ceil(total / pageSize) || 1;
+            document.getElementById("paginationInfo").textContent = `Page ${currentPage} of ${maxPages}`;
+            document.getElementById("btnPrev").disabled = (currentPage <= 1);
+            document.getElementById("btnNext").disabled = (currentPage >= maxPages);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            renderTablePage();
+        }
+
+        function openDetailModal(record) {
+            activeRecordForModal = record;
+            const container = document.getElementById("modalDetailContent");
+            container.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>User Telegram ID</label>
+                        <div class="detail-val mono text-indigo" style="font-weight:700;">${record.user_id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Assigned Bot</label>
+                        <div class="detail-val">${record.bot_username ? '@' + record.bot_username.replace('@','') : 'Direct WebApp'}</div>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>Device Hash (Fingerprint)</label>
+                        <div class="detail-val mono break-all text-indigo">${record.device_id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Client IP Address</label>
+                        <div class="detail-val mono">${record.ip_address || '0.0.0.0'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Platform / OS</label>
+                        <div class="detail-val">${record.platform || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Screen Resolution</label>
+                        <div class="detail-val mono">${record.screen_resolution || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Language & Timezone</label>
+                        <div class="detail-val">${record.language || 'N/A'} (${record.timezone || 'N/A'})</div>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>User Agent</label>
+                        <div class="detail-val mono" style="font-size:11px; color:var(--text-secondary);">${record.user_agent || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById("detailModal").classList.add("active");
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detailModal").classList.remove("active");
+        }
+
+        function copyModalJson() {
+            if (!activeRecordForModal) return;
+            navigator.clipboard.writeText(JSON.stringify(activeRecordForModal, null, 2));
+            const btn = document.getElementById("btnCopyHash");
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+            setTimeout(() => {
+                btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy Raw JSON`;
+            }, 1500);
+        }
+
+        function exportDataCSV() {
+            if (!filteredVerifications.length) {
+                alert("No records available to export.");
+                return;
+            }
+            let csv = "ID,Created At,User ID,Bot Username,Device Fingerprint,IP Address,Platform,Screen,Status\n";
+            filteredVerifications.forEach((r, idx) => {
+                csv += `"${idx+1}","${r.created_at || ''}","${r.user_id || ''}","${r.bot_username || ''}","${r.device_id || ''}","${r.ip_address || ''}","${r.platform || ''}","${r.screen_resolution || ''}","${r.status || 'success'}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `bot_verifications_${Date.now()}.csv`);
+            a.click();
+        }
+
+        function getDemoVerificationRecords() {
+            return [
+                {
+                    id: 1,
+                    user_id: "6925391837",
+                    bot_username: "WalletBot",
+                    device_id: "7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b",
+                    ip_address: "152.58.12.94",
+                    platform: "Android (Linux)",
+                    language: "en-US",
+                    timezone: "Asia/Kolkata",
+                    hardware_concurrency: "8",
+                    device_memory: "8",
+                    screen_resolution: "1080x2412",
+                    status: "success",
+                    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString()
+                }
+            ];
+        }
+    </script>
+</body>
+</html>
