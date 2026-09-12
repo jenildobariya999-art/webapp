@@ -3,45 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Gateway Portal | Jenil Dobariya</title>
-    <!-- Google Fonts & FontAwesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Jenil Dobariya Telemetry Matrix | Live Multi-Bot Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Supabase Client for Realtime Database Fetch -->
+    <!-- Official Supabase JS SDK for Real Live Data -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* ==========================================================
-           JENIL DOBARIYA MULTI-BOT VERIFICATION GATEWAY - COMPLETE ALL-IN-ONE
-           Cyberpunk Dark Matrix Holographic Theme
-           ========================================================== */
         :root {
             --bg-base: #06070d;
             --bg-surface: #0c0e17;
-            --bg-surface-elevated: rgba(18, 21, 36, 0.78);
-            --bg-card: rgba(15, 18, 30, 0.7);
-            --bg-card-hover: rgba(23, 28, 48, 0.85);
+            --bg-surface-elevated: rgba(18, 21, 36, 0.75);
+            --bg-card: rgba(14, 18, 32, 0.85);
+            --bg-card-hover: rgba(22, 26, 44, 0.9);
             --border-subtle: rgba(99, 102, 241, 0.16);
             --border-bright: rgba(99, 102, 241, 0.38);
             --border-focus: #6366f1;
+            
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-dim: #64748b;
             
-            /* Status Accents & Neon Gradients */
             --accent-indigo: #6366f1;
             --accent-purple: #8b5cf6;
             --accent-cyan: #06b6d4;
             --accent-emerald: #10b981;
             --accent-amber: #f59e0b;
             --accent-rose: #f43f5e;
+            
             --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
             --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.35);
+            --glow-emerald: 0 0 30px rgba(16, 185, 129, 0.3);
+            --glow-amber: 0 0 30px rgba(245, 158, 11, 0.3);
+            --glow-rose: 0 0 30px rgba(244, 63, 94, 0.3);
+
             --radius-sm: 8px;
             --radius-md: 14px;
             --radius-lg: 20px;
             --radius-xl: 26px;
+
             --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
@@ -50,6 +50,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -61,7 +62,7 @@
             position: relative;
         }
 
-        /* Ambient Glow & Background Grid */
+        /* Ambient Cyber Glowing Mesh */
         .glow-bg {
             position: fixed;
             top: 0;
@@ -76,43 +77,21 @@
         .ambient-orb {
             position: absolute;
             border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.25;
-            animation: orbFloat 18s infinite alternate ease-in-out;
+            filter: blur(140px);
+            opacity: 0.22;
+            animation: orbFloat 22s infinite alternate ease-in-out;
         }
 
-        .orb-1 {
-            top: -10%;
-            left: 15%;
-            width: 500px;
-            height: 500px;
-            background: #4f46e5;
-        }
-
-        .orb-2 {
-            bottom: 5%;
-            right: 10%;
-            width: 600px;
-            height: 600px;
-            background: #06b6d4;
-            animation-delay: -7s;
-        }
-
-        .orb-3 {
-            top: 40%;
-            left: 45%;
-            width: 400px;
-            height: 400px;
-            background: #a855f7;
-            animation-delay: -12s;
-        }
+        .orb-1 { top: -15%; left: 10%; width: 550px; height: 550px; background: #6366f1; }
+        .orb-2 { bottom: 5%; right: 10%; width: 620px; height: 620px; background: #06b6d4; animation-delay: -8s; }
+        .orb-3 { top: 40%; left: 40%; width: 450px; height: 450px; background: #a855f7; animation-delay: -14s; }
 
         .cyber-grid {
             position: absolute;
             inset: 0;
             background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
                               linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background-size: 38px 38px;
             mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
         }
 
@@ -122,34 +101,28 @@
         }
 
         .mono { font-family: var(--font-mono); }
-        .font-xs { font-size: 11px; }
-        .font-sm { font-size: 13px; }
-        .bold { font-weight: 700; }
-        .text-primary { color: var(--text-primary); }
-        .text-secondary { color: var(--text-secondary); }
-        .text-dim { color: var(--text-dim); }
-        .text-indigo { color: #818cf8; }
-        .text-success { color: #34d399 !important; }
-        .text-warning { color: #fbbf24 !important; }
-        .text-danger { color: #fb7185 !important; }
 
         /* ==========================================================
-           VIEW 1: MASTER PASSCODE LOCKSCREEN OVERLAY
+           1. AUTH LOCKSCREEN OVERLAY (jenil2026)
            ========================================================== */
         .auth-overlay {
             position: fixed;
             inset: 0;
             z-index: 9999;
-            display: none;
+            display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            backdrop-filter: blur(25px);
-            background: rgba(6, 7, 13, 0.88);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            background: rgba(6, 7, 13, 0.92);
+            transition: opacity 0.35s ease, visibility 0.35s ease;
         }
 
-        .auth-overlay.active {
-            display: flex;
+        .auth-overlay.hidden-auth {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .auth-card {
@@ -157,24 +130,30 @@
             max-width: 440px;
             background: var(--bg-surface-elevated);
             border: 1px solid var(--border-bright);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.2);
             border-radius: var(--radius-xl);
             padding: 45px 35px;
             text-align: center;
             position: relative;
             backdrop-filter: blur(20px);
+            animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .shield-badge {
-            width: 64px;
-            height: 64px;
-            border-radius: 20px;
+            width: 68px;
+            height: 68px;
+            border-radius: 22px;
             margin: 0 auto 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-            border: 1px solid rgba(99, 102, 241, 0.4);
+            border: 1.5px solid rgba(99, 102, 241, 0.45);
             box-shadow: var(--glow-indigo);
             font-size: 28px;
             color: #818cf8;
@@ -213,7 +192,7 @@
 
         .input-wrapper input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
             padding: 16px 50px 16px 48px;
@@ -249,7 +228,7 @@
             color: #fb7185;
             font-size: 13px;
             margin-bottom: 18px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .btn-login {
@@ -261,12 +240,12 @@
             color: #fff;
             font-size: 14px;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
             transition: all 0.3s;
         }
@@ -276,47 +255,45 @@
             box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6);
         }
 
-        .auth-footer {
-            margin-top: 30px;
+        .quick-unlock-btn {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px dashed rgba(99, 102, 241, 0.35);
+            color: #a5b4fc;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-size: 11px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .shake-anim {
-            animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-            40%, 60% { transform: translate3d(6px, 0, 0); }
+        .quick-unlock-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+            color: #fff;
         }
 
         /* ==========================================================
-           VIEW 2: MAIN DASHBOARD VIEW
+           2. MAIN DASHBOARD CONTENT (LIVE DATA)
            ========================================================== */
         .dashboard-wrapper {
             position: relative;
             z-index: 1;
-            display: none;
+            display: flex;
             flex-direction: column;
             min-height: 100vh;
-        }
-
-        .dashboard-wrapper.active {
-            display: flex;
         }
 
         .top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 36px;
-            background: rgba(12, 14, 23, 0.85);
-            backdrop-filter: blur(15px);
+            padding: 16px 36px;
+            background: rgba(12, 14, 23, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border-bottom: 1px solid var(--border-subtle);
             position: sticky;
             top: 0;
@@ -360,7 +337,8 @@
             gap: 6px;
             font-size: 11px;
             color: var(--text-secondary);
-            font-weight: 500;
+            font-weight: 600;
+            margin-top: 2px;
         }
 
         .live-pulse {
@@ -380,7 +358,7 @@
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .status-chip {
@@ -394,8 +372,8 @@
         }
 
         .chip-online {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
             color: #34d399;
         }
 
@@ -436,7 +414,7 @@
             gap: 24px;
         }
 
-        /* KPI Cards Grid */
+        /* 3. Real-Time KPI Cards */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -464,18 +442,18 @@
             left: 0;
             width: 100%;
             height: 3px;
-            opacity: 0.8;
+            opacity: 0.9;
         }
 
         .kpi-card.glow-indigo::before { background: var(--accent-indigo); }
-        .kpi-card.glow-green::before { background: var(--accent-emerald); }
+        .kpi-card.glow-emerald::before { background: var(--accent-emerald); }
         .kpi-card.glow-amber::before { background: var(--accent-amber); }
         .kpi-card.glow-rose::before { background: var(--accent-rose); }
 
         .kpi-card:hover {
             transform: translateY(-4px);
             background: var(--bg-card-hover);
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .kpi-title {
@@ -490,8 +468,8 @@
             font-size: 32px;
             font-weight: 800;
             margin: 8px 0 6px;
-            font-family: var(--font-sans);
             letter-spacing: -1px;
+            color: #fff;
         }
 
         .kpi-sub {
@@ -517,7 +495,7 @@
         .kpi-icon-wrap.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
         .kpi-icon-wrap.rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
 
-        /* Filter Toolbar */
+        /* 4. Toolbar Filter & Search */
         .toolbar-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
@@ -541,7 +519,7 @@
 
         .search-input-box {
             position: relative;
-            min-width: 280px;
+            min-width: 290px;
             flex: 1;
         }
 
@@ -556,10 +534,10 @@
 
         .search-input-box input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.35);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 10px 16px 10px 40px;
+            padding: 11px 16px 11px 40px;
             color: #fff;
             font-size: 13px;
             outline: none;
@@ -569,7 +547,7 @@
 
         .search-input-box input:focus {
             border-color: var(--border-focus);
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
         }
 
         .select-box {
@@ -587,10 +565,10 @@
         }
 
         .select-box select {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.35);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
-            padding: 10px 32px 10px 38px;
+            padding: 11px 32px 11px 38px;
             color: var(--text-primary);
             font-size: 13px;
             font-weight: 500;
@@ -618,7 +596,7 @@
 
         .btn-pill {
             background: rgba(99, 102, 241, 0.12);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(99, 102, 241, 0.35);
             color: #a5b4fc;
             padding: 9px 18px;
             border-radius: 20px;
@@ -632,22 +610,11 @@
         }
 
         .btn-pill:hover {
-            background: rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.28);
             color: #fff;
         }
 
-        .btn-pill.btn-danger {
-            background: rgba(244, 63, 94, 0.12);
-            border-color: rgba(244, 63, 94, 0.3);
-            color: #fda4af;
-        }
-
-        .btn-pill.btn-danger:hover {
-            background: rgba(244, 63, 94, 0.25);
-            color: #fff;
-        }
-
-        /* Data Table */
+        /* 5. Real Data Table Card */
         .table-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
@@ -676,8 +643,9 @@
             letter-spacing: 0.8px;
             color: var(--text-dim);
             text-transform: uppercase;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
         }
 
         .data-table td {
@@ -686,6 +654,7 @@
             color: var(--text-primary);
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .data-table tbody tr {
@@ -693,10 +662,9 @@
         }
 
         .data-table tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
+            background-color: rgba(255, 255, 255, 0.035);
         }
 
-        /* Status Chips */
         .status-tag {
             display: inline-flex;
             align-items: center;
@@ -709,29 +677,9 @@
             text-transform: uppercase;
         }
 
-        .tag-success {
-            background: rgba(16, 185, 129, 0.12);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.25);
-        }
-
-        .tag-info {
-            background: rgba(59, 130, 246, 0.12);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.25);
-        }
-
-        .tag-warning {
-            background: rgba(245, 158, 11, 0.12);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.25);
-        }
-
-        .tag-danger {
-            background: rgba(244, 63, 94, 0.12);
-            color: #fb7185;
-            border: 1px solid rgba(244, 63, 94, 0.25);
-        }
+        .tag-success { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-amber { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-danger { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
 
         .badge-bot {
             background: rgba(139, 92, 246, 0.15);
@@ -741,21 +689,24 @@
             border-radius: 8px;
             font-size: 12px;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .hash-cell {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             font-size: 12px;
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
 
         .platform-chip {
             background: rgba(255, 255, 255, 0.05);
             padding: 4px 10px;
             border-radius: 8px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
@@ -781,11 +732,11 @@
         }
 
         .empty-placeholder td {
-            padding: 60px 20px;
+            padding: 70px 20px;
             text-align: center;
         }
 
-        .loading-state, .empty-state {
+        .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -794,8 +745,8 @@
         }
 
         .empty-state i {
-            font-size: 38px;
-            color: var(--text-dim);
+            font-size: 42px;
+            color: #475569;
         }
 
         .empty-state h4 {
@@ -806,93 +757,29 @@
         .empty-state p {
             font-size: 13px;
             color: var(--text-secondary);
+            max-width: 400px;
+            line-height: 1.5;
         }
 
         .mini-spinner {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border: 3px solid rgba(99, 102, 241, 0.2);
             border-top-color: var(--accent-indigo);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            margin-bottom: 8px;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        .table-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 24px;
-            background: rgba(0, 0, 0, 0.2);
-            border-top: 1px solid var(--border-subtle);
-        }
-
-        .page-info {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .page-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-page {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-page:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-page:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .admin-footer {
-            padding: 24px 36px;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover {
-            color: #818cf8;
-        }
-
-        /* Modal Inspector */
+        /* 6. Deep Telemetry Inspector Modal */
         .detail-modal {
             position: fixed;
             inset: 0;
-            z-index: 999;
+            z-index: 1000;
             display: none;
             justify-content: center;
             align-items: center;
@@ -907,19 +794,19 @@
             position: absolute;
             inset: 0;
             background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
         }
 
         .modal-card {
             position: relative;
             width: 100%;
-            max-width: 650px;
-            background: #0f121d;
+            max-width: 680px;
+            background: #0f121e;
             border: 1px solid var(--border-bright);
             border-radius: var(--radius-lg);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), var(--glow-indigo);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), var(--glow-indigo);
             overflow: hidden;
-            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes modalIn {
@@ -941,12 +828,11 @@
             align-items: center;
             gap: 10px;
             font-size: 16px;
+            font-weight: 700;
             color: #fff;
         }
 
-        .modal-title-group i {
-            color: #818cf8;
-        }
+        .modal-title-group i { color: #818cf8; }
 
         .btn-close-modal {
             background: transparent;
@@ -957,9 +843,7 @@
             transition: color 0.2s;
         }
 
-        .btn-close-modal:hover {
-            color: #fff;
-        }
+        .btn-close-modal:hover { color: #fff; }
 
         .modal-body {
             padding: 24px;
@@ -992,12 +876,12 @@
             color: var(--text-primary);
         }
 
-        .break-all {
-            word-break: break-all;
-        }
-
         .detail-item.full-width {
             grid-column: span 2;
+        }
+
+        .break-all {
+            word-break: break-all;
         }
 
         .modal-actions {
@@ -1005,11 +889,32 @@
             justify-content: flex-end;
             gap: 12px;
             padding: 16px 24px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.25);
             border-top: 1px solid var(--border-subtle);
         }
 
-        /* Mobile Adjustments */
+        /* Footer */
+        .admin-footer {
+            padding: 24px 36px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover { color: #818cf8; }
+
         @media (max-width: 1024px) {
             .metrics-grid { grid-template-columns: repeat(2, 1fr); }
         }
@@ -1017,7 +922,6 @@
         @media (max-width: 768px) {
             .top-nav { padding: 14px 20px; flex-direction: column; align-items: flex-start; gap: 14px; }
             .nav-actions { width: 100%; justify-content: space-between; }
-            .btn-text { display: none; }
             .metrics-grid { grid-template-columns: 1fr; }
             .content-container { padding: 16px; }
             .toolbar-left { flex-direction: column; width: 100%; }
@@ -1029,7 +933,7 @@
 </head>
 <body>
 
-    <!-- Ambient Glowing Background Grid & Orbs -->
+    <!-- Ambient Lighting Orbs -->
     <div class="glow-bg">
         <div class="ambient-orb orb-1"></div>
         <div class="ambient-orb orb-2"></div>
@@ -1037,201 +941,193 @@
         <div class="cyber-grid"></div>
     </div>
 
-    <!-- ========================================================
-         VIEW 1: PASSWORD AUTHENTICATION MODAL (LOCKSCREEN)
-         ======================================================== -->
-    <div id="authOverlay" class="auth-overlay active">
+    <!-- 1. AUTH GATEWAY LOCKSCREEN (Passcode: jenil2026) -->
+    <div class="auth-overlay" id="authOverlay">
         <div class="auth-card">
-            <div class="auth-header">
-                <div class="shield-badge">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h2>Security Gateway</h2>
-                <p>Enter Master Passcode to access Bot Device Telemetry</p>
+            <div class="shield-badge">
+                <i class="fa-solid fa-fingerprint"></i>
             </div>
-
-            <form id="loginForm" onsubmit="handleAuthSubmit(event)">
+            <div class="auth-header">
+                <h2>Admin Telemetry Portal</h2>
+                <p>Enter Master Passcode to access live Supabase database records</p>
+            </div>
+            <form id="authForm" onsubmit="handleLogin(event)">
                 <div class="input-wrapper">
                     <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="adminPassInput" placeholder="Master Access Key" autocomplete="off" required>
-                    <button type="button" class="toggle-pass" onclick="togglePasswordVisibility()">
+                    <input type="password" id="passcodeInput" placeholder="Enter Master Passcode..." autocomplete="off" required autofocus>
+                    <button type="button" class="toggle-pass" onclick="togglePassVisibility()">
                         <i class="fa-solid fa-eye" id="eyeIcon"></i>
                     </button>
                 </div>
-
-                <div id="authErrorMsg" class="auth-error-msg">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <span>Invalid Passcode. Access Denied.</span>
+                <div class="auth-error-msg" id="authError">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="authErrorText">Invalid passcode. Please retry.</span>
                 </div>
-
                 <button type="submit" class="btn-login" id="btnLogin">
-                    <span>AUTHENTICATE</span>
-                    <i class="fa-solid fa-arrow-right-long"></i>
+                    <span>AUTHENTICATE PORTAL</span>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
-
-            <div class="auth-footer">
-                <span>Multi-Bot Verification Core 2.0 • Jenil Dobariya</span>
-            </div>
+            <button type="button" class="quick-unlock-btn" onclick="quickFillAndUnlock()">
+                <i class="fa-solid fa-bolt"></i> Auto-Fill <strong>jenil2026</strong> & Unlock
+            </button>
         </div>
     </div>
 
-    <!-- ========================================================
-         VIEW 2: MAIN ADMIN DASHBOARD
-         ======================================================== -->
-    <div id="dashboardApp" class="dashboard-wrapper">
-        
-        <!-- Top Navigation Bar -->
+    <!-- 2. MAIN REAL DATA DASHBOARD -->
+    <div class="dashboard-wrapper">
+        <!-- Top Navbar -->
         <header class="top-nav">
             <div class="brand-group">
                 <div class="logo-box">
-                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <i class="fa-solid fa-fingerprint"></i>
                 </div>
                 <div class="brand-text">
-                    <h1>Jenil Dobariya <span>Telemetry</span></h1>
-                    <p class="live-pill"><span class="live-pulse"></span> Multi-Bot Realtime Monitor</p>
+                    <h1>Jenil Dobariya <span>Telemetry Matrix 3.0</span></h1>
+                    <div class="live-pill">
+                        <span class="live-pulse"></span>
+                        <span id="liveStatusLabel">Supabase Live Connected</span>
+                    </div>
                 </div>
             </div>
 
             <div class="nav-actions">
-                <div class="status-chip chip-online">
-                    <i class="fa-solid fa-database"></i>
-                    <span id="dbStatusText">Connected: Supabase</span>
-                </div>
-                <button class="btn-action" onclick="refreshDashboardData()" title="Reload Data">
-                    <i class="fa-solid fa-rotate" id="refreshIcon"></i>
-                    <span class="btn-text">Sync</span>
+                <button class="btn-action" onclick="fetchLiveRecords(true)">
+                    <i class="fa-solid fa-rotate" id="syncIcon"></i>
+                    <span class="btn-text">Live Sync</span>
                 </button>
-                <button class="btn-action btn-danger" onclick="logoutAdmin()" title="Lock Portal">
-                    <i class="fa-solid fa-power-off"></i>
+                <button class="btn-action btn-danger" onclick="lockPortal()">
+                    <i class="fa-solid fa-lock"></i>
                     <span class="btn-text">Lock</span>
                 </button>
             </div>
         </header>
 
-        <!-- Main Workspace Container -->
+        <!-- Main Workspace -->
         <main class="content-container">
 
-            <!-- Summary KPI Metric Cards -->
+            <!-- Real-Time Dynamic Counters -->
             <section class="metrics-grid">
-                
+                <!-- KPI 1 -->
                 <div class="kpi-card glow-indigo">
-                    <div class="kpi-meta">
-                        <span class="kpi-title">TOTAL VERIFICATIONS</span>
-                        <div class="kpi-value" id="countTotal">0</div>
-                        <span class="kpi-sub"><i class="fa-solid fa-microchip"></i> All bot requests</span>
+                    <div>
+                        <div class="kpi-title">TOTAL VERIFICATIONS</div>
+                        <div class="kpi-value" id="kpiTotal">0</div>
+                        <div class="kpi-sub">
+                            <i class="fa-solid fa-database text-indigo"></i>
+                            <span>All verified database rows</span>
+                        </div>
                     </div>
                     <div class="kpi-icon-wrap indigo">
-                        <i class="fa-solid fa-fingerprint"></i>
+                        <i class="fa-solid fa-server"></i>
                     </div>
                 </div>
 
-                <div class="kpi-card glow-green">
-                    <div class="kpi-meta">
-                        <span class="kpi-title">SUCCESS / PASSED</span>
-                        <div class="kpi-value text-success" id="countSuccess">0</div>
-                        <span class="kpi-sub"><i class="fa-solid fa-circle-check"></i> Fresh Verified Devices</span>
+                <!-- KPI 2 -->
+                <div class="kpi-card glow-emerald">
+                    <div>
+                        <div class="kpi-title">UNIQUE DEVICES (PASSED)</div>
+                        <div class="kpi-value" id="kpiUnique">0</div>
+                        <div class="kpi-sub">
+                            <i class="fa-solid fa-shield-halved text-emerald"></i>
+                            <span>Distinct hardware fingerprints</span>
+                        </div>
                     </div>
                     <div class="kpi-icon-wrap green">
                         <i class="fa-solid fa-check-double"></i>
                     </div>
                 </div>
 
+                <!-- KPI 3 -->
                 <div class="kpi-card glow-amber">
-                    <div class="kpi-meta">
-                        <span class="kpi-title">SAME-DEVICE ATTEMPTS</span>
-                        <div class="kpi-value text-warning" id="countAttempts">0</div>
-                        <span class="kpi-sub"><i class="fa-solid fa-users-viewfinder"></i> Re-visits / Multi-accounts</span>
+                    <div>
+                        <div class="kpi-title">CONNECTED BOTS</div>
+                        <div class="kpi-value" id="kpiBots">0</div>
+                        <div class="kpi-sub">
+                            <i class="fa-solid fa-robot text-amber"></i>
+                            <span>Active Telegram Bots</span>
+                        </div>
                     </div>
                     <div class="kpi-icon-wrap amber">
-                        <i class="fa-solid fa-clone"></i>
+                        <i class="fa-solid fa-robot"></i>
                     </div>
                 </div>
 
+                <!-- KPI 4 -->
                 <div class="kpi-card glow-rose">
-                    <div class="kpi-meta">
-                        <span class="kpi-title">BLOCKED / FAILED</span>
-                        <div class="kpi-value text-danger" id="countFailed">0</div>
-                        <span class="kpi-sub"><i class="fa-solid fa-shield-virus"></i> VPN / Missing Fingerprint</span>
+                    <div>
+                        <div class="kpi-title">PLATFORMS DETECTED</div>
+                        <div class="kpi-value" id="kpiPlatforms">0</div>
+                        <div class="kpi-sub">
+                            <i class="fa-solid fa-mobile-screen-button text-rose"></i>
+                            <span>Android / iOS / Desktop</span>
+                        </div>
                     </div>
                     <div class="kpi-icon-wrap rose">
-                        <i class="fa-solid fa-ban"></i>
+                        <i class="fa-solid fa-microchip"></i>
                     </div>
                 </div>
-
             </section>
 
-            <!-- Multi-Bot Distribution & Filter Toolbar -->
+            <!-- Search, Filter & Export Toolbar -->
             <section class="toolbar-card">
                 <div class="toolbar-left">
                     <div class="search-input-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="searchInput" placeholder="Search by User ID, Bot, IP, Device Hash..." oninput="handleSearchFilter()">
+                        <input type="text" id="searchInput" placeholder="Search by User ID, Bot, IP, Fingerprint..." oninput="applyFilters()">
                     </div>
 
                     <div class="select-box">
                         <i class="fa-solid fa-robot"></i>
-                        <select id="botFilterSelect" onchange="applyFilters()">
+                        <select id="botFilter" onchange="applyFilters()">
                             <option value="ALL">All Connected Bots</option>
                         </select>
                     </div>
 
                     <div class="select-box">
                         <i class="fa-solid fa-filter"></i>
-                        <select id="statusFilterSelect" onchange="applyFilters()">
-                            <option value="ALL">All Status Types</option>
-                            <option value="success">Verified Success</option>
-                            <option value="continue">Already Verified</option>
-                            <option value="attempt">Clone / Same-Dev Attempt</option>
+                        <select id="platformFilter" onchange="applyFilters()">
+                            <option value="ALL">All Platforms</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="toolbar-right">
-                    <button class="btn-pill" onclick="exportDataCSV()">
-                        <i class="fa-solid fa-file-arrow-down"></i>
-                        <span>Export CSV</span>
+                    <span class="records-indicator" id="recordsCounter">Showing 0 records</span>
+                    <button class="btn-pill" onclick="exportDataToCSV()">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
                     </button>
-                    <span class="records-indicator" id="recordIndicator">Showing 0 of 0 logs</span>
                 </div>
             </section>
 
-            <!-- Verification Logs Table View -->
+            <!-- Live Table Card -->
             <section class="table-card">
                 <div class="table-responsive">
-                    <table class="data-table" id="logsTable">
+                    <table class="data-table" id="dataTable">
                         <thead>
                             <tr>
                                 <th>TIME (UTC)</th>
-                                <th>STATUS</th>
                                 <th>USER ID</th>
                                 <th>TELEGRAM BOT</th>
                                 <th>DEVICE FINGERPRINT</th>
-                                <th>IP & GEO</th>
-                                <th>PLATFORM / HW</th>
-                                <th>ACTION</th>
+                                <th>IP ADDRESS</th>
+                                <th>PLATFORM / OS</th>
+                                <th>RESOLUTION</th>
+                                <th>INSPECT</th>
                             </tr>
                         </thead>
-                        <tbody id="logsTableBody">
+                        <tbody id="tableBody">
                             <tr class="empty-placeholder">
                                 <td colspan="8">
-                                    <div class="loading-state">
+                                    <div class="empty-state">
                                         <div class="mini-spinner"></div>
-                                        <span>Loading database records...</span>
+                                        <h4>Connecting to Supabase Database...</h4>
+                                        <p>Fetching real-time verification rows from table <code>bot_device_verifications</code></p>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                <!-- Table Footer Pagination -->
-                <div class="table-footer">
-                    <div class="page-info" id="paginationInfo">Page 1</div>
-                    <div class="page-controls">
-                        <button class="btn-page" id="btnPrev" onclick="changePage(-1)" disabled><i class="fa-solid fa-chevron-left"></i> Previous</button>
-                        <button class="btn-page" id="btnNext" onclick="changePage(1)">Next <i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
                 </div>
             </section>
 
@@ -1239,291 +1135,337 @@
 
         <!-- System Footer -->
         <footer class="admin-footer">
-            <span>© 2026 Jenil Dobariya • Multi-Bot Device Verification Gateway</span>
+            <div>
+                © 2026 Jenil Dobariya • Multi-Bot Device Verification Matrix • Direct Supabase Integration
+            </div>
             <div class="footer-links">
-                <a href="fire.html" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Client WebApp</a>
+                <a href="fire.html" target="_blank">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Verification WebApp
+                </a>
             </div>
         </footer>
-
     </div>
 
-    <!-- ========================================================
-         MODAL: INSPECT DEVICE TELEMETRY DETAILS
-         ======================================================== -->
-    <div id="detailModal" class="detail-modal">
+    <!-- 3. DEEP TELEMETRY INSPECTOR MODAL -->
+    <div class="detail-modal" id="detailModal">
         <div class="modal-backdrop" onclick="closeDetailModal()"></div>
         <div class="modal-card">
             <div class="modal-header">
                 <div class="modal-title-group">
                     <i class="fa-solid fa-microchip"></i>
-                    <h3>Device Deep Telemetry</h3>
+                    <span>Hardware Telemetry Details</span>
                 </div>
-                <button class="btn-close-modal" onclick="closeDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" onclick="closeDetailModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div class="modal-body" id="modalDetailContent">
-                <!-- Dynamically populated -->
+            <div class="modal-body">
+                <div class="detail-grid" id="modalDetailContent">
+                    <!-- Populated via Javascript -->
+                </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-pill btn-danger" id="btnCopyHash" onclick="copyModalJson()"><i class="fa-regular fa-copy"></i> Copy Raw JSON</button>
-                <button class="btn-pill" onclick="closeDetailModal()">Close</button>
+                <button class="btn-action" onclick="copyRowJSON()">
+                    <i class="fa-regular fa-copy"></i> Copy Raw JSON
+                </button>
+                <button class="btn-action" onclick="closeDetailModal()">
+                    Close
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- ==========================================================
+       JAVASCRIPT: 100% REAL SUPABASE LIVE ENGINE
+       ========================================================== -->
     <script>
-        // MASTER PASSCODE: You can change this
-        const ADMIN_PASSCODE = "jenil2026"; 
-
-        // Supabase credentials matching process.js
+        // --- 1. SUPABASE CREDENTIALS & CLIENT INITIALIZATION ---
         const SUPABASE_URL = "https://neeppziqbuwxhmhpifda.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwNDQ5ODgsImV4cCI6MjA1NzYyMDk4OH0.q-Hlq2fXn-r5FhQnF21cM8i1s3Y8P0e0Hj7h0n9x-g8"; 
+        // Public Anon Key for reading verification telemetry
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjgxOTYsImV4cCI6MjA4ODk5OTc5Nn0.6k8E_1s1V8f1L_O9Wp0Q_k0W4Wq0E1K7gZ4Y-8x0M1A";
 
-        let supabase = null;
-        let allVerifications = [];
-        let filteredVerifications = [];
-        let currentPage = 1;
-        const pageSize = 15;
-        let activeRecordForModal = null;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem("admin_authenticated") === "true") {
-                unlockDashboard();
+        let supabaseClient = null;
+        try {
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
-        });
+        } catch (e) {
+            console.error("Supabase Client Init Error:", e);
+        }
 
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const input = document.getElementById("adminPassInput").value.trim();
-            const errorMsg = document.getElementById("authErrorMsg");
-            const btn = document.getElementById("btnLogin");
+        // Global State
+        let rawRecords = [];
+        let activeModalRecord = null;
+        let autoSyncTimer = null;
 
-            if (input === ADMIN_PASSCODE) {
-                errorMsg.style.display = "none";
-                btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...`;
-                sessionStorage.setItem("admin_authenticated", "true");
-                setTimeout(() => {
-                    unlockDashboard();
-                }, 400);
+        // --- 2. AUTH & LOCKSCREEN LOGIC ---
+        function checkExistingSession() {
+            const isAuth = sessionStorage.getItem('jenil_admin_auth');
+            const overlay = document.getElementById('authOverlay');
+            if (isAuth === 'true') {
+                overlay.classList.add('hidden-auth');
+                startLiveEngine();
             } else {
-                errorMsg.style.display = "flex";
-                const inputCard = document.querySelector(".auth-card");
-                inputCard.classList.add("shake-anim");
-                setTimeout(() => inputCard.classList.remove("shake-anim"), 500);
+                overlay.classList.remove('hidden-auth');
             }
         }
 
-        function togglePasswordVisibility() {
-            const input = document.getElementById("adminPassInput");
-            const icon = document.getElementById("eyeIcon");
-            if (input.type === "password") {
-                input.type = "text";
-                icon.className = "fa-solid fa-eye-slash";
+        function handleLogin(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('passcodeInput');
+            const errBox = document.getElementById('authError');
+            const overlay = document.getElementById('authOverlay');
+            const val = (input.value || '').trim().toLowerCase();
+
+            // Case-insensitive passcode check: 'jenil2026', 'admin', 'jenil'
+            if (val === 'jenil2026' || val === 'admin' || val === 'jenil') {
+                sessionStorage.setItem('jenil_admin_auth', 'true');
+                errBox.style.display = 'none';
+                overlay.classList.add('hidden-auth');
+                startLiveEngine();
             } else {
-                input.type = "password";
-                icon.className = "fa-solid fa-eye";
+                errBox.style.display = 'flex';
+                input.value = '';
+                input.focus();
             }
         }
 
-        function unlockDashboard() {
-            document.getElementById("authOverlay").classList.remove("active");
-            document.getElementById("dashboardApp").classList.add("active");
-            initSupabaseAndFetch();
+        function quickFillAndUnlock() {
+            document.getElementById('passcodeInput').value = 'jenil2026';
+            handleLogin();
         }
 
-        function logoutAdmin() {
-            sessionStorage.removeItem("admin_authenticated");
-            document.getElementById("dashboardApp").classList.remove("active");
-            document.getElementById("authOverlay").classList.add("active");
-            document.getElementById("adminPassInput").value = "";
-        }
-
-        async function initSupabaseAndFetch() {
-            try {
-                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                }
-            } catch (e) {
-                console.warn("Supabase init error:", e);
-            }
-            await refreshDashboardData();
-        }
-
-        async function refreshDashboardData() {
-            const refreshIcon = document.getElementById("refreshIcon");
-            if (refreshIcon) refreshIcon.classList.add("fa-spin");
-
-            try {
-                let records = [];
-
-                if (supabase) {
-                    const { data, error } = await supabase
-                        .from('bot_device_verifications')
-                        .select('*')
-                        .order('created_at', { ascending: false })
-                        .limit(500);
-
-                    if (error) {
-                        document.getElementById("dbStatusText").textContent = "DB Error: " + error.message;
-                    } else if (data) {
-                        records = data;
-                        document.getElementById("dbStatusText").textContent = "Connected: Supabase (" + records.length + " rows)";
-                    }
-                }
-
-                if (!records || records.length === 0) {
-                    records = getDemoVerificationRecords();
-                }
-
-                allVerifications = records;
-                populateBotDropdown(records);
-                calculateKpiCounters(records);
-                applyFilters();
-
-            } catch (err) {
-                allVerifications = getDemoVerificationRecords();
-                calculateKpiCounters(allVerifications);
-                applyFilters();
-            } finally {
-                if (refreshIcon) refreshIcon.classList.remove("fa-spin");
+        function togglePassVisibility() {
+            const passInput = document.getElementById('passcodeInput');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passInput.type = 'password';
+                eyeIcon.className = 'fa-solid fa-eye';
             }
         }
 
-        function calculateKpiCounters(data) {
-            const total = data.length;
-            const success = data.filter(r => !r.status || r.status === 'pass' || r.status === 'success').length;
-            const attempts = data.filter(r => r.status === 'attempt' || r.status === 'continue').length;
-            const failed = data.filter(r => r.status === 'fail' || r.status === 'failed').length;
-
-            animateNumber("countTotal", total);
-            animateNumber("countSuccess", success);
-            animateNumber("countAttempts", attempts);
-            animateNumber("countFailed", failed);
+        function lockPortal() {
+            sessionStorage.removeItem('jenil_admin_auth');
+            if (autoSyncTimer) clearInterval(autoSyncTimer);
+            document.getElementById('passcodeInput').value = '';
+            document.getElementById('authOverlay').classList.remove('hidden-auth');
         }
 
-        function animateNumber(elementId, target) {
-            const el = document.getElementById(elementId);
-            if (!el) return;
-            let current = 0;
-            const step = Math.ceil(target / 20) || 1;
-            const timer = setInterval(() => {
-                current += step;
-                if (current >= target) {
-                    el.textContent = target.toLocaleString();
-                    clearInterval(timer);
-                } else {
-                    el.textContent = current.toLocaleString();
-                }
-            }, 25);
+        // --- 3. FETCH LIVE REAL DATA FROM SUPABASE ---
+        function startLiveEngine() {
+            fetchLiveRecords(false);
+            // Live background sync every 6 seconds
+            if (!autoSyncTimer) {
+                autoSyncTimer = setInterval(() => {
+                    fetchLiveRecords(false);
+                }, 6000);
+            }
         }
 
-        function populateBotDropdown(records) {
-            const select = document.getElementById("botFilterSelect");
-            if (!select) return;
+        async function fetchLiveRecords(isManualClick = false) {
+            const syncIcon = document.getElementById('syncIcon');
+            const statusLabel = document.getElementById('liveStatusLabel');
+            if (syncIcon && isManualClick) syncIcon.classList.add('fa-spin');
 
-            const existingVal = select.value;
-            const bots = new Set();
-
-            records.forEach(r => {
-                if (r.bot_username && r.bot_username.trim() !== '') {
-                    bots.add(r.bot_username.replace('@', '').trim());
-                }
-            });
-
-            select.innerHTML = '<option value="ALL">All Connected Bots</option>';
-            bots.forEach(bot => {
-                const opt = document.createElement("option");
-                opt.value = bot;
-                opt.textContent = "@" + bot;
-                select.appendChild(opt);
-            });
-
-            if (bots.has(existingVal)) select.value = existingVal;
-        }
-
-        function handleSearchFilter() {
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const search = document.getElementById("searchInput").value.toLowerCase().trim();
-            const selectedBot = document.getElementById("botFilterSelect").value;
-            const selectedStatus = document.getElementById("statusFilterSelect").value;
-
-            filteredVerifications = allVerifications.filter(row => {
-                const matchSearch = !search || 
-                    (row.user_id && String(row.user_id).toLowerCase().includes(search)) ||
-                    (row.bot_username && String(row.bot_username).toLowerCase().includes(search)) ||
-                    (row.device_id && String(row.device_id).toLowerCase().includes(search)) ||
-                    (row.ip_address && String(row.ip_address).toLowerCase().includes(search)) ||
-                    (row.platform && String(row.platform).toLowerCase().includes(search));
-
-                const rowBot = (row.bot_username || '').replace('@', '').trim();
-                const matchBot = selectedBot === 'ALL' || rowBot === selectedBot;
-
-                const rowStatus = (row.status || 'success').toLowerCase();
-                let matchStatus = true;
-                if (selectedStatus === 'success') matchStatus = (rowStatus === 'success' || rowStatus === 'pass');
-                if (selectedStatus === 'continue') matchStatus = (rowStatus === 'continue');
-                if (selectedStatus === 'attempt') matchStatus = (rowStatus === 'attempt' || rowStatus === 'fail');
-
-                return matchSearch && matchBot && matchStatus;
-            });
-
-            currentPage = 1;
-            renderTablePage();
-        }
-
-        function renderTablePage() {
-            const tbody = document.getElementById("logsTableBody");
-            const indicator = document.getElementById("recordIndicator");
-            const totalCount = filteredVerifications.length;
-
-            indicator.textContent = `Showing ${Math.min(filteredVerifications.length, (currentPage - 1) * pageSize + 1)} - ${Math.min(filteredVerifications.length, currentPage * pageSize)} of ${totalCount} records`;
-
-            if (totalCount === 0) {
-                tbody.innerHTML = `
-                    <tr class="empty-placeholder">
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-folder-open"></i>
-                                <h4>No Verification Records Found</h4>
-                                <p>No events match your selected filters.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                updatePaginationControls(0);
+            if (!supabaseClient) {
+                showEmptyTable("Database Error", "Supabase Client could not be initialized.");
+                if (syncIcon) syncIcon.classList.remove('fa-spin');
                 return;
             }
 
-            const start = (currentPage - 1) * pageSize;
-            const pageRecords = filteredVerifications.slice(start, start + pageSize);
+            try {
+                // Fetch the newest 300 records from table: bot_device_verifications
+                const { data, error } = await supabaseClient
+                    .from('bot_device_verifications')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(300);
 
-            let html = "";
-            pageRecords.forEach(item => {
-                const dateStr = formatDateTime(item.created_at || item.verified_at);
-                const statusBadge = getStatusBadgeHtml(item.status);
-                const botTag = item.bot_username ? `<span class="badge-bot">@${item.bot_username.replace('@','')}</span>` : '<span class="text-dim">N/A</span>';
-                const shortFingerprint = item.device_id ? item.device_id.slice(0, 16) + '...' : '---';
-                const platformTxt = item.platform || 'Unknown';
-                const ipTxt = item.ip_address || '0.0.0.0';
+                if (error) {
+                    console.error("Supabase Query Error:", error);
+                    statusLabel.textContent = "Supabase Sync Notice";
+                    showEmptyTable("Database Read Notice", error.message || "Ensure RLS Policy is set to Allow Read/Select.");
+                    return;
+                }
+
+                rawRecords = Array.isArray(data) ? data : [];
+                statusLabel.textContent = `Supabase Connected (${rawRecords.length} records)`;
+
+                // Update Bot & Platform Dropdowns dynamically based on REAL incoming data
+                populateFilterDropdowns(rawRecords);
+
+                // Update Metrics Counters with REAL figures
+                updateKPICounters(rawRecords);
+
+                // Render Table Rows
+                applyFilters();
+
+            } catch (err) {
+                console.error("Network Fetch Error:", err);
+                statusLabel.textContent = "Connection Reconnecting...";
+            } finally {
+                if (syncIcon) syncIcon.classList.remove('fa-spin');
+            }
+        }
+
+        // --- 4. KPI COUNTERS (100% REAL) ---
+        function updateKPICounters(records) {
+            const totalCount = records.length;
+            const uniqueFingerprints = new Set(records.map(r => r.device_id).filter(Boolean)).size;
+            const uniqueBots = new Set(records.map(r => (r.bot_username || '').replace('@', '').trim()).filter(Boolean)).size;
+            const uniquePlatforms = new Set(records.map(r => (r.platform || '').trim()).filter(Boolean)).size;
+
+            document.getElementById('kpiTotal').textContent = totalCount.toLocaleString();
+            document.getElementById('kpiUnique').textContent = uniqueFingerprints.toLocaleString();
+            document.getElementById('kpiBots').textContent = uniqueBots.toLocaleString();
+            document.getElementById('kpiPlatforms').textContent = uniquePlatforms.toLocaleString();
+        }
+
+        // --- 5. DYNAMIC FILTERS ---
+        function populateFilterDropdowns(records) {
+            const botSelect = document.getElementById('botFilter');
+            const platformSelect = document.getElementById('platformFilter');
+            const currentBot = botSelect.value;
+            const currentPlatform = platformSelect.value;
+
+            // Bots
+            const botList = Array.from(new Set(records.map(r => (r.bot_username || '').replace('@', '').trim()).filter(Boolean))).sort();
+            botSelect.innerHTML = '<option value="ALL">All Connected Bots</option>';
+            botList.forEach(bot => {
+                const opt = document.createElement('option');
+                opt.value = bot;
+                opt.textContent = `@${bot}`;
+                if (bot === currentBot) opt.selected = true;
+                botSelect.appendChild(opt);
+            });
+
+            // Platforms
+            const platformList = Array.from(new Set(records.map(r => (r.platform || '').trim()).filter(Boolean))).sort();
+            platformSelect.innerHTML = '<option value="ALL">All Platforms</option>';
+            platformList.forEach(plat => {
+                const opt = document.createElement('option');
+                opt.value = plat;
+                opt.textContent = plat;
+                if (plat === currentPlatform) opt.selected = true;
+                platformSelect.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            const selectedBot = document.getElementById('botFilter').value;
+            const selectedPlatform = document.getElementById('platformFilter').value;
+
+            const filtered = rawRecords.filter(item => {
+                // Bot filter
+                if (selectedBot !== 'ALL') {
+                    const cleanBot = (item.bot_username || '').replace('@', '').trim();
+                    if (cleanBot !== selectedBot) return false;
+                }
+
+                // Platform filter
+                if (selectedPlatform !== 'ALL') {
+                    if ((item.platform || '').trim() !== selectedPlatform) return false;
+                }
+
+                // Query filter
+                if (query) {
+                    const matchUser = String(item.user_id || '').toLowerCase().includes(query);
+                    const matchBot = String(item.bot_username || '').toLowerCase().includes(query);
+                    const matchIP = String(item.ip_address || '').toLowerCase().includes(query);
+                    const matchFp = String(item.device_id || '').toLowerCase().includes(query);
+                    const matchPlatform = String(item.platform || '').toLowerCase().includes(query);
+                    if (!matchUser && !matchBot && !matchIP && !matchFp && !matchPlatform) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderTable(filtered);
+        }
+
+        // --- 6. RENDER REAL TABLE ROWS ---
+        function renderTable(records) {
+            const tbody = document.getElementById('tableBody');
+            const counter = document.getElementById('recordsCounter');
+            counter.textContent = `Showing ${records.length} of ${rawRecords.length} records`;
+
+            if (!records || records.length === 0) {
+                if (rawRecords.length === 0) {
+                    tbody.innerHTML = `
+                        <tr class="empty-placeholder">
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <h4>No Device Records Yet</h4>
+                                    <p>Your database is ready and connected! As soon as users open your bot verification WebApp, their real device telemetry will stream here in real-time.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = `
+                        <tr class="empty-placeholder">
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-filter-circle-xmark"></i>
+                                    <h4>No Matching Records Found</h4>
+                                    <p>Try clearing your search query or selecting "All Connected Bots" in the toolbar.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+                return;
+            }
+
+            let html = '';
+            records.forEach(item => {
+                const dateObj = item.created_at ? new Date(item.created_at) : null;
+                const timeStr = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '---';
+                const dateStr = dateObj ? dateObj.toLocaleDateString() : '';
+
+                const botClean = item.bot_username ? item.bot_username.replace('@', '') : 'UnknownBot';
+                const fpShort = item.device_id ? (item.device_id.substring(0, 10) + '...') : '---';
 
                 html += `
                     <tr>
-                        <td class="mono font-sm text-secondary">${dateStr}</td>
-                        <td>${statusBadge}</td>
-                        <td><span class="mono bold text-primary">${item.user_id || 'Unknown'}</span></td>
-                        <td>${botTag}</td>
                         <td>
-                            <div class="hash-cell mono" title="${item.device_id}">
+                            <div><strong>${timeStr}</strong></div>
+                            <div style="font-size: 11px; color: var(--text-dim);">${dateStr}</div>
+                        </td>
+                        <td>
+                            <strong class="mono" style="color: #fff;">${escapeHtml(String(item.user_id || '---'))}</strong>
+                        </td>
+                        <td>
+                            <span class="badge-bot">
+                                <i class="fa-brands fa-telegram"></i> @${escapeHtml(botClean)}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="hash-cell mono" title="${escapeHtml(item.device_id || '')}">
                                 <i class="fa-solid fa-fingerprint text-indigo"></i>
-                                <span>${shortFingerprint}</span>
+                                <span>${escapeHtml(fpShort)}</span>
                             </div>
                         </td>
-                        <td class="mono font-sm">${ipTxt}</td>
-                        <td><span class="platform-chip">${platformTxt}</span></td>
                         <td>
-                            <button class="btn-inspect" onclick='openDetailModal(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                            <span class="mono" style="color: #94a3b8;">${escapeHtml(item.ip_address || '0.0.0.0')}</span>
+                        </td>
+                        <td>
+                            <span class="platform-chip">
+                                <i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(item.platform || 'Browser')}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="mono" style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(item.screen_resolution || '---')}</span>
+                        </td>
+                        <td>
+                            <button class="btn-inspect" onclick="openDetailModal(${item.id})">
                                 <i class="fa-solid fa-eye"></i> Details
                             </button>
                         </td>
@@ -1532,174 +1474,164 @@
             });
 
             tbody.innerHTML = html;
-            updatePaginationControls(totalCount);
         }
 
-        function getStatusBadgeHtml(status) {
-            const st = (status || 'success').toLowerCase();
-            if (st === 'success' || st === 'pass') {
-                return `<span class="status-tag tag-success"><i class="fa-solid fa-circle-check"></i> Passed</span>`;
-            } else if (st === 'continue') {
-                return `<span class="status-tag tag-info"><i class="fa-solid fa-shield-halved"></i> Authorized</span>`;
-            } else if (st === 'attempt') {
-                return `<span class="status-tag tag-warning"><i class="fa-solid fa-clone"></i> Same Device</span>`;
-            } else {
-                return `<span class="status-tag tag-danger"><i class="fa-solid fa-triangle-exclamation"></i> Failed</span>`;
-            }
+        function showEmptyTable(title, desc) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = `
+                <tr class="empty-placeholder">
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-triangle-exclamation text-amber"></i>
+                            <h4>${title}</h4>
+                            <p>${desc}</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
         }
 
-        function formatDateTime(iso) {
-            if (!iso) return "Just Now";
-            try {
-                const d = new Date(iso);
-                return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } catch (e) {
-                return iso;
-            }
-        }
+        // --- 7. DEEP TELEMETRY MODAL ---
+        function openDetailModal(id) {
+            const record = rawRecords.find(r => r.id === id);
+            if (!record) return;
 
-        function updatePaginationControls(total) {
-            const maxPages = Math.ceil(total / pageSize) || 1;
-            document.getElementById("paginationInfo").textContent = `Page ${currentPage} of ${maxPages}`;
-            document.getElementById("btnPrev").disabled = (currentPage <= 1);
-            document.getElementById("btnNext").disabled = (currentPage >= maxPages);
-        }
+            activeModalRecord = record;
+            const container = document.getElementById('modalDetailContent');
 
-        function changePage(delta) {
-            currentPage += delta;
-            renderTablePage();
-        }
-
-        function openDetailModal(record) {
-            activeRecordForModal = record;
-            const container = document.getElementById("modalDetailContent");
             container.innerHTML = `
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <label>User Telegram ID</label>
-                        <div class="detail-val mono text-primary">${record.user_id || 'N/A'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Assigned Bot</label>
-                        <div class="detail-val">${record.bot_username ? '@' + record.bot_username.replace('@','') : 'Direct WebApp'}</div>
-                    </div>
-                    <div class="detail-item full-width">
-                        <label>Complete Visitor Device ID (Fingerprint)</label>
-                        <div class="detail-val mono break-all text-indigo">${record.device_id || 'N/A'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Client IP Address</label>
-                        <div class="detail-val mono">${record.ip_address || '0.0.0.0'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Platform / OS</label>
-                        <div class="detail-val">${record.platform || 'N/A'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Screen Resolution</label>
-                        <div class="detail-val mono">${record.screen_resolution || 'N/A'}</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Language & Timezone</label>
-                        <div class="detail-val">${record.language || 'N/A'} (${record.timezone || 'N/A'})</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>CPU Hardware Concurrency</label>
-                        <div class="detail-val mono">${record.hardware_concurrency || 'N/A'} Cores</div>
-                    </div>
-                    <div class="detail-item">
-                        <label>Device RAM Memory</label>
-                        <div class="detail-val mono">${record.device_memory || 'unknown'} GB</div>
-                    </div>
-                    <div class="detail-item full-width">
-                        <label>User Agent Header</label>
-                        <div class="detail-val mono font-xs text-secondary">${record.user_agent || 'N/A'}</div>
-                    </div>
+                <div class="detail-item">
+                    <label>Database Record ID</label>
+                    <div class="detail-val mono">#${record.id}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Telegram User ID</label>
+                    <div class="detail-val mono">${escapeHtml(record.user_id || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Telegram Bot Handle</label>
+                    <div class="detail-val mono">@${escapeHtml((record.bot_username || '').replace('@', ''))}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Client IP Address</label>
+                    <div class="detail-val mono">${escapeHtml(record.ip_address || '---')}</div>
+                </div>
+
+                <div class="detail-item full-width">
+                    <label>Device Fingerprint (FingerprintJS Hash)</label>
+                    <div class="detail-val mono break-all">${escapeHtml(record.device_id || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Platform / OS</label>
+                    <div class="detail-val">${escapeHtml(record.platform || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Screen Resolution</label>
+                    <div class="detail-val mono">${escapeHtml(record.screen_resolution || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Browser Language</label>
+                    <div class="detail-val mono">${escapeHtml(record.language || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Timezone</label>
+                    <div class="detail-val mono">${escapeHtml(record.timezone || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>CPU Cores (Concurrency)</label>
+                    <div class="detail-val mono">${escapeHtml(record.hardware_concurrency || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Device Memory (RAM GB)</label>
+                    <div class="detail-val mono">${escapeHtml(record.device_memory || '---')} GB</div>
+                </div>
+
+                <div class="detail-item full-width">
+                    <label>User Agent Header</label>
+                    <div class="detail-val mono break-all" style="font-size: 11px;">${escapeHtml(record.user_agent || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Created Timestamp (UTC)</label>
+                    <div class="detail-val mono">${escapeHtml(record.created_at || '---')}</div>
+                </div>
+
+                <div class="detail-item">
+                    <label>Session Bot Hash</label>
+                    <div class="detail-val mono break-all">${escapeHtml(record.bot_hash || '---')}</div>
                 </div>
             `;
-            document.getElementById("detailModal").classList.add("active");
+
+            document.getElementById('detailModal').classList.add('active');
         }
 
         function closeDetailModal() {
-            document.getElementById("detailModal").classList.remove("active");
+            document.getElementById('detailModal').classList.remove('active');
+            activeModalRecord = null;
         }
 
-        function copyModalJson() {
-            if (!activeRecordForModal) return;
-            navigator.clipboard.writeText(JSON.stringify(activeRecordForModal, null, 2));
-            const btn = document.getElementById("btnCopyHash");
-            btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
-            setTimeout(() => {
-                btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy Raw JSON`;
-            }, 1500);
+        function copyRowJSON() {
+            if (!activeModalRecord) return;
+            const str = JSON.stringify(activeModalRecord, null, 2);
+            navigator.clipboard.writeText(str).then(() => {
+                alert("Device telemetry JSON copied to clipboard!");
+            });
         }
 
-        function exportDataCSV() {
-            if (!filteredVerifications.length) {
-                alert("No records available to export.");
+        // --- 8. EXPORT CSV (REAL DATA) ---
+        function exportDataToCSV() {
+            if (!rawRecords || rawRecords.length === 0) {
+                alert("No records to export.");
                 return;
             }
-            let csv = "ID,Created At,User ID,Bot Username,Device Fingerprint,IP Address,Platform,Screen,Status\n";
-            filteredVerifications.forEach((r, idx) => {
-                csv += `"${idx+1}","${r.created_at || ''}","${r.user_id || ''}","${r.bot_username || ''}","${r.device_id || ''}","${r.ip_address || ''}","${r.platform || ''}","${r.screen_resolution || ''}","${r.status || 'success'}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', `jenil_bot_verifications_${Date.now()}.csv`);
-            a.click();
+
+            const headers = ["ID", "User_ID", "Bot_Username", "Device_ID", "IP_Address", "Platform", "Resolution", "Timezone", "Created_At"];
+            const rows = rawRecords.map(r => [
+                r.id,
+                `"${r.user_id || ''}"`,
+                `"${r.bot_username || ''}"`,
+                `"${r.device_id || ''}"`,
+                `"${r.ip_address || ''}"`,
+                `"${r.platform || ''}"`,
+                `"${r.screen_resolution || ''}"`,
+                `"${r.timezone || ''}"`,
+                `"${r.created_at || ''}"`
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `jenil_bot_verifications_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        function getDemoVerificationRecords() {
-            return [
-                {
-                    id: 1,
-                    user_id: "6925391837",
-                    bot_username: "WalletBot",
-                    device_id: "7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b",
-                    ip_address: "152.58.12.94",
-                    platform: "Android (Linux)",
-                    language: "en-US",
-                    timezone: "Asia/Kolkata",
-                    hardware_concurrency: "8",
-                    device_memory: "8",
-                    screen_resolution: "1080x2412",
-                    status: "success",
-                    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString()
-                },
-                {
-                    id: 2,
-                    user_id: "5481923019",
-                    bot_username: "CryptoRewardBot",
-                    device_id: "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
-                    ip_address: "49.36.198.42",
-                    platform: "iPhone (iOS)",
-                    language: "en-GB",
-                    timezone: "Asia/Dubai",
-                    hardware_concurrency: "6",
-                    device_memory: "6",
-                    screen_resolution: "1170x2532",
-                    status: "continue",
-                    created_at: new Date(Date.now() - 1000 * 60 * 42).toISOString()
-                },
-                {
-                    id: 3,
-                    user_id: "7102948201",
-                    bot_username: "WalletBot",
-                    device_id: "7f8a92b3c4d5e6f10a1b2c3d4e5f6a7b",
-                    ip_address: "152.58.12.94",
-                    platform: "Android (Linux)",
-                    language: "hi-IN",
-                    timezone: "Asia/Kolkata",
-                    hardware_concurrency: "8",
-                    device_memory: "8",
-                    screen_resolution: "1080x2412",
-                    status: "attempt",
-                    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString()
-                }
-            ];
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
+
+        // On Page Load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkExistingSession();
+        });
     </script>
 </body>
 </html>
