@@ -1,1637 +1,598 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jenil Dobariya Telemetry Matrix | Live Multi-Bot Monitor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Official Supabase JS SDK for Real Live Data -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <style>
-        :root {
-            --bg-base: #06070d;
-            --bg-surface: #0c0e17;
-            --bg-surface-elevated: rgba(18, 21, 36, 0.75);
-            --bg-card: rgba(14, 18, 32, 0.85);
-            --bg-card-hover: rgba(22, 26, 44, 0.9);
-            --border-subtle: rgba(99, 102, 241, 0.16);
-            --border-bright: rgba(99, 102, 241, 0.38);
-            --border-focus: #6366f1;
-            
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-dim: #64748b;
-            
-            --accent-indigo: #6366f1;
-            --accent-purple: #8b5cf6;
-            --accent-cyan: #06b6d4;
-            --accent-emerald: #10b981;
-            --accent-amber: #f59e0b;
-            --accent-rose: #f43f5e;
-            
-            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-            --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.35);
-            --glow-emerald: 0 0 30px rgba(16, 185, 129, 0.3);
-            --glow-amber: 0 0 30px rgba(245, 158, 11, 0.3);
-            --glow-rose: 0 0 30px rgba(244, 63, 94, 0.3);
-
-            --radius-sm: 8px;
-            --radius-md: 14px;
-            --radius-lg: 20px;
-            --radius-xl: 26px;
-
-            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Ambient Cyber Glowing Mesh */
-        .glow-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .ambient-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(140px);
-            opacity: 0.22;
-            animation: orbFloat 22s infinite alternate ease-in-out;
-        }
-
-        .orb-1 { top: -15%; left: 10%; width: 550px; height: 550px; background: #6366f1; }
-        .orb-2 { bottom: 5%; right: 10%; width: 620px; height: 620px; background: #06b6d4; animation-delay: -8s; }
-        .orb-3 { top: 40%; left: 40%; width: 450px; height: 450px; background: #a855f7; animation-delay: -14s; }
-
-        .cyber-grid {
-            position: absolute;
-            inset: 0;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 38px 38px;
-            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-        }
-
-        @keyframes orbFloat {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(60px, 40px) scale(1.15); }
-        }
-
-        .mono { font-family: var(--font-mono); }
-
-        /* ==========================================================
-           1. AUTH LOCKSCREEN OVERLAY (jenil2026)
-           ========================================================== */
-        .auth-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            background: rgba(6, 7, 13, 0.92);
-            transition: opacity 0.35s ease, visibility 0.35s ease;
-        }
-
-        .auth-overlay.hidden-auth {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .auth-card {
-            width: 100%;
-            max-width: 440px;
-            background: var(--bg-surface-elevated);
-            border: 1px solid var(--border-bright);
-            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.2);
-            border-radius: var(--radius-xl);
-            padding: 45px 35px;
-            text-align: center;
-            position: relative;
-            backdrop-filter: blur(20px);
-            animation: zoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.92); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .shield-badge {
-            width: 68px;
-            height: 68px;
-            border-radius: 22px;
-            margin: 0 auto 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-            border: 1.5px solid rgba(99, 102, 241, 0.45);
-            box-shadow: var(--glow-indigo);
-            font-size: 28px;
-            color: #818cf8;
-        }
-
-        .auth-header h2 {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-header p {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 28px;
-        }
-
-        .input-wrapper {
-            position: relative;
-            width: 100%;
-            margin-bottom: 16px;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-dim);
-            font-size: 16px;
-        }
-
-        .input-wrapper input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 16px 50px 16px 48px;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            font-family: var(--font-sans);
-            transition: all 0.3s;
-        }
-
-        .input-wrapper input:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-        }
-
-        .toggle-pass {
-            position: absolute;
-            right: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .auth-error-msg {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: #fb7185;
-            font-size: 13px;
-            margin-bottom: 18px;
-            font-weight: 600;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 16px;
-            background: var(--gradient-primary);
-            border: none;
-            border-radius: var(--radius-md);
-            color: #fff;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
-            transition: all 0.3s;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6);
-        }
-
-        .quick-unlock-btn {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px dashed rgba(99, 102, 241, 0.35);
-            color: #a5b4fc;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 11px;
-            cursor: pointer;
-            margin-top: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-        .quick-unlock-btn:hover {
-            background: rgba(99, 102, 241, 0.25);
-            color: #fff;
-        }
-
-        /* ==========================================================
-           2. MAIN DASHBOARD CONTENT (LIVE DATA)
-           ========================================================== */
-        .dashboard-wrapper {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .top-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 36px;
-            background: rgba(12, 14, 23, 0.82);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-bottom: 1px solid var(--border-subtle);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .brand-group {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .logo-box {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            color: #fff;
-            box-shadow: var(--glow-indigo);
-        }
-
-        .brand-text h1 {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: -0.3px;
-            color: #fff;
-        }
-
-        .brand-text h1 span {
-            color: #818cf8;
-            font-weight: 400;
-        }
-
-        .live-pill {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .live-pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #10b981;
-            box-shadow: 0 0 10px #10b981;
-            animation: pulseGlow 1.8s infinite;
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.6; }
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .status-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .chip-online {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #34d399;
-        }
-
-        .btn-action {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-            padding: 10px 18px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.25s;
-        }
-
-        .btn-action:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-action.btn-danger:hover {
-            background: rgba(244, 63, 94, 0.15);
-            border-color: rgba(244, 63, 94, 0.4);
-            color: #fb7185;
-        }
-
-        .content-container {
-            flex: 1;
-            max-width: 1440px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        /* 3. Real-Time KPI Cards */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .kpi-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            backdrop-filter: blur(12px);
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            opacity: 0.9;
-        }
-
-        .kpi-card.glow-indigo::before { background: var(--accent-indigo); }
-        .kpi-card.glow-emerald::before { background: var(--accent-emerald); }
-        .kpi-card.glow-amber::before { background: var(--accent-amber); }
-        .kpi-card.glow-rose::before { background: var(--accent-rose); }
-
-        .kpi-card:hover {
-            transform: translateY(-4px);
-            background: var(--bg-card-hover);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .kpi-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-dim);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .kpi-value {
-            font-size: 32px;
-            font-weight: 800;
-            margin: 8px 0 6px;
-            letter-spacing: -1px;
-            color: #fff;
-        }
-
-        .kpi-sub {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .kpi-icon-wrap {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-        }
-
-        .kpi-icon-wrap.indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-        .kpi-icon-wrap.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-        .kpi-icon-wrap.amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-        .kpi-icon-wrap.rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
-
-        /* 4. Toolbar Filter & Search */
-        .toolbar-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            backdrop-filter: blur(12px);
-        }
-
-        .toolbar-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            flex-wrap: wrap;
-        }
-
-        .search-input-box {
-            position: relative;
-            min-width: 290px;
-            flex: 1;
-        }
-
-        .search-input-box i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-dim);
-            font-size: 14px;
-        }
-
-        .search-input-box input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 11px 16px 11px 40px;
-            color: #fff;
-            font-size: 13px;
-            outline: none;
-            font-family: var(--font-sans);
-            transition: all 0.25s;
-        }
-
-        .search-input-box input:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
-        }
-
-        .select-box {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .select-box i {
-            position: absolute;
-            left: 14px;
-            color: var(--text-dim);
-            font-size: 13px;
-            pointer-events: none;
-        }
-
-        .select-box select {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 11px 32px 11px 38px;
-            color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 500;
-            outline: none;
-            cursor: pointer;
-            font-family: var(--font-sans);
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 14px;
-        }
-
-        .toolbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .records-indicator {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .btn-pill {
-            background: rgba(99, 102, 241, 0.12);
-            border: 1px solid rgba(99, 102, 241, 0.35);
-            color: #a5b4fc;
-            padding: 9px 18px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.25s;
-        }
-
-        .btn-pill:hover {
-            background: rgba(99, 102, 241, 0.28);
-            color: #fff;
-        }
-
-        /* 5. Real Data Table Card */
-        .table-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        .data-table th {
-            padding: 16px 20px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            background: rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid var(--border-subtle);
-            white-space: nowrap;
-        }
-
-        .data-table td {
-            padding: 16px 20px;
-            font-size: 13px;
-            color: var(--text-primary);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .data-table tbody tr {
-            transition: background-color 0.2s;
-        }
-
-        .data-table tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.035);
-        }
-
-        .status-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-        }
-
-        .tag-success { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .tag-amber { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .tag-danger { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
-
-        .badge-bot {
-            background: rgba(139, 92, 246, 0.15);
-            color: #c4b5fd;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .hash-cell {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        .platform-chip {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .btn-inspect {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-inspect:hover {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: rgba(99, 102, 241, 0.4);
-            color: #fff;
-        }
-
-        .empty-placeholder td {
-            padding: 70px 20px;
-            text-align: center;
-        }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-dim);
-        }
-
-        .empty-state i {
-            font-size: 42px;
-            color: #475569;
-        }
-
-        .empty-state h4 {
-            font-size: 16px;
-            color: var(--text-primary);
-        }
-
-        .empty-state p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            max-width: 400px;
-            line-height: 1.5;
-        }
-
-        .mini-spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: var(--accent-indigo);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* 6. Deep Telemetry Inspector Modal */
-        .detail-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .detail-modal.active {
-            display: flex;
-        }
-
-        .modal-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(10px);
-        }
-
-        .modal-card {
-            position: relative;
-            width: 100%;
-            max-width: 680px;
-            background: #0f121e;
-            border: 1px solid var(--border-bright);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), var(--glow-indigo);
-            overflow: hidden;
-            animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-        .modal-title-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .modal-title-group i { color: #818cf8; }
-
-        .btn-close-modal {
-            background: transparent;
-            border: none;
-            color: var(--text-dim);
-            font-size: 18px;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .btn-close-modal:hover { color: #fff; }
-
-        .modal-body {
-            padding: 24px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .detail-item label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
-
-        .detail-val {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid var(--border-subtle);
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            color: var(--text-primary);
-        }
-
-        .detail-item.full-width {
-            grid-column: span 2;
-        }
-
-        .break-all {
-            word-break: break-all;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding: 16px 24px;
-            background: rgba(0, 0, 0, 0.25);
-            border-top: 1px solid var(--border-subtle);
-        }
-
-        /* Footer */
-        .admin-footer {
-            padding: 24px 36px;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover { color: #818cf8; }
-
-        @media (max-width: 1024px) {
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .top-nav { padding: 14px 20px; flex-direction: column; align-items: flex-start; gap: 14px; }
-            .nav-actions { width: 100%; justify-content: space-between; }
-            .metrics-grid { grid-template-columns: 1fr; }
-            .content-container { padding: 16px; }
-            .toolbar-left { flex-direction: column; width: 100%; }
-            .search-input-box, .select-box, .select-box select { width: 100%; }
-            .detail-grid { grid-template-columns: 1fr; }
-            .detail-item.full-width { grid-column: span 1; }
-        }
-    </style>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Jenil Dobariya Admin Panel - 100% Real Supabase Data</title>
+<!-- Tailwind CSS CDN with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Google Fonts for Cyberpunk & Terminal Typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              950: '#040508',
+              900: '#06070d',
+              850: '#0a0d16',
+              800: '#0f1422',
+              700: '#182032',
+              600: '#232f48'
+            },
+            cyber: {
+              cyan: '#06b6d4',
+              indigo: '#6366f1',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Fira Code"', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+<style data-purpose="custom-scrollbars-and-glows">
+    body {
+      background-color: #06070d;
+      color: #e2e8f0;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #06070d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    .neon-border-glow {
+      box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.15), inset 0 0 15px -3px rgba(99, 102, 241, 0.05);
+    }
+  </style>
 </head>
-<body>
-
-    <!-- Ambient Lighting Orbs -->
-    <div class="glow-bg">
-        <div class="ambient-orb orb-1"></div>
-        <div class="ambient-orb orb-2"></div>
-        <div class="ambient-orb orb-3"></div>
-        <div class="cyber-grid"></div>
-    </div>
-
-    <!-- 1. AUTH GATEWAY LOCKSCREEN (Passcode: jenil2026) -->
-    <div class="auth-overlay" id="authOverlay">
-        <div class="auth-card">
-            <div class="shield-badge">
-                <i class="fa-solid fa-fingerprint"></i>
-            </div>
-            <div class="auth-header">
-                <h2>Admin Telemetry Portal</h2>
-                <p>Enter Master Passcode to access live Supabase database records</p>
-            </div>
-            <form id="authForm" onsubmit="handleLogin(event)">
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="passcodeInput" placeholder="Enter Master Passcode..." autocomplete="off" required autofocus>
-                    <button type="button" class="toggle-pass" onclick="togglePassVisibility()">
-                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
-                    </button>
-                </div>
-                <div class="auth-error-msg" id="authError">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span id="authErrorText">Invalid passcode. Please retry.</span>
-                </div>
-                <button type="submit" class="btn-login" id="btnLogin">
-                    <span>AUTHENTICATE PORTAL</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-            <button type="button" class="quick-unlock-btn" onclick="quickFillAndUnlock()">
-                <i class="fa-solid fa-bolt"></i> Auto-Fill <strong>jenil2026</strong> & Unlock
-            </button>
+<body class="min-h-screen bg-obsidian-900 text-slate-200 font-sans antialiased selection:bg-indigo-500 selection:text-white flex flex-col">
+<!-- BEGIN: TopNavigation -->
+<header class="border-b border-obsidian-700/60 bg-obsidian-950/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 py-3.5" data-purpose="top-navigation">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+<!-- Brand & Project Identity -->
+<div class="flex items-center gap-3.5 w-full sm:w-auto">
+<div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-cyber-indigo via-indigo-600 to-cyber-cyan p-0.5 shadow-lg shadow-indigo-950/50 flex-shrink-0">
+<div class="w-full h-full bg-obsidian-900 rounded-[10px] flex items-center justify-center">
+<svg class="w-6 h-6 text-cyber-cyan" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.097.99-4.32.99-6.632 0-6.075-4.925-11-11-11S-2 5.925-2 12c0 3.061.644 5.972 1.808 8.608" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-1.5">
+              Jenil Dobariya <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyber-cyan to-teal-300 font-extrabold">Telemetry Matrix 3.0</span>
+</h1>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="connection-status-pill">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Connected to Supabase (Real Database)
+            </span>
+<span class="text-[11px] text-slate-500 font-mono hidden md:inline-block">table: bot_device_verifications</span>
+</div>
+</div>
+</div>
+<!-- Live Sync Controls -->
+<div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+<!-- Sync Now Button -->
+<button class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold tracking-wide text-slate-200 bg-obsidian-800 hover:bg-obsidian-700 active:scale-[0.98] border border-obsidian-600 rounded-lg shadow-sm transition duration-150" data-purpose="trigger-live-sync" id="btn-sync-now">
+<svg class="w-4 h-4 text-cyber-cyan transition-transform" fill="none" id="sync-spinner-icon" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span id="sync-button-text">Live Sync</span>
+</button>
+<!-- Lock Control Button -->
+<button class="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold tracking-wide text-slate-400 hover:text-slate-200 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700 rounded-lg transition" data-purpose="toggle-admin-lock" id="btn-toggle-lock">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Lock</span>
+</button>
+</div>
+</div>
+</header>
+<!-- END: TopNavigation -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+<!-- Real-time Status Alert Banner (Non-simulated) -->
+<section class="rounded-xl border border-cyber-indigo/30 bg-gradient-to-r from-obsidian-850 via-obsidian-900 to-obsidian-850 p-4 neon-border-glow" data-purpose="database-banner">
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+<div class="flex items-center gap-2.5">
+<span class="p-1.5 rounded-md bg-cyber-indigo/20 text-cyber-indigo">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zm0 5h16M9 4v16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<p class="text-slate-300">
+<strong class="text-white font-medium">100% Real Database Mode Active:</strong> Reading live data strictly from Supabase project <code class="bg-black/50 text-cyber-cyan px-1.5 py-0.5 rounded font-mono">neeppziqbuwxhmhpifda</code>. Zero simulated values.
+          </p>
+</div>
+<div class="flex items-center gap-3 text-slate-400 font-mono text-[11px] self-end md:self-auto">
+<span>Last Sync: <span class="text-white font-medium" id="last-sync-timestamp">Just now</span></span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+<span class="text-emerald-400" id="live-row-indicator">0 rows detected</span>
+</div>
+</div>
+</section>
+<!-- BEGIN: RealMetricsKPI -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-purpose="kpi-metrics-grid">
+<!-- Metric 1: Total Verifications -->
+<div class="bg-obsidian-850 rounded-2xl border border-obsidian-700/70 p-5 shadow-lg relative overflow-hidden transition-all hover:border-cyber-indigo/40 group">
+<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-indigo to-indigo-400"></div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Verifications</span>
+<div class="w-10 h-10 rounded-xl bg-cyber-indigo/10 border border-cyber-indigo/20 flex items-center justify-center text-cyber-indigo group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-extrabold text-white tracking-tight font-mono" id="kpi-total-verifications">--</span>
+<p class="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-cyber-indigo" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            All verified database rows
+          </p>
+</div>
+</div>
+<!-- Metric 2: Unique Devices -->
+<div class="bg-obsidian-850 rounded-2xl border border-obsidian-700/70 p-5 shadow-lg relative overflow-hidden transition-all hover:border-cyber-emerald/40 group">
+<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-emerald to-emerald-400"></div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Unique Devices (Passed)</span>
+<div class="w-10 h-10 rounded-xl bg-cyber-emerald/10 border border-cyber-emerald/20 flex items-center justify-center text-cyber-emerald group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-extrabold text-white tracking-tight font-mono" id="kpi-unique-devices">--</span>
+<p class="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-cyber-emerald" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.097.99-4.32.99-6.632 0-6.075-4.925-11-11-11S-2 5.925-2 12c0 3.061.644 5.972 1.808 8.608" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Distinct hardware fingerprints
+          </p>
+</div>
+</div>
+<!-- Metric 3: Connected Bots -->
+<div class="bg-obsidian-850 rounded-2xl border border-obsidian-700/70 p-5 shadow-lg relative overflow-hidden transition-all hover:border-cyber-amber/40 group">
+<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-amber to-yellow-400"></div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Connected Bots</span>
+<div class="w-10 h-10 rounded-xl bg-cyber-amber/10 border border-cyber-amber/20 flex items-center justify-center text-cyber-amber group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-extrabold text-white tracking-tight font-mono" id="kpi-connected-bots">--</span>
+<p class="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-cyber-amber" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Active Telegram Bots
+          </p>
+</div>
+</div>
+<!-- Metric 4: Platforms Detected -->
+<div class="bg-obsidian-850 rounded-2xl border border-obsidian-700/70 p-5 shadow-lg relative overflow-hidden transition-all hover:border-cyber-rose/40 group">
+<div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-rose to-rose-400"></div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Platforms Detected</span>
+<div class="w-10 h-10 rounded-xl bg-cyber-rose/10 border border-cyber-rose/20 flex items-center justify-center text-cyber-rose group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-extrabold text-white tracking-tight font-mono" id="kpi-platforms-detected">--</span>
+<p class="mt-1 text-xs text-slate-400 flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-cyber-rose" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            OS Environments
+          </p>
+</div>
+</div>
+</section>
+<!-- END: RealMetricsKPI -->
+<!-- BEGIN: LiveDataTableSection -->
+<section class="bg-obsidian-850 rounded-2xl border border-obsidian-700/80 shadow-xl overflow-hidden flex flex-col" data-purpose="table-container">
+<!-- Table Header Bar -->
+<div class="p-4 sm:p-5 border-b border-obsidian-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-obsidian-900/60">
+<div>
+<h2 class="text-base font-bold text-white flex items-center gap-2">
+<span>Live Hardware Telemetry Logs</span>
+<span class="text-xs px-2 py-0.5 rounded font-mono font-normal bg-obsidian-700 text-cyber-cyan">table: bot_device_verifications</span>
+</h2>
+<p class="text-xs text-slate-400 mt-0.5">Real-time records queried directly from Supabase via Postgres client</p>
+</div>
+<!-- Filter / Search bar -->
+<div class="relative w-full sm:w-72">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</span>
+<input class="w-full pl-9 pr-3 py-1.5 text-xs bg-obsidian-950 border border-obsidian-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-indigo focus:ring-1 focus:ring-cyber-indigo transition font-mono" id="table-filter-input" placeholder="Filter by user_id, device, IP..." type="text"/>
+</div>
+</div>
+<!-- Real Data Table Scroll Area -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="border-b border-obsidian-700/80 bg-obsidian-900/90 text-slate-400 uppercase tracking-wider font-semibold font-mono text-[11px]">
+<th class="py-3 px-4" scope="col">Row ID</th>
+<th class="py-3 px-4" scope="col">Created Time (UTC)</th>
+<th class="py-3 px-4" scope="col">Telegram User ID</th>
+<th class="py-3 px-4" scope="col">Bot Username</th>
+<th class="py-3 px-4" scope="col">Device Fingerprint</th>
+<th class="py-3 px-4" scope="col">IP Address</th>
+<th class="py-3 px-4" scope="col">Platform / OS</th>
+<th class="py-3 px-4" scope="col">Resolution</th>
+<th class="py-3 px-4 text-center" scope="col">Inspect</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-obsidian-700/50 font-mono" id="real-data-table-body">
+<!-- Dynamic Real Data Rows Injected Here -->
+<tr>
+<td class="py-12 text-center text-slate-500 font-sans" colspan="9">
+<div class="inline-flex flex-col items-center gap-2">
+<svg class="w-6 h-6 animate-spin text-cyber-indigo" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+<span>Connecting to Supabase and querying bot_device_verifications...</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer with row counters -->
+<div class="px-5 py-3 border-t border-obsidian-700/70 bg-obsidian-900/50 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+<div class="flex items-center gap-2">
+<span>Displaying <strong class="text-white" id="visible-row-count">0</strong> of <strong class="text-white" id="total-row-count">0</strong> database records</span>
+<span class="text-slate-600">|</span>
+<span class="text-[11px] text-slate-500">Auto-refresh ready via Live Sync</span>
+</div>
+<div class="text-[11px] font-mono text-slate-500">
+          ORDER BY id DESC
         </div>
-    </div>
+</div>
+</section>
+<!-- END: LiveDataTableSection -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: DetailModal -->
+<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4" id="inspect-modal">
+<div class="bg-obsidian-900 border border-obsidian-600 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden neon-border-glow">
+<!-- Modal Header -->
+<div class="p-4 border-b border-obsidian-700 flex items-center justify-between bg-obsidian-850">
+<div class="flex items-center gap-2.5">
+<div class="w-3 h-3 rounded-full bg-cyber-cyan animate-pulse"></div>
+<h3 class="font-bold text-white text-base" id="modal-title">Hardware Verification Detail</h3>
+</div>
+<button class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-obsidian-700 transition" id="btn-close-modal">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+<!-- Modal Body (Raw JSON & Parsed key-value table) -->
+<div class="p-5 overflow-y-auto space-y-4 text-xs font-mono">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="modal-attributes-grid">
+<!-- Fields will be injected here dynamically -->
+</div>
+<div class="mt-4">
+<div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+<span>Raw Database Row Object (PostgreSQL jsonb):</span>
+</div>
+<pre class="p-3.5 bg-black/60 rounded-xl border border-obsidian-800 text-cyber-cyan overflow-x-auto text-[11px] font-mono leading-relaxed" id="modal-raw-json"></pre>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-3.5 border-t border-obsidian-700 bg-obsidian-850 flex justify-end">
+<button class="px-4 py-1.5 bg-obsidian-700 hover:bg-obsidian-600 text-white rounded-lg text-xs font-semibold" id="btn-modal-close-footer">Close Inspector</button>
+</div>
+</div>
+</div>
+<!-- END: DetailModal -->
+<!-- BEGIN: Footer -->
+<footer class="border-t border-obsidian-800 bg-obsidian-950 py-4 px-4 text-center text-xs text-slate-500 font-mono" data-purpose="dashboard-footer">
+<span>Jenil Dobariya Admin Panel • 100% Real Supabase Data Engine • Zero Simulated Records</span>
+</footer>
+<!-- END: Footer -->
+<!-- Supabase Database Real Sync Logic -->
+<script data-purpose="supabase-real-engine">
+    // Direct credentials provided for real Supabase connection
+    const SUPABASE_URL = 'https://neeppziqbuwxhmhpifda.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjgxOTYsImV4cCI6MjA4ODk5OTc5Nn0.6k8E_1s1V8f1L_O9Wp0Q_k0W4Wq0E1K7gZ4Y-8x0M1A';
+    
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <!-- 2. MAIN REAL DATA DASHBOARD -->
-    <div class="dashboard-wrapper">
-        <!-- Top Navbar -->
-        <header class="top-nav">
-            <div class="brand-group">
-                <div class="logo-box">
-                    <i class="fa-solid fa-fingerprint"></i>
-                </div>
-                <div class="brand-text">
-                    <h1>Jenil Dobariya <span>Telemetry Matrix 3.0</span></h1>
-                    <div class="live-pill">
-                        <span class="live-pulse"></span>
-                        <span id="liveStatusLabel">Supabase Live Connected</span>
-                    </div>
-                </div>
-            </div>
+    // Master state for real records
+    let realRowsData = [];
+    let isLocked = false;
 
-            <div class="nav-actions">
-                <button class="btn-action" onclick="fetchLiveRecords(true)">
-                    <i class="fa-solid fa-rotate" id="syncIcon"></i>
-                    <span class="btn-text">Live Sync</span>
-                </button>
-                <button class="btn-action btn-danger" onclick="lockPortal()">
-                    <i class="fa-solid fa-lock"></i>
-                    <span class="btn-text">Lock</span>
-                </button>
-            </div>
-        </header>
+    // Element References
+    const tableBody = document.getElementById('real-data-table-body');
+    const filterInput = document.getElementById('table-filter-input');
+    const kpiTotal = document.getElementById('kpi-total-verifications');
+    const kpiDevices = document.getElementById('kpi-unique-devices');
+    const kpiBots = document.getElementById('kpi-connected-bots');
+    const kpiPlatforms = document.getElementById('kpi-platforms-detected');
+    const visibleRowCountEl = document.getElementById('visible-row-count');
+    const totalRowCountEl = document.getElementById('total-row-count');
+    const lastSyncEl = document.getElementById('last-sync-timestamp');
+    const liveRowIndicator = document.getElementById('live-row-indicator');
+    const syncButton = document.getElementById('btn-sync-now');
+    const syncIcon = document.getElementById('sync-spinner-icon');
+    const syncText = document.getElementById('sync-button-text');
+    const lockBtn = document.getElementById('btn-toggle-lock');
+    const inspectModal = document.getElementById('inspect-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalGrid = document.getElementById('modal-attributes-grid');
+    const modalRaw = document.getElementById('modal-raw-json');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnCloseModalFooter = document.getElementById('btn-modal-close-footer');
 
-        <!-- Main Workspace -->
-        <main class="content-container">
+    // Utility: Format date nicely
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      try {
+        const d = new Date(dateStr);
+        return d.toISOString().replace('T', ' ').substring(0, 19);
+      } catch (e) {
+        return dateStr;
+      }
+    }
 
-            <!-- Real-Time Dynamic Counters -->
-            <section class="metrics-grid">
-                <!-- KPI 1 -->
-                <div class="kpi-card glow-indigo">
-                    <div>
-                        <div class="kpi-title">TOTAL VERIFICATIONS</div>
-                        <div class="kpi-value" id="kpiTotal">0</div>
-                        <div class="kpi-sub">
-                            <i class="fa-solid fa-database text-indigo"></i>
-                            <span>All verified database rows</span>
-                        </div>
-                    </div>
-                    <div class="kpi-icon-wrap indigo">
-                        <i class="fa-solid fa-server"></i>
-                    </div>
-                </div>
+    // Utility: Truncate fingerprint hash
+    function truncateString(str, start = 8, end = 6) {
+      if (!str) return 'N/A';
+      if (str.length <= start + end) return str;
+      return `${str.substring(0, start)}...${str.substring(str.length - end)}`;
+    }
 
-                <!-- KPI 2 -->
-                <div class="kpi-card glow-emerald">
-                    <div>
-                        <div class="kpi-title">UNIQUE DEVICES (PASSED)</div>
-                        <div class="kpi-value" id="kpiUnique">0</div>
-                        <div class="kpi-sub">
-                            <i class="fa-solid fa-shield-halved text-emerald"></i>
-                            <span>Distinct hardware fingerprints</span>
-                        </div>
-                    </div>
-                    <div class="kpi-icon-wrap green">
-                        <i class="fa-solid fa-check-double"></i>
-                    </div>
-                </div>
+    // Compute KPI cards from 100% REAL Supabase data array
+    function updateKPIs(data) {
+      // 1. Total Verifications: strictly data.length
+      const total = data.length;
+      kpiTotal.textContent = total;
 
-                <!-- KPI 3 -->
-                <div class="kpi-card glow-amber">
-                    <div>
-                        <div class="kpi-title">CONNECTED BOTS</div>
-                        <div class="kpi-value" id="kpiBots">0</div>
-                        <div class="kpi-sub">
-                            <i class="fa-solid fa-robot text-amber"></i>
-                            <span>Active Telegram Bots</span>
-                        </div>
-                    </div>
-                    <div class="kpi-icon-wrap amber">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-                </div>
+      // 2. Unique Devices: distinct non-null device_id values
+      const uniqueDevicesSet = new Set(data.map(r => r.device_id).filter(Boolean));
+      kpiDevices.textContent = uniqueDevicesSet.size;
 
-                <!-- KPI 4 -->
-                <div class="kpi-card glow-rose">
-                    <div>
-                        <div class="kpi-title">PLATFORMS DETECTED</div>
-                        <div class="kpi-value" id="kpiPlatforms">0</div>
-                        <div class="kpi-sub">
-                            <i class="fa-solid fa-mobile-screen-button text-rose"></i>
-                            <span>Android / iOS / Desktop</span>
-                        </div>
-                    </div>
-                    <div class="kpi-icon-wrap rose">
-                        <i class="fa-solid fa-microchip"></i>
-                    </div>
-                </div>
-            </section>
+      // 3. Connected Bots: distinct non-null bot_username values
+      const uniqueBotsSet = new Set(data.map(r => r.bot_username).filter(Boolean));
+      kpiBots.textContent = uniqueBotsSet.size;
 
-            <!-- Search, Filter & Export Toolbar -->
-            <section class="toolbar-card">
-                <div class="toolbar-left">
-                    <div class="search-input-box">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="searchInput" placeholder="Search by User ID, Bot, IP, Fingerprint..." oninput="applyFilters()">
-                    </div>
+      // 4. Platforms Detected: distinct platform values
+      const uniquePlatformsSet = new Set(data.map(r => r.platform).filter(Boolean));
+      kpiPlatforms.textContent = uniquePlatformsSet.size;
 
-                    <div class="select-box">
-                        <i class="fa-solid fa-robot"></i>
-                        <select id="botFilter" onchange="applyFilters()">
-                            <option value="ALL">All Connected Bots</option>
-                        </select>
-                    </div>
+      // Status indicator text
+      liveRowIndicator.textContent = `${total} ${total === 1 ? 'row' : 'rows'} detected`;
+      totalRowCountEl.textContent = total;
+    }
 
-                    <div class="select-box">
-                        <i class="fa-solid fa-filter"></i>
-                        <select id="platformFilter" onchange="applyFilters()">
-                            <option value="ALL">All Platforms</option>
-                        </select>
-                    </div>
-                </div>
+    // Render table rows based on filtered real dataset
+    function renderTableRows(filteredData) {
+      visibleRowCountEl.textContent = filteredData.length;
 
-                <div class="toolbar-right">
-                    <span class="records-indicator" id="recordsCounter">Showing 0 records</span>
-                    <button class="btn-pill" onclick="exportDataToCSV()">
-                        <i class="fa-solid fa-file-csv"></i> Export CSV
-                    </button>
-                </div>
-            </section>
+      if (!filteredData || filteredData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="py-12 text-center text-slate-500 font-sans">
+              <div class="inline-flex flex-col items-center justify-center gap-2">
+                <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                <p class="font-medium text-slate-400">No database records match current filter</p>
+                <p class="text-xs text-slate-600">Table 'bot_device_verifications' has ${realRowsData.length} total rows.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
-            <!-- Live Table Card -->
-            <section class="table-card">
-                <div class="table-responsive">
-                    <table class="data-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>TIME (UTC)</th>
-                                <th>USER ID</th>
-                                <th>TELEGRAM BOT</th>
-                                <th>DEVICE FINGERPRINT</th>
-                                <th>IP ADDRESS</th>
-                                <th>PLATFORM / OS</th>
-                                <th>RESOLUTION</th>
-                                <th>INSPECT</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr class="empty-placeholder">
-                                <td colspan="8">
-                                    <div class="empty-state">
-                                        <div class="mini-spinner"></div>
-                                        <h4>Connecting to Supabase Database...</h4>
-                                        <p>Fetching real-time verification rows from table <code>bot_device_verifications</code></p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+      tableBody.innerHTML = filteredData.map(row => {
+        const id = row.id ?? '—';
+        const createdAt = formatDate(row.created_at || row.timestamp || row.last_seen_at);
+        const userId = row.user_id ? `<span class="text-cyber-cyan font-semibold">${row.user_id}</span>` : '<span class="text-slate-500">NULL</span>';
+        const botUsername = row.bot_username ? `<span class="text-amber-400 font-medium">@${row.bot_username.replace('@','')}</span>` : '<span class="text-slate-500">N/A</span>';
+        const deviceFp = row.device_id ? `<span class="bg-obsidian-950 px-2 py-0.5 rounded border border-obsidian-700 text-slate-300 font-mono" title="${row.device_id}">${truncateString(row.device_id, 8, 6)}</span>` : '<span class="text-slate-600">None</span>';
+        const ip = row.ip_address || '<span class="text-slate-600">—</span>';
+        const platform = row.platform || '<span class="text-slate-600">Unknown</span>';
+        const resolution = row.screen_resolution || row.resolution || '<span class="text-slate-600">—</span>';
 
-        </main>
+        return `
+          <tr class="hover:bg-obsidian-800/60 transition-colors border-b border-obsidian-700/40">
+            <td class="py-3 px-4 text-emerald-400 font-bold">#${id}</td>
+            <td class="py-3 px-4 text-slate-300 whitespace-nowrap">${createdAt}</td>
+            <td class="py-3 px-4">${userId}</td>
+            <td class="py-3 px-4">${botUsername}</td>
+            <td class="py-3 px-4">${deviceFp}</td>
+            <td class="py-3 px-4 text-slate-300">${ip}</td>
+            <td class="py-3 px-4 text-slate-300">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-obsidian-750 text-slate-200 border border-obsidian-700">
+                ${platform}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-slate-400">${resolution}</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="window.inspectRowById('${id}')" class="px-2.5 py-1 text-xs font-sans font-medium rounded-lg bg-cyber-indigo/20 hover:bg-cyber-indigo/30 text-indigo-300 border border-indigo-500/30 transition">
+                Inspect
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
 
-        <!-- System Footer -->
-        <footer class="admin-footer">
-            <div>
-                © 2026 Jenil Dobariya • Multi-Bot Device Verification Matrix • Direct Supabase Integration
-            </div>
-            <div class="footer-links">
-                <a href="fire.html" target="_blank">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Verification WebApp
-                </a>
-            </div>
-        </footer>
-    </div>
+    // Fetch REAL Data from Supabase
+    async function fetchRealSupabaseData() {
+      syncIcon.classList.add('animate-spin');
+      syncText.textContent = 'Querying...';
 
-    <!-- 3. DEEP TELEMETRY INSPECTOR MODAL -->
-    <div class="detail-modal" id="detailModal">
-        <div class="modal-backdrop" onclick="closeDetailModal()"></div>
-        <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-title-group">
-                    <i class="fa-solid fa-microchip"></i>
-                    <span>Hardware Telemetry Details</span>
-                </div>
-                <button class="btn-close-modal" onclick="closeDetailModal()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="detail-grid" id="modalDetailContent">
-                    <!-- Populated via Javascript -->
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-action" onclick="copyRowJSON()">
-                    <i class="fa-regular fa-copy"></i> Copy Raw JSON
-                </button>
-                <button class="btn-action" onclick="closeDetailModal()">
-                    Close
-                </button>
-            </div>
+      try {
+        // Query the real table 'bot_device_verifications' ordered by ID descending
+        const { data, error } = await supabase
+          .from('bot_device_verifications')
+          .select('*')
+          .order('id', { ascending: false });
+
+        if (error) {
+          console.error('Supabase query error:', error);
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="9" class="py-8 text-center text-rose-400 font-sans">
+                <p class="font-bold">Error querying Supabase table: ${error.message}</p>
+                <p class="text-xs text-slate-500 mt-1">Verify RLS policies and table permissions for bot_device_verifications.</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Store real records
+        realRowsData = Array.isArray(data) ? data : [];
+
+        // Update KPIs with real lengths
+        updateKPIs(realRowsData);
+
+        // Render rows
+        applyFilter();
+
+        // Update timestamp
+        const now = new Date();
+        lastSyncEl.textContent = now.toLocaleTimeString();
+
+      } catch (err) {
+        console.error('Network or fetch error:', err);
+      } finally {
+        syncIcon.classList.remove('animate-spin');
+        syncText.textContent = 'Live Sync';
+      }
+    }
+
+    // Search and filter handling
+    function applyFilter() {
+      const q = filterInput.value.trim().toLowerCase();
+      if (!q) {
+        renderTableRows(realRowsData);
+        return;
+      }
+
+      const filtered = realRowsData.filter(row => {
+        const idStr = String(row.id || '');
+        const userStr = String(row.user_id || '').toLowerCase();
+        const botStr = String(row.bot_username || '').toLowerCase();
+        const devStr = String(row.device_id || '').toLowerCase();
+        const ipStr = String(row.ip_address || '').toLowerCase();
+        const platStr = String(row.platform || '').toLowerCase();
+
+        return idStr.includes(q) ||
+               userStr.includes(q) ||
+               botStr.includes(q) ||
+               devStr.includes(q) ||
+               ipStr.includes(q) ||
+               platStr.includes(q);
+      });
+
+      renderTableRows(filtered);
+    }
+
+    // Inspect Row Function (Exposed globally for row onclick)
+    window.inspectRowById = function(rowId) {
+      const row = realRowsData.find(r => String(r.id) === String(rowId));
+      if (!row) return;
+
+      modalTitle.textContent = `Hardware Telemetry Record #${row.id}`;
+      modalRaw.textContent = JSON.stringify(row, null, 2);
+
+      // Render structured key-values
+      const entries = Object.entries(row);
+      modalGrid.innerHTML = entries.map(([key, val]) => `
+        <div class="bg-obsidian-950 p-2.5 rounded-lg border border-obsidian-800">
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 block">${key}</span>
+          <span class="text-white break-all font-semibold mt-0.5 block">${val !== null && val !== undefined ? String(val) : '<em class="text-slate-600 font-normal">null</em>'}</span>
         </div>
-    </div>
+      `).join('');
 
-    <!-- ==========================================================
-       JAVASCRIPT: 100% REAL SUPABASE LIVE ENGINE
-       ========================================================== -->
-    <script>
-        // --- 1. SUPABASE CREDENTIALS & CLIENT INITIALIZATION ---
-        const SUPABASE_URL = "https://neeppziqbuwxhmhpifda.supabase.co";
-        // Public Anon Key for reading verification telemetry
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjgxOTYsImV4cCI6MjA4ODk5OTc5Nn0.6k8E_1s1V8f1L_O9Wp0Q_k0W4Wq0E1K7gZ4Y-8x0M1A";
+      inspectModal.classList.remove('hidden');
+      inspectModal.classList.add('flex');
+    };
 
-        let supabaseClient = null;
-        try {
-            if (window.supabase) {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            }
-        } catch (e) {
-            console.error("Supabase Client Init Error:", e);
-        }
+    // Close Modal Handler
+    function closeModal() {
+      inspectModal.classList.add('hidden');
+      inspectModal.classList.remove('flex');
+    }
 
-        // Global State
-        let rawRecords = [];
-        let activeModalRecord = null;
-        let autoSyncTimer = null;
+    btnCloseModal.addEventListener('click', closeModal);
+    btnCloseModalFooter.addEventListener('click', closeModal);
+    inspectModal.addEventListener('click', (e) => {
+      if (e.target === inspectModal) closeModal();
+    });
 
-        // --- 2. AUTH & LOCKSCREEN LOGIC ---
-        function checkExistingSession() {
-            const isAuth = sessionStorage.getItem('jenil_admin_auth');
-            const overlay = document.getElementById('authOverlay');
-            if (isAuth === 'true') {
-                overlay.classList.add('hidden-auth');
-                startLiveEngine();
-            } else {
-                overlay.classList.remove('hidden-auth');
-            }
-        }
+    // Event listeners
+    filterInput.addEventListener('input', applyFilter);
+    syncButton.addEventListener('click', fetchRealSupabaseData);
 
-        function handleLogin(e) {
-            if (e) e.preventDefault();
-            const input = document.getElementById('passcodeInput');
-            const errBox = document.getElementById('authError');
-            const overlay = document.getElementById('authOverlay');
-            const val = (input.value || '').trim().toLowerCase();
+    // Lock toggle button handler
+    lockBtn.addEventListener('click', () => {
+      isLocked = !isLocked;
+      if (isLocked) {
+        lockBtn.classList.remove('text-slate-400', 'bg-obsidian-850');
+        lockBtn.classList.add('text-cyber-rose', 'bg-cyber-rose/10', 'border-cyber-rose/30');
+        lockBtn.querySelector('span').textContent = 'Locked';
+        syncButton.disabled = true;
+        syncButton.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        lockBtn.classList.add('text-slate-400', 'bg-obsidian-850');
+        lockBtn.classList.remove('text-cyber-rose', 'bg-cyber-rose/10', 'border-cyber-rose/30');
+        lockBtn.querySelector('span').textContent = 'Lock';
+        syncButton.disabled = false;
+        syncButton.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
 
-            // Case-insensitive passcode check: 'jenil2026', 'admin', 'jenil'
-            if (val === 'jenil2026' || val === 'admin' || val === 'jenil') {
-                sessionStorage.setItem('jenil_admin_auth', 'true');
-                errBox.style.display = 'none';
-                overlay.classList.add('hidden-auth');
-                startLiveEngine();
-            } else {
-                errBox.style.display = 'flex';
-                input.value = '';
-                input.focus();
-            }
-        }
-
-        function quickFillAndUnlock() {
-            document.getElementById('passcodeInput').value = 'jenil2026';
-            handleLogin();
-        }
-
-        function togglePassVisibility() {
-            const passInput = document.getElementById('passcodeInput');
-            const eyeIcon = document.getElementById('eyeIcon');
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                eyeIcon.className = 'fa-solid fa-eye-slash';
-            } else {
-                passInput.type = 'password';
-                eyeIcon.className = 'fa-solid fa-eye';
-            }
-        }
-
-        function lockPortal() {
-            sessionStorage.removeItem('jenil_admin_auth');
-            if (autoSyncTimer) clearInterval(autoSyncTimer);
-            document.getElementById('passcodeInput').value = '';
-            document.getElementById('authOverlay').classList.remove('hidden-auth');
-        }
-
-        // --- 3. FETCH LIVE REAL DATA FROM SUPABASE ---
-        function startLiveEngine() {
-            fetchLiveRecords(false);
-            // Live background sync every 6 seconds
-            if (!autoSyncTimer) {
-                autoSyncTimer = setInterval(() => {
-                    fetchLiveRecords(false);
-                }, 6000);
-            }
-        }
-
-        async function fetchLiveRecords(isManualClick = false) {
-            const syncIcon = document.getElementById('syncIcon');
-            const statusLabel = document.getElementById('liveStatusLabel');
-            if (syncIcon && isManualClick) syncIcon.classList.add('fa-spin');
-
-            if (!supabaseClient) {
-                showEmptyTable("Database Error", "Supabase Client could not be initialized.");
-                if (syncIcon) syncIcon.classList.remove('fa-spin');
-                return;
-            }
-
-            try {
-                // Fetch the newest 300 records from table: bot_device_verifications
-                const { data, error } = await supabaseClient
-                    .from('bot_device_verifications')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(300);
-
-                if (error) {
-                    console.error("Supabase Query Error:", error);
-                    statusLabel.textContent = "Supabase Sync Notice";
-                    showEmptyTable("Database Read Notice", error.message || "Ensure RLS Policy is set to Allow Read/Select.");
-                    return;
-                }
-
-                rawRecords = Array.isArray(data) ? data : [];
-                statusLabel.textContent = `Supabase Connected (${rawRecords.length} records)`;
-
-                // Update Bot & Platform Dropdowns dynamically based on REAL incoming data
-                populateFilterDropdowns(rawRecords);
-
-                // Update Metrics Counters with REAL figures
-                updateKPICounters(rawRecords);
-
-                // Render Table Rows
-                applyFilters();
-
-            } catch (err) {
-                console.error("Network Fetch Error:", err);
-                statusLabel.textContent = "Connection Reconnecting...";
-            } finally {
-                if (syncIcon) syncIcon.classList.remove('fa-spin');
-            }
-        }
-
-        // --- 4. KPI COUNTERS (100% REAL) ---
-        function updateKPICounters(records) {
-            const totalCount = records.length;
-            const uniqueFingerprints = new Set(records.map(r => r.device_id).filter(Boolean)).size;
-            const uniqueBots = new Set(records.map(r => (r.bot_username || '').replace('@', '').trim()).filter(Boolean)).size;
-            const uniquePlatforms = new Set(records.map(r => (r.platform || '').trim()).filter(Boolean)).size;
-
-            document.getElementById('kpiTotal').textContent = totalCount.toLocaleString();
-            document.getElementById('kpiUnique').textContent = uniqueFingerprints.toLocaleString();
-            document.getElementById('kpiBots').textContent = uniqueBots.toLocaleString();
-            document.getElementById('kpiPlatforms').textContent = uniquePlatforms.toLocaleString();
-        }
-
-        // --- 5. DYNAMIC FILTERS ---
-        function populateFilterDropdowns(records) {
-            const botSelect = document.getElementById('botFilter');
-            const platformSelect = document.getElementById('platformFilter');
-            const currentBot = botSelect.value;
-            const currentPlatform = platformSelect.value;
-
-            // Bots
-            const botList = Array.from(new Set(records.map(r => (r.bot_username || '').replace('@', '').trim()).filter(Boolean))).sort();
-            botSelect.innerHTML = '<option value="ALL">All Connected Bots</option>';
-            botList.forEach(bot => {
-                const opt = document.createElement('option');
-                opt.value = bot;
-                opt.textContent = `@${bot}`;
-                if (bot === currentBot) opt.selected = true;
-                botSelect.appendChild(opt);
-            });
-
-            // Platforms
-            const platformList = Array.from(new Set(records.map(r => (r.platform || '').trim()).filter(Boolean))).sort();
-            platformSelect.innerHTML = '<option value="ALL">All Platforms</option>';
-            platformList.forEach(plat => {
-                const opt = document.createElement('option');
-                opt.value = plat;
-                opt.textContent = plat;
-                if (plat === currentPlatform) opt.selected = true;
-                platformSelect.appendChild(opt);
-            });
-        }
-
-        function applyFilters() {
-            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-            const selectedBot = document.getElementById('botFilter').value;
-            const selectedPlatform = document.getElementById('platformFilter').value;
-
-            const filtered = rawRecords.filter(item => {
-                // Bot filter
-                if (selectedBot !== 'ALL') {
-                    const cleanBot = (item.bot_username || '').replace('@', '').trim();
-                    if (cleanBot !== selectedBot) return false;
-                }
-
-                // Platform filter
-                if (selectedPlatform !== 'ALL') {
-                    if ((item.platform || '').trim() !== selectedPlatform) return false;
-                }
-
-                // Query filter
-                if (query) {
-                    const matchUser = String(item.user_id || '').toLowerCase().includes(query);
-                    const matchBot = String(item.bot_username || '').toLowerCase().includes(query);
-                    const matchIP = String(item.ip_address || '').toLowerCase().includes(query);
-                    const matchFp = String(item.device_id || '').toLowerCase().includes(query);
-                    const matchPlatform = String(item.platform || '').toLowerCase().includes(query);
-                    if (!matchUser && !matchBot && !matchIP && !matchFp && !matchPlatform) {
-                        return false;
-                    }
-                }
-
-                return true;
-            });
-
-            renderTable(filtered);
-        }
-
-        // --- 6. RENDER REAL TABLE ROWS ---
-        function renderTable(records) {
-            const tbody = document.getElementById('tableBody');
-            const counter = document.getElementById('recordsCounter');
-            counter.textContent = `Showing ${records.length} of ${rawRecords.length} records`;
-
-            if (!records || records.length === 0) {
-                if (rawRecords.length === 0) {
-                    tbody.innerHTML = `
-                        <tr class="empty-placeholder">
-                            <td colspan="8">
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-inbox"></i>
-                                    <h4>No Device Records Yet</h4>
-                                    <p>Your database is ready and connected! As soon as users open your bot verification WebApp, their real device telemetry will stream here in real-time.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML = `
-                        <tr class="empty-placeholder">
-                            <td colspan="8">
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-filter-circle-xmark"></i>
-                                    <h4>No Matching Records Found</h4>
-                                    <p>Try clearing your search query or selecting "All Connected Bots" in the toolbar.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }
-                return;
-            }
-
-            let html = '';
-            records.forEach(item => {
-                const dateObj = item.created_at ? new Date(item.created_at) : null;
-                const timeStr = dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '---';
-                const dateStr = dateObj ? dateObj.toLocaleDateString() : '';
-
-                const botClean = item.bot_username ? item.bot_username.replace('@', '') : 'UnknownBot';
-                const fpShort = item.device_id ? (item.device_id.substring(0, 10) + '...') : '---';
-
-                html += `
-                    <tr>
-                        <td>
-                            <div><strong>${timeStr}</strong></div>
-                            <div style="font-size: 11px; color: var(--text-dim);">${dateStr}</div>
-                        </td>
-                        <td>
-                            <strong class="mono" style="color: #fff;">${escapeHtml(String(item.user_id || '---'))}</strong>
-                        </td>
-                        <td>
-                            <span class="badge-bot">
-                                <i class="fa-brands fa-telegram"></i> @${escapeHtml(botClean)}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="hash-cell mono" title="${escapeHtml(item.device_id || '')}">
-                                <i class="fa-solid fa-fingerprint text-indigo"></i>
-                                <span>${escapeHtml(fpShort)}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="mono" style="color: #94a3b8;">${escapeHtml(item.ip_address || '0.0.0.0')}</span>
-                        </td>
-                        <td>
-                            <span class="platform-chip">
-                                <i class="fa-solid fa-mobile-screen"></i> ${escapeHtml(item.platform || 'Browser')}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="mono" style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(item.screen_resolution || '---')}</span>
-                        </td>
-                        <td>
-                            <button class="btn-inspect" onclick="openDetailModal(${item.id})">
-                                <i class="fa-solid fa-eye"></i> Details
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-        }
-
-        function showEmptyTable(title, desc) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = `
-                <tr class="empty-placeholder">
-                    <td colspan="8">
-                        <div class="empty-state">
-                            <i class="fa-solid fa-triangle-exclamation text-amber"></i>
-                            <h4>${title}</h4>
-                            <p>${desc}</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // --- 7. DEEP TELEMETRY MODAL ---
-        function openDetailModal(id) {
-            const record = rawRecords.find(r => r.id === id);
-            if (!record) return;
-
-            activeModalRecord = record;
-            const container = document.getElementById('modalDetailContent');
-
-            container.innerHTML = `
-                <div class="detail-item">
-                    <label>Database Record ID</label>
-                    <div class="detail-val mono">#${record.id}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Telegram User ID</label>
-                    <div class="detail-val mono">${escapeHtml(record.user_id || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Telegram Bot Handle</label>
-                    <div class="detail-val mono">@${escapeHtml((record.bot_username || '').replace('@', ''))}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Client IP Address</label>
-                    <div class="detail-val mono">${escapeHtml(record.ip_address || '---')}</div>
-                </div>
-
-                <div class="detail-item full-width">
-                    <label>Device Fingerprint (FingerprintJS Hash)</label>
-                    <div class="detail-val mono break-all">${escapeHtml(record.device_id || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Platform / OS</label>
-                    <div class="detail-val">${escapeHtml(record.platform || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Screen Resolution</label>
-                    <div class="detail-val mono">${escapeHtml(record.screen_resolution || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Browser Language</label>
-                    <div class="detail-val mono">${escapeHtml(record.language || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Timezone</label>
-                    <div class="detail-val mono">${escapeHtml(record.timezone || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>CPU Cores (Concurrency)</label>
-                    <div class="detail-val mono">${escapeHtml(record.hardware_concurrency || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Device Memory (RAM GB)</label>
-                    <div class="detail-val mono">${escapeHtml(record.device_memory || '---')} GB</div>
-                </div>
-
-                <div class="detail-item full-width">
-                    <label>User Agent Header</label>
-                    <div class="detail-val mono break-all" style="font-size: 11px;">${escapeHtml(record.user_agent || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Created Timestamp (UTC)</label>
-                    <div class="detail-val mono">${escapeHtml(record.created_at || '---')}</div>
-                </div>
-
-                <div class="detail-item">
-                    <label>Session Bot Hash</label>
-                    <div class="detail-val mono break-all">${escapeHtml(record.bot_hash || '---')}</div>
-                </div>
-            `;
-
-            document.getElementById('detailModal').classList.add('active');
-        }
-
-        function closeDetailModal() {
-            document.getElementById('detailModal').classList.remove('active');
-            activeModalRecord = null;
-        }
-
-        function copyRowJSON() {
-            if (!activeModalRecord) return;
-            const str = JSON.stringify(activeModalRecord, null, 2);
-            navigator.clipboard.writeText(str).then(() => {
-                alert("Device telemetry JSON copied to clipboard!");
-            });
-        }
-
-        // --- 8. EXPORT CSV (REAL DATA) ---
-        function exportDataToCSV() {
-            if (!rawRecords || rawRecords.length === 0) {
-                alert("No records to export.");
-                return;
-            }
-
-            const headers = ["ID", "User_ID", "Bot_Username", "Device_ID", "IP_Address", "Platform", "Resolution", "Timezone", "Created_At"];
-            const rows = rawRecords.map(r => [
-                r.id,
-                `"${r.user_id || ''}"`,
-                `"${r.bot_username || ''}"`,
-                `"${r.device_id || ''}"`,
-                `"${r.ip_address || ''}"`,
-                `"${r.platform || ''}"`,
-                `"${r.screen_resolution || ''}"`,
-                `"${r.timezone || ''}"`,
-                `"${r.created_at || ''}"`
-            ]);
-
-            const csvContent = "data:text/csv;charset=utf-8," 
-                + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `jenil_bot_verifications_${Date.now()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        // On Page Load
-        document.addEventListener('DOMContentLoaded', () => {
-            checkExistingSession();
-        });
-    </script>
-</body>
-</html>
+    // Initial Load - Fetch directly on document ready
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchRealSupabaseData();
+    });
+  </script>
+</body></html>
