@@ -38,6 +38,15 @@
   --text-dim: #64748b;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Screenshot-match tokens: top nav + card stack + checklist */
+  --nav-bg: #0a0f1a;
+  --card-blue-start: #1d7fd6;
+  --card-blue-end: #3fb6f0;
+  --card-back-bg: #17202f;
+  --gold-start: #f6c744;
+  --gold-end: #d98f1e;
+  --check-green: #22c55e;
 }
 
 * {
@@ -664,6 +673,457 @@ p.desc {
   color: var(--accent-mint);
 }
 
+/* ==========================================================================
+   TOP NAV BAR (X close / title / dropdown / kebab menu)
+   ========================================================================== */
+.topnav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--nav-bg);
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.topnav-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.topnav-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.topnav-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+}
+
+.topnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   USER ROW (avatar / name / id / checking chip)
+   ========================================================================== */
+.user-row {
+  width: 100%;
+  max-width: 440px;
+  margin: 8px auto 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.user-row .user-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.user-row .avatar-container {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  box-shadow: none;
+}
+
+.user-row .text-info h3 {
+  font-size: 20px;
+  letter-spacing: 0.2px;
+}
+
+.user-row .text-info p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+.chip-checking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--accent-sky);
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.chip-checking .chip-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.chip-checking .chip-dots span {
+  width: 3px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent-sky);
+  animation: chipBar 1s ease-in-out infinite;
+}
+
+.chip-checking .chip-dots span:nth-child(2) { animation-delay: 0.15s; }
+.chip-checking .chip-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes chipBar {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   CARD STACK (device verification card graphic)
+   ========================================================================== */
+.card-stack {
+  width: 100%;
+  max-width: 400px;
+  margin: 28px auto 8px;
+  position: relative;
+  height: 240px;
+}
+
+.card-back {
+  position: absolute;
+  top: 6%;
+  left: 8%;
+  width: 84%;
+  height: 90%;
+  background: var(--card-back-bg);
+  border-radius: 22px;
+  transform: rotate(-6deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card-back::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  width: 46%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 0 rgba(255, 255, 255, 0.1);
+}
+
+.card-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--card-blue-start) 0%, var(--card-blue-end) 100%);
+  box-shadow: 0 25px 50px rgba(29, 127, 214, 0.35);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.card-front::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 60%;
+  height: 160%;
+  background: rgba(255, 255, 255, 0.06);
+  transform: rotate(20deg);
+}
+
+.card-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.card-label {
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.card-status-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.card-plane-icon {
+  position: absolute;
+  top: 18px;
+  right: 60px;
+  width: 60px;
+  height: 60px;
+  opacity: 0.35;
+  stroke: #ffffff;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.card-id-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+.card-id-digits {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.card-name {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.card-handle {
+  font-size: 13px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.card-badge {
+  position: absolute;
+  right: 18px;
+  bottom: -14px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 3px solid var(--nav-bg);
+  background: linear-gradient(135deg, var(--gold-start), var(--gold-end));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.card-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-badge-shield {
+  position: absolute;
+  right: -2px;
+  bottom: -22px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--nav-bg);
+  border: 2px solid rgba(56, 189, 248, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-sky);
+}
+
+.card-badge-shield svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+/* ==========================================================================
+   HEADING + CHECKLIST PROGRESS PANEL
+   ========================================================================== */
+.check-heading {
+  width: 100%;
+  max-width: 400px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+  text-align: left;
+}
+
+.check-heading h1 {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.check-heading p {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.progress-panel {
+  width: calc(100% - 40px);
+  max-width: 400px;
+  margin: 22px auto 0;
+  background: var(--bg-card-inner);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 18px 20px 20px;
+}
+
+.progress-panel-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.progress-panel-top .label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.progress-panel-top .percent {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent-sky);
+}
+
+.checklist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 10px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.checklist-item.done {
+  color: #ffffff;
+}
+
+.checklist-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checklist-item.done .checklist-icon {
+  background: rgba(34, 197, 94, 0.16);
+  color: var(--check-green);
+}
+
+.checklist-item.pending .checklist-icon {
+  border: 2px solid rgba(56, 189, 248, 0.4);
+  border-top-color: var(--accent-sky);
+  animation: orbit 1s linear infinite;
+}
+
+.checklist-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 3;
+}
+
+/* ==========================================================================
+   FOOTER NOTE (lock icon + text + speaker control)
+   ========================================================================== */
+.footer-note {
+  width: calc(100% - 40px);
+  max-width: 400px;
+  margin: auto auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.footer-note-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.footer-note-text svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.footer-note-speaker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.footer-note-speaker svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
 @media (max-width: 480px) {
   .header {
     margin: 12px 14px 0;
@@ -683,5 +1143,15 @@ p.desc {
   p.desc {
     font-size: 13px;
     margin-bottom: 20px;
+  }
+  .card-stack {
+    height: 220px;
+  }
+  .card-id-digits {
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+  .check-heading h1 {
+    font-size: 27px;
   }
 }
