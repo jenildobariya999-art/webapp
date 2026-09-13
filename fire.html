@@ -1,115 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Secure Verification | Jenil Dobariya</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-    <script src="script.js"></script>
-    
-    <script>
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('selectstart', e => e.preventDefault());
-        document.addEventListener('dragstart', e => e.preventDefault());
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Device Verification | Jenil Dobariya</title>
+  
+  <!-- Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Telegram WebApp SDK & FingerprintJS -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+  <script src="script.js"></script>
+
+  <script>
+    // Disable right-click, selection & dragging for client verification integrity
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    document.addEventListener('dragstart', e => e.preventDefault());
+  </script>
 </head>
 <body>
-    
-    <header class="header">
-      <div class="user-profile">
-        <div class="avatar-container" id="avatarBox">U</div>
-        <div class="text-info">
-          <h3 id="userName">USER</h3>
-          <p>ID: <span id="userIdDisplay">---</span></p>
+
+  <!-- TOP FLOATING USER PROFILE BAR -->
+  <header class="header">
+    <div class="user-profile">
+      <div class="avatar-container" id="avatarBox">
+        <span id="userInitial">U</span>
+      </div>
+      <div class="text-info">
+        <h3 id="userName">— J E N I L ! ! !</h3>
+        <p>ID: <span id="userIdDisplay">6925391837</span></p>
+      </div>
+    </div>
+    <div class="status-pill pill-green" id="headerBadge">
+      <span class="dot"></span>
+      <span id="headerStatusText">ACTIVE</span>
+    </div>
+  </header>
+
+  <!-- AMBIENT PARTICLES CANVAS -->
+  <div class="particles" id="particles"></div>
+
+  <!-- MAIN CONTAINER WRAPPER -->
+  <div class="main-wrapper">
+    <div class="auth-container">
+
+      <!-- TOP GLOBAL BOT IDENTITY CARD (Visible across all states) -->
+      <div class="global-bot-card" id="globalBotCard">
+        <div class="bot-info-group">
+          <div class="bot-avatar-wrap">
+            <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img" id="globalBotPhoto">
+            <span class="bot-online-dot pulse"></span>
+          </div>
+          <div class="bot-meta-labels">
+            <div class="bot-title-line">
+              <span class="bot-display-name" id="globalBotTitle">RushReward Bot</span>
+              <span class="badge-bot-chip">BOT</span>
+            </div>
+            <span class="bot-handle-name mono" id="globalBotHandle">@RushRewardbot</span>
+          </div>
+        </div>
+        <div class="bot-ready-pill" id="globalBotStatus">READY</div>
+      </div>
+
+      <!-- VIEW 1: SCANNING / ANALYZING DEVICE -->
+      <div class="view-section" id="view-scanning">
+        <div class="loader">
+          <div class="orbit"></div>
+          <div class="orbit"></div>
+          <div class="orbit"></div>
+          <div class="satellite"></div>
+        </div>
+        <div class="section-tagline">DEVICE VERIFICATION</div>
+        <h1>Analyzing Device</h1>
+        <p class="desc">Analyzing hardware signature & network route verification...</p>
+        
+        <div class="progress-container">
+          <div class="progress-bar" id="scanBar"></div>
+        </div>
+
+        <div class="account-verified-card scanning-border">
+          <div class="bot-info-group">
+            <div class="bot-avatar-wrap">
+              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
+              <span class="bot-online-dot pulse"></span>
+            </div>
+            <div class="bot-meta-labels">
+              <span class="bot-verified-tag" style="color:var(--accent-sky);">TARGET BOT</span>
+              <span class="bot-handle-name mono" id="scanBotHandle">@RushRewardbot</span>
+            </div>
+          </div>
+          <div class="check-icon-wrap" style="color:var(--accent-sky);">
+            <i class="fas fa-network-wired"></i>
+          </div>
         </div>
       </div>
-      <div class="status-pill pill-blue" id="headerBadge">
-        <span class="dot"></span>
-        <span id="headerStatusText">SCANNING</span>
-      </div>
-    </header>
 
-    <div class="particles" id="particles"></div>
-
-    <div class="main-wrapper">
-      <div class="auth-container">
-        <!-- View Critical: Third Party Browser Blocked / No ID -->
-        <div class="view-section" id="view-critical">
-          <div class="icon-wrapper error">
-            <i class="fas fa-shield-virus"></i>
-          </div>
-          <h1 class="text-error">Access Denied</h1>
-          <p class="desc">Official Telegram Client Required. External browsers are blocked for security.</p>
-          <button class="btn danger" onclick="window.location.reload()">CLOSE & RETRY</button>
+      <!-- VIEW 2: VERIFIED SUCCESSFULLY (EXACT MATCH FOR RUSH REWARDS SCREENSHOT) -->
+      <div class="view-section active" id="view-success">
+        <div class="icon-wrapper success">
+          <svg class="shield-icon-svg" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
         </div>
+        <div class="section-tagline">DEVICE VERIFICATION</div>
+        <h1 class="text-success">Verified Successfully</h1>
+        <p class="desc">You're verified successfully, you can use our bot now.</p>
 
-        <!-- View Scanning -->
-        <div class="view-section active" id="view-scanning">
-          <div class="loader">
-            <div class="orbit"></div>
-            <div class="orbit"></div>
-            <div class="orbit"></div>
-            <div class="satellite"></div>
+        <!-- ACCOUNT VERIFIED CARD WITH REAL BOT PHOTO -->
+        <div class="account-verified-card">
+          <div class="bot-info-group">
+            <div class="bot-avatar-wrap">
+              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img" id="successBotPhoto">
+              <span class="bot-online-dot"></span>
+            </div>
+            <div class="bot-meta-labels">
+              <span class="bot-verified-tag">ACCOUNT VERIFIED</span>
+              <span class="bot-handle-name mono" id="successBotHandle">RushRewardbot</span>
+            </div>
           </div>
-          <h1>Device Verification</h1>
-          <p class="desc" style="margin-bottom:12px">Analyzing hardware signature & network route...</p>
-          <div class="progress-container">
-            <div class="progress-bar" id="scanBar"></div>
-          </div>
-        </div>
-
-        <!-- View Failed: VPN / Proxy / Criteria -->
-        <div class="view-section" id="view-failed">
-          <div class="icon-wrapper error">
-            <i class="fas fa-triangle-exclamation"></i>
-          </div>
-          <h1 class="text-error">Verification Blocked</h1>
-          <p class="desc" id="failedMsg">VPN or proxy connection detected. Please disable and retry.</p>
-          <button class="btn danger" id="btnFailClose">RETURN TO BOT</button>
-        </div>
-
-        <!-- View Success -->
-        <div class="view-section" id="view-success">
-          <div class="icon-wrapper success">
+          <div class="check-icon-wrap">
             <i class="fa-solid fa-check"></i>
           </div>
-          <h1 class="text-success">Verified Successfully</h1>
-          <p class="desc">Hardware signature authorized. You are safe to continue.</p>
-          <button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button>
         </div>
 
-        <!-- View Already Verified / Same Device Linked -->
-        <div class="view-section" id="view-already">
-          <div class="icon-wrapper info">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <h1 class="text-info-h">Device Detected</h1>
-          <p class="desc">This hardware signature has already been recorded.</p>
-          <button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button>
-        </div>
+        <button class="btn success" id="btnSuccessClose">
+          <span>CONTINUE TO BOT</span>
+          <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+        </button>
       </div>
-    </div>
 
-    <div class="footer">
-      <a href="https://t.me/" target="_blank">© 2026 Jenil Dobariya • Multi-Bot Security</a>
-    </div>
+      <!-- VIEW 3: ALREADY AUTHORIZED / SAME DEVICE RECORDED -->
+      <div class="view-section" id="view-already">
+        <div class="icon-wrapper info">
+          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-sky);">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+        </div>
+        <div class="section-tagline" style="color:var(--accent-sky);">EXISTING DEVICE</div>
+        <h1 class="text-info-h">Already Authorized</h1>
+        <p class="desc">This hardware signature has already been recorded and authorized.</p>
 
-    <script>
-      document.addEventListener('keydown', function(e) {
-        if (
-          e.key === "F12" ||
-          (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-          (e.ctrlKey && (e.key === "U" || e.key === "S"))
-        ) {
-          e.preventDefault();
-          return false;
-        }
+        <div class="account-verified-card info-border">
+          <div class="bot-info-group">
+            <div class="bot-avatar-wrap">
+              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
+              <span class="bot-online-dot"></span>
+            </div>
+            <div class="bot-meta-labels">
+              <span class="bot-verified-tag" style="color:var(--accent-sky);">ALREADY REGISTERED</span>
+              <span class="bot-handle-name mono" id="alreadyBotHandle">@RushRewardbot</span>
+            </div>
+          </div>
+          <div class="check-icon-wrap" style="color:var(--accent-sky);">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+        </div>
+
+        <button class="btn primary" id="btnAlreadyClose">
+          <span>CONTINUE TO BOT</span>
+          <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+        </button>
+      </div>
+
+      <!-- VIEW 4: FAILED (VPN / PROXY DETECTED) -->
+      <div class="view-section" id="view-failed">
+        <div class="icon-wrapper error">
+          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-rose);">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m15 9-6 6M9 9l6 6"/>
+          </svg>
+        </div>
+        <div class="section-tagline" style="color:var(--accent-rose);">SECURITY ALERT</div>
+        <h1 class="text-error">Verification Blocked</h1>
+        <p class="desc" id="failedMsg">VPN or proxy connection detected. Please disable and retry.</p>
+
+        <div class="account-verified-card error-border">
+          <div class="bot-info-group">
+            <div class="bot-avatar-wrap">
+              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
+              <span class="bot-online-dot" style="background:var(--accent-rose); box-shadow:0 0 8px var(--accent-rose);"></span>
+            </div>
+            <div class="bot-meta-labels">
+              <span class="bot-verified-tag" style="color:var(--accent-rose);">FAILED ON BOT</span>
+              <span class="bot-handle-name mono" id="failedBotHandle">@RushRewardbot</span>
+            </div>
+          </div>
+          <div class="check-icon-wrap" style="color:var(--accent-rose);">
+            <i class="fas fa-triangle-exclamation"></i>
+          </div>
+        </div>
+
+        <button class="btn danger" id="btnFailClose">
+          <span>RETURN TO BOT</span>
+          <i class="fas fa-rotate-left" style="font-size:12px;"></i>
+        </button>
+      </div>
+
+      <!-- VIEW 5: CRITICAL (EXTERNAL BROWSER BLOCKED) -->
+      <div class="view-section" id="view-critical">
+        <div class="icon-wrapper error">
+          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-rose);">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m4.9 4.9 14.2 14.2"/>
+          </svg>
+        </div>
+        <div class="section-tagline" style="color:var(--accent-rose);">CLIENT INTEGRITY</div>
+        <h1 class="text-error">Access Denied</h1>
+        <p class="desc">Official Telegram Client Required. External browsers are blocked for security.</p>
+
+        <div class="account-verified-card error-border">
+          <div class="bot-info-group">
+            <div class="bot-avatar-wrap">
+              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
+              <span class="bot-online-dot" style="background:var(--accent-rose);"></span>
+            </div>
+            <div class="bot-meta-labels">
+              <span class="bot-verified-tag" style="color:var(--accent-rose);">MISSION BLOCKED</span>
+              <span class="bot-handle-name mono" id="criticalBotHandle">@RushRewardbot</span>
+            </div>
+          </div>
+          <div class="check-icon-wrap" style="color:var(--accent-rose);">
+            <i class="fas fa-ban"></i>
+          </div>
+        </div>
+
+        <button class="btn danger" onclick="window.location.reload()">
+          <span>CLOSE & RETRY</span>
+          <i class="fas fa-arrow-rotate-right" style="font-size:12px;"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER BRAND SIGNATURE -->
+  <div class="footer">
+    <p style="color: rgba(16, 185, 129, 0.75); font-size: 13px; font-weight: 600; margin-bottom: 4px;">
+      Your access is ready when you are.
+    </p>
+    <a href="https://t.me/" target="_blank">© 2026 Jenil Dobariya • Multi-Bot Device Security</a>
+  </div>
+
+  <!-- REAL BOT AVATAR & CLIENT DATA SYNC SCRIPT -->
+  <script>
+    (function initVerificationPage() {
+      // 1. Extract URL Query Parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const rawBotParam = urlParams.get('botusername') || urlParams.get('bot') || 'RushRewardbot';
+      const cleanBotName = rawBotParam.replace(/^@/, '').trim();
+
+      // 2. Real Telegram Bot CDN Avatar URL
+      const directTgAvatarUrl = `https://t.me/i/userpic/320/${cleanBotName}.jpg`;
+
+      // 3. Update all Bot Handles dynamically in DOM
+      const botHandleElements = [
+        'globalBotHandle', 'scanBotHandle', 'successBotHandle',
+        'alreadyBotHandle', 'failedBotHandle', 'criticalBotHandle'
+      ];
+      botHandleElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '@' + cleanBotName;
       });
-    </script>
+
+      const titleEl = document.getElementById('globalBotTitle');
+      if (titleEl) titleEl.textContent = cleanBotName;
+
+      // 4. Update all Bot Photo Elements with Fallback Handling
+      const botImages = document.querySelectorAll('.bot-photo-img');
+      botImages.forEach(img => {
+        img.src = directTgAvatarUrl;
+        img.onerror = function() {
+          // If public Telegram avatar is hidden, fallback gracefully to clean cyber bot avatar
+          this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanBotName}&backgroundColor=0c1320`;
+        };
+      });
+
+      // 5. Try Serverless `/api/bot-info` for HD photo if deployed on Vercel
+      fetch(`/api/bot-info?botusername=${cleanBotName}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.photo_url) {
+            botImages.forEach(img => { img.src = data.photo_url; });
+          }
+        })
+        .catch(() => {
+          // Fallback is already handled by direct Telegram CDN URL above
+        });
+
+      // 6. Telegram WebApp User Context Sync
+      if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+        if (user) {
+          const uName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'USER';
+          const uId = user.id || '---';
+
+          const nameEl = document.getElementById('userName');
+          const idEl = document.getElementById('userIdDisplay');
+          const avatarBox = document.getElementById('avatarBox');
+
+          if (nameEl) nameEl.textContent = uName;
+          if (idEl) idEl.textContent = uId;
+
+          if (user.photo_url && avatarBox) {
+            avatarBox.innerHTML = `<img src="${user.photo_url}" alt="User Avatar">`;
+          } else if (avatarBox) {
+            const initial = user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U';
+            avatarBox.innerHTML = `<span>${initial}</span>`;
+          }
+        }
+      }
+
+      // Close handlers for WebApp buttons
+      const closeAction = () => {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.close) {
+          window.Telegram.WebApp.close();
+        } else {
+          window.history.back();
+        }
+      };
+
+      ['btnSuccessClose', 'btnAlreadyClose', 'btnFailClose'].forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.addEventListener('click', closeAction);
+      });
+    })();
+
+    // Prevent inspection shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+        (e.ctrlKey && (e.key === "U" || e.key === "S"))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+  </script>
 </body>
 </html>

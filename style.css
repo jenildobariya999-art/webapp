@@ -1,6 +1,7 @@
 /* ==========================================================================
-   JENIL DOBARIYA DEVICE VERIFICATION - RUSH REWARDS SOFT CYBER THEME
-   File: style.css (Auto Real Telegram Bot Avatar & User Integration)
+   JENIL DOBARIYA MULTI-BOT DEVICE VERIFICATION - DYNAMIC TELEGRAM THEME
+   File: style.css
+   Dynamic Real-Time Bot & User Avatar Integration
    Palette: Void Teal (#070b12), Emerald (#10b981), Electric Sky Blue (#0284c7, #38bdf8),
             Deep Surface Card (#0c1320), Soft Slate (#94a3b8)
    ========================================================================== */
@@ -88,7 +89,7 @@ body, html {
   50% { transform: translateY(-24px) rotate(180deg); }
 }
 
-/* TOP USER BAR (Exact match for reference screenshot) */
+/* TOP USER BAR (Dynamic Telegram User Profile) */
 .header {
   width: calc(100% - 32px);
   max-width: 440px;
@@ -148,6 +149,10 @@ body, html {
   font-weight: 800;
   color: #ffffff;
   letter-spacing: 0.5px;
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .text-info p {
@@ -254,7 +259,7 @@ body, html {
   background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
 }
 
-/* TOP GLOBAL BOT PROFILE CARD (Visible across all states) */
+/* TOP GLOBAL BOT PROFILE CARD (Dynamic Bot Info) */
 .global-bot-card {
   width: 100%;
   background: rgba(17, 26, 44, 0.7);
@@ -279,6 +284,10 @@ body, html {
   font-weight: 800;
   color: #fff;
   letter-spacing: 0.3px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badge-bot-chip {
@@ -322,7 +331,7 @@ body, html {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* SHIELD ICON BADGE (Exact match for reference) */
+/* SHIELD ICON BADGE */
 .icon-wrapper {
   width: 92px;
   height: 92px;
@@ -459,7 +468,7 @@ p.desc {
   max-width: 320px;
 }
 
-/* ACCOUNT VERIFIED REAL BOT CARD */
+/* ACCOUNT VERIFIED CARD */
 .account-verified-card {
   width: 100%;
   background: var(--bg-card-inner);
@@ -551,6 +560,10 @@ p.desc {
   font-weight: 700;
   color: #ffffff;
   margin-top: 1px;
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .check-icon-wrap {
@@ -584,7 +597,7 @@ p.desc {
   transition: width 0.35s ease;
 }
 
-/* ACTION BUTTONS (Bright Sky Blue Gradient) */
+/* ACTION BUTTONS */
 .btn {
   width: 100%;
   padding: 16px 24px;
