@@ -1,6 +1,6 @@
 /* ==========================================================================
    JENIL DOBARIYA DEVICE VERIFICATION - RUSH REWARDS SOFT CYBER THEME
-   File: style.css (Matches exact styling of reference screenshot)
+   File: style.css (Auto Real Telegram Bot Avatar & User Integration)
    Palette: Void Teal (#070b12), Emerald (#10b981), Electric Sky Blue (#0284c7, #38bdf8),
             Deep Surface Card (#0c1320), Soft Slate (#94a3b8)
    ========================================================================== */
@@ -35,7 +35,7 @@
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --text-dim: #64748b;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -49,18 +49,22 @@
 body, html {
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: var(--font-sans);
   background-color: var(--bg-dark);
   background-image: 
-    radial-gradient(circle at 50% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 85%, rgba(2, 132, 199, 0.06) 0%, transparent 55%);
+    radial-gradient(circle at 50% 12%, rgba(16, 185, 129, 0.09) 0%, transparent 50%),
+    radial-gradient(circle at 50% 88%, rgba(2, 132, 199, 0.08) 0%, transparent 55%);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
   position: relative;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.mono {
+  font-family: var(--font-mono);
 }
 
 /* Subtle Ambient Background Particles */
@@ -84,9 +88,9 @@ body, html {
   50% { transform: translateY(-24px) rotate(180deg); }
 }
 
-/* TOP USER BAR (Matches the Header in Image 2) */
+/* TOP USER BAR (Exact match for reference screenshot) */
 .header {
-  width: 100%;
+  width: calc(100% - 32px);
   max-width: 440px;
   margin: 16px auto 0;
   padding: 12px 18px;
@@ -174,7 +178,6 @@ body, html {
   border-radius: 50%;
 }
 
-/* Green Active Pill (Matches Image 2 exactly) */
 .pill-green {
   color: var(--accent-mint);
   border-color: rgba(16, 185, 129, 0.35);
@@ -227,7 +230,7 @@ body, html {
   max-width: 440px;
   background: var(--bg-card);
   border-radius: 28px;
-  padding: 40px 24px 34px;
+  padding: 24px 22px 30px;
   box-shadow: 
     0 25px 60px rgba(0, 0, 0, 0.8),
     0 0 40px rgba(16, 185, 129, 0.08);
@@ -241,7 +244,6 @@ body, html {
   align-items: center;
 }
 
-/* Subtle top glow highlight on card */
 .auth-container::before {
   content: '';
   position: absolute;
@@ -252,6 +254,56 @@ body, html {
   background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
 }
 
+/* TOP GLOBAL BOT PROFILE CARD (Visible across all states) */
+.global-bot-card {
+  width: 100%;
+  background: rgba(17, 26, 44, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+
+.bot-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bot-display-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.badge-bot-chip {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.bot-ready-pill {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--accent-mint);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 5px 12px;
+  border-radius: 12px;
+  letter-spacing: 0.6px;
+}
+
+/* VIEW SECTIONS */
 .view-section {
   display: none;
   flex-direction: column;
@@ -270,7 +322,7 @@ body, html {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* SHIELD ICON BADGE (Exact match for reference screenshot) */
+/* SHIELD ICON BADGE (Exact match for reference) */
 .icon-wrapper {
   width: 92px;
   height: 92px;
@@ -281,8 +333,8 @@ body, html {
   background: rgba(16, 185, 129, 0.12);
   border: 1.5px solid rgba(16, 185, 129, 0.4);
   box-shadow: var(--glow-emerald);
-  margin-bottom: 24px;
-  font-size: 40px;
+  margin-bottom: 20px;
+  font-size: 38px;
   position: relative;
 }
 
@@ -306,7 +358,6 @@ body, html {
   box-shadow: 0 0 35px rgba(56, 189, 248, 0.28);
 }
 
-/* Subtle SVG Shield Icon */
 .shield-icon-svg {
   width: 44px;
   height: 44px;
@@ -322,7 +373,7 @@ body, html {
   width: 96px;
   height: 96px;
   position: relative;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .orbit {
@@ -378,7 +429,7 @@ body, html {
   box-shadow: 0 0 12px var(--accent-mint);
 }
 
-/* SECTION HEADERS (Matches reference typography) */
+/* SECTION HEADINGS */
 .section-tagline, .sub-heading {
   font-size: 11px;
   font-weight: 800;
@@ -389,36 +440,49 @@ body, html {
 }
 
 h1 {
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 800;
   margin-bottom: 8px;
   letter-spacing: -0.5px;
   color: #ffffff;
 }
 
-.text-success { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
-.text-error { color: var(--accent-rose) !important; -webkit-text-fill-color: var(--accent-rose) !important; }
-.text-info-h { color: var(--accent-sky) !important; -webkit-text-fill-color: var(--accent-sky) !important; }
+.text-success { color: #ffffff !important; }
+.text-error { color: var(--accent-rose) !important; }
+.text-info-h { color: var(--accent-sky) !important; }
 
 p.desc {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.55;
-  margin-bottom: 26px;
+  margin-bottom: 22px;
   max-width: 320px;
 }
 
-/* ACCOUNT VERIFIED INNER BOX (Matches reference screenshot) */
+/* ACCOUNT VERIFIED REAL BOT CARD */
 .account-verified-card {
   width: 100%;
   background: var(--bg-card-inner);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.28);
   border-radius: 18px;
-  padding: 14px 18px;
+  padding: 13px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 26px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.account-verified-card.scanning-border {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.account-verified-card.info-border {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.account-verified-card.error-border {
+  border-color: rgba(244, 63, 94, 0.35);
 }
 
 .bot-info-group {
@@ -428,24 +492,28 @@ p.desc {
   text-align: left;
 }
 
+/* REAL BOT AVATAR WRAPPER */
 .bot-avatar-wrap {
   position: relative;
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  overflow: hidden;
+  overflow: visible;
   background: #1e293b;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
 
-.bot-avatar-wrap img {
+.bot-avatar-wrap img.bot-photo-img {
   width: 100%;
   height: 100%;
+  border-radius: 14px;
   object-fit: cover;
+  display: block;
 }
 
 .bot-online-dot {
@@ -458,6 +526,11 @@ p.desc {
   background: var(--accent-mint);
   border: 2px solid #0c1320;
   box-shadow: 0 0 8px var(--accent-mint);
+  z-index: 2;
+}
+
+.bot-online-dot.pulse {
+  animation: pulseDot 1.6s infinite;
 }
 
 .bot-meta-labels {
@@ -481,8 +554,8 @@ p.desc {
 }
 
 .check-icon-wrap {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -491,7 +564,7 @@ p.desc {
   font-weight: 900;
 }
 
-/* PROGRESS BAR FOR SCANNING STATE */
+/* PROGRESS BAR */
 .progress-container {
   width: 100%;
   max-width: 320px;
@@ -511,7 +584,7 @@ p.desc {
   transition: width 0.35s ease;
 }
 
-/* ACTION BUTTONS (Exact bright sky blue as in Image 2) */
+/* ACTION BUTTONS (Bright Sky Blue Gradient) */
 .btn {
   width: 100%;
   padding: 16px 24px;
@@ -526,7 +599,7 @@ p.desc {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--btn-blue-gradient);
   box-shadow: var(--glow-blue);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -541,17 +614,17 @@ p.desc {
   transform: scale(0.98);
 }
 
-.btn.success, .btn-success {
+.btn.success {
   background: var(--btn-blue-gradient);
   box-shadow: var(--glow-blue);
 }
 
-.btn.danger, .btn-danger {
+.btn.danger {
   background: var(--error-gradient);
   box-shadow: 0 10px 24px rgba(244, 63, 94, 0.4);
 }
 
-.btn.primary, .btn-primary {
+.btn.primary {
   background: var(--btn-blue-gradient);
   box-shadow: var(--glow-blue);
 }
@@ -562,7 +635,7 @@ p.desc {
   text-align: center;
   font-size: 11px;
   color: rgba(16, 185, 129, 0.7);
-  padding: 16px 0;
+  padding: 16px 0 20px;
   flex-shrink: 0;
   font-weight: 600;
   letter-spacing: 0.4px;
@@ -585,16 +658,17 @@ p.desc {
     padding: 10px 14px;
   }
   .main-wrapper {
-    padding: 14px;
+    padding: 12px;
   }
   .auth-container {
-    padding: 34px 20px 28px;
+    padding: 22px 18px 24px;
     border-radius: 24px;
   }
   h1 {
-    font-size: 24px;
+    font-size: 23px;
   }
   p.desc {
     font-size: 13px;
+    margin-bottom: 20px;
   }
 }
