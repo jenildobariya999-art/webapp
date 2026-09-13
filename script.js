@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // STRICT TELEGRAM CHECK: If not Telegram WebApp, show critical blocked screen
   const isNativeTelegram = !!(tg && (tgUser || tg.initData));
-  if (!isNativeTelegram && !urlParams.get('test_bypass')) {
+  if (!isNativeTelegram) {
     updateBadge('failed', 'BLOCKED');
     showView('view-critical');
     const desc = document.querySelector('#view-critical .desc');
