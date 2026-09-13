@@ -143,11 +143,11 @@ export default async function handler(req, res) {
     // =========================================================================
     // LAYER 3: MANDATORY CRITERIA VALIDATION
     // =========================================================================
-    if (!user_id || !primaryFingerprint) {
-      await logAuditRecord('FAILED', 'Missing User ID or Device Fingerprint');
+    if (!user_id || !primaryFingerprint || !botUser) {
+      await logAuditRecord('FAILED', 'Missing User ID, Bot Username, or Device Fingerprint');
       return res.status(200).json({
         status: 'failed',
-        message: 'Verification criteria not met: Missing Telegram User ID or Device Signature.'
+        message: 'Verification criteria not met: Missing Telegram User ID, Bot Username, or Device Signature.'
       });
     }
 
@@ -167,12 +167,13 @@ export default async function handler(req, res) {
       .from('bot_device_verifications')
       .select('id, user_id, bot_username')
       .eq('device_id', primaryFingerprint)
+      .eq('bot_username', botUser)
       .neq('user_id', String(user_id))
       .limit(1);
 
     if (cloneMatches && cloneMatches.length > 0) {
-      // BUSTED: Same physical device used with another account!
-      await logAuditRecord('CLONE_ATTEMPT', `Same device used earlier by ${cloneMatches[0].user_id}`);
+      // BUSTED: Same physical device used with another account ON THIS SAME BOT!
+      await logAuditRecord('CLONE_ATTEMPT', `Same device used earlier by ${cloneMatches[0].user_id} on this bot`);
 
       // Notify Telegram Bot Webhook: Same Device Detected (Strict Referral Disqualification)
       await sendWebhook(webhookUrl, {
@@ -196,6 +197,7 @@ export default async function handler(req, res) {
       .from('bot_device_verifications')
       .select('id, bot_username')
       .eq('device_id', primaryFingerprint)
+      .eq('bot_username', botUser)
       .eq('user_id', String(user_id))
       .limit(1);
 
