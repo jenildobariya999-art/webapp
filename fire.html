@@ -3,351 +3,768 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Device Verification | Jenil Dobariya</title>
-  
-  <!-- Fonts & Font Awesome Icons -->
+  <title>Device Verification</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 
-  <!-- Telegram WebApp SDK & FingerprintJS -->
+  <style>
+    /* ── Layout shell ───────────────────────────────────────── */
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* ── View sections fill remaining space ─────────────────── */
+    .view-section { display: none; flex-direction: column; width: 100%; }
+    .view-section.active { display: flex; flex: 1; }
+
+    /* ── Scanning view: left-aligned, full-width ─────────────── */
+    #view-scanning { padding-bottom: 8px; }
+
+    /* ── Result panel (success / already / failed / critical) ── */
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 22px 24px 28px;
+      flex: 1;
+    }
+
+    .result-icon {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+    }
+    .result-icon svg { width: 38px; height: 38px; }
+
+    .success-icon {
+      background: rgba(16,185,129,0.12);
+      border: 1.5px solid rgba(16,185,129,0.4);
+      color: #10b981;
+      box-shadow: 0 0 32px rgba(16,185,129,0.22);
+    }
+    .info-icon {
+      background: rgba(56,189,248,0.12);
+      border: 1.5px solid rgba(56,189,248,0.4);
+      color: #38bdf8;
+      box-shadow: 0 0 32px rgba(56,189,248,0.22);
+    }
+    .error-icon {
+      background: rgba(244,63,94,0.12);
+      border: 1.5px solid rgba(244,63,94,0.4);
+      color: #f43f5e;
+      box-shadow: 0 0 32px rgba(244,63,94,0.22);
+    }
+
+    .result-panel h1 {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+    .result-desc {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.55;
+      margin-bottom: 20px;
+      max-width: 300px;
+    }
+
+    /* ── Bot result card (inside result views) ───────────────── */
+    .bot-result-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(17,26,44,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .bot-result-card.info-border  { border-color: rgba(56,189,248,0.35); }
+    .bot-result-card.error-border { border-color: rgba(244,63,94,0.35); }
+
+    .btn { margin-top: auto; max-width: 400px; }
+
+    /* ── Top nav ─────────────────────────────────────────────── */
+    .topnav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      background: #070b12;
+      flex-shrink: 0; z-index: 20;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .topnav-icon-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; background: none; border: none; cursor: pointer;
+    }
+    .topnav-icon-btn svg {
+      width: 20px; height: 20px;
+      stroke: currentColor; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .topnav-title {
+      flex: 1; text-align: center;
+      font-size: 17px; font-weight: 800; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding: 0 10px;
+    }
+    .topnav-actions { display: flex; align-items: center; gap: 2px; }
+
+    /* ── User row ────────────────────────────────────────────── */
+    .user-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      flex-shrink: 0;
+    }
+    .user-identity { display: flex; align-items: center; gap: 12px; }
+    .user-row .avatar-container {
+      width: 50px; height: 50px; border-radius: 50%;
+      border: none; box-shadow: none;
+      font-size: 18px; font-weight: 800;
+      background: #151d2f;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .user-row .avatar-container img { width: 100%; height: 100%; object-fit: cover; }
+    .user-row .text-info h3 {
+      font-size: 18px; font-weight: 800; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 180px;
+    }
+    .user-row .text-info p { font-size: 13px; color: #64748b; font-weight: 500; }
+
+    /* Use status-pill from style.css — just override size for this row */
+    .user-row .status-pill { font-size: 11px; padding: 7px 14px; }
+
+    /* ── Card stack ──────────────────────────────────────────── */
+    .card-stack {
+      position: relative; height: 230px;
+      margin: 4px 20px 20px; flex-shrink: 0;
+    }
+    .card-back {
+      position: absolute;
+      top: 8%; left: 6%; width: 88%; height: 88%;
+      background: #0e1929;
+      border-radius: 22px;
+      transform: rotate(-6deg);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+    }
+    .card-back::before {
+      content: '';
+      position: absolute; top: 22px; left: 22px;
+      width: 42%; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      box-shadow: 0 10px 0 rgba(255,255,255,0.07);
+    }
+    .card-front {
+      position: absolute; inset: 0;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #1a7fd4 0%, #3ab5f0 100%);
+      box-shadow: 0 22px 50px rgba(26,127,212,0.38);
+      padding: 20px 22px 20px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      color: #fff; overflow: hidden;
+      transition: background 0.5s ease;
+    }
+    .card-front.card-success { background: linear-gradient(135deg, #0d7a56 0%, #10b981 100%); }
+    .card-front.card-fail    { background: linear-gradient(135deg, #be123c 0%, #f43f5e 100%); }
+
+    /* subtle glare */
+    .card-front::after {
+      content: '';
+      position: absolute; top: -40%; right: -25%;
+      width: 55%; height: 180%;
+      background: rgba(255,255,255,0.055);
+      transform: rotate(18deg);
+      pointer-events: none;
+    }
+    .card-top-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .card-label  { font-size: 14px; font-weight: 700; }
+    .card-status-chip {
+      font-size: 11px; font-weight: 700;
+      padding: 5px 12px; border-radius: 14px;
+      background: rgba(255,255,255,0.18);
+      transition: background 0.3s;
+    }
+    /* Paper-plane watermark */
+    .card-plane {
+      position: absolute; top: 14px; right: 56px;
+      width: 58px; height: 58px; opacity: 0.22;
+    }
+    .card-plane svg {
+      width: 100%; height: 100%;
+      stroke: #fff; fill: none; stroke-width: 1.6;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .card-id-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; letter-spacing: 2px; opacity: 0.8; margin-bottom: 4px;
+    }
+    .card-id-digits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px; font-weight: 700; letter-spacing: 3px; margin-bottom: 8px;
+    }
+    .card-name   { font-size: 15px; font-weight: 800; margin-bottom: 1px; }
+    .card-handle { font-size: 12px; opacity: 0.8; }
+
+    /* Bot badge bottom-right */
+    .card-badge {
+      position: absolute; right: 18px; bottom: -12px;
+      width: 68px; height: 68px; border-radius: 50%;
+      border: 3px solid #070b12;
+      background: linear-gradient(135deg, #f6c744, #d98f1e);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+    .card-badge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .card-badge-shield {
+      position: absolute; right: 12px; bottom: -12px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #070b12;
+      border: 2px solid rgba(56,189,248,0.5);
+      display: flex; align-items: center; justify-content: center;
+      color: #38bdf8;
+    }
+    .card-badge-shield svg {
+      width: 12px; height: 12px;
+      stroke: currentColor; fill: none; stroke-width: 2.2;
+    }
+
+    /* ── Scanning view: heading + progress panel ─────────────── */
+    .check-heading {
+      padding: 0 20px 12px; text-align: left;
+    }
+    .check-heading h1 { font-size: 30px; margin-bottom: 5px; }
+    .check-heading p  { font-size: 15px; color: #94a3b8; }
+
+    .progress-panel {
+      margin: 0 20px;
+      background: rgba(17,26,44,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 18px 20px 20px;
+    }
+    .progress-panel-top {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .progress-panel-top .label { font-size: 14px; font-weight: 600; color: #fff; }
+    .progress-panel-top .pct   { font-size: 22px; font-weight: 800; color: #38bdf8; }
+
+    .checklist-row {
+      display: flex; align-items: center; justify-content: space-around;
+      margin-top: 14px;
+    }
+    .checklist-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 600; color: #64748b;
+    }
+    .checklist-item.done { color: #e2e8f0; }
+    .checklist-item.active { color: #38bdf8; }
+    .cl-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .checklist-item.done .cl-icon {
+      background: rgba(34,197,94,0.15); color: #22c55e;
+    }
+    .checklist-item.done .cl-icon svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 3; }
+    .checklist-item.active .cl-icon {
+      border: 2px solid rgba(56,189,248,0.45);
+      border-top-color: #38bdf8;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .checklist-item.pending .cl-icon {
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+
+    /* ── Footer note ─────────────────────────────────────────── */
+    .footer-note {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 18px; flex-shrink: 0;
+    }
+    .footer-note-text {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 13px; color: #475569;
+    }
+    .footer-note-text svg {
+      width: 15px; height: 15px;
+      stroke: currentColor; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .footer-note-spk {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; cursor: pointer; flex-shrink: 0;
+    }
+    .footer-note-spk svg {
+      width: 17px; height: 17px;
+      stroke: currentColor; fill: none; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    @media (max-width: 380px) {
+      .card-id-digits { font-size: 20px; letter-spacing: 2px; }
+      .check-heading h1 { font-size: 26px; }
+    }
+  </style>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script src="script.js"></script>
 
   <script>
-    // Disable right-click, selection & dragging for client verification integrity
     document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('selectstart', e => e.preventDefault());
-    document.addEventListener('dragstart', e => e.preventDefault());
+    document.addEventListener('selectstart',  e => e.preventDefault());
+    document.addEventListener('dragstart',    e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) ||
+        (e.ctrlKey && ['U','S'].includes(e.key))
+      ) e.preventDefault();
+    });
   </script>
 </head>
 <body>
 
-  <!-- TOP FLOATING USER PROFILE BAR -->
-  <header class="header">
-    <div class="user-profile">
-      <div class="avatar-container" id="avatarBox">
-        <span id="userInitial">U</span>
-      </div>
-      <div class="text-info">
-        <h3 id="userName">— J E N I L ! ! !</h3>
-        <p>ID: <span id="userIdDisplay">6925391837</span></p>
-      </div>
-    </div>
-    <div class="status-pill pill-green" id="headerBadge">
-      <span class="dot"></span>
-      <span id="headerStatusText">ACTIVE</span>
-    </div>
-  </header>
-
-  <!-- AMBIENT PARTICLES CANVAS -->
+  <!-- AMBIENT PARTICLES -->
   <div class="particles" id="particles"></div>
 
-  <!-- MAIN CONTAINER WRAPPER -->
-  <div class="main-wrapper">
-    <div class="auth-container">
-
-      <!-- TOP GLOBAL BOT IDENTITY CARD (Visible across all states) -->
-      <div class="global-bot-card" id="globalBotCard">
-        <div class="bot-info-group">
-          <div class="bot-avatar-wrap">
-            <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img" id="globalBotPhoto">
-            <span class="bot-online-dot pulse"></span>
-          </div>
-          <div class="bot-meta-labels">
-            <div class="bot-title-line">
-              <span class="bot-display-name" id="globalBotTitle">RushReward Bot</span>
-              <span class="badge-bot-chip">BOT</span>
-            </div>
-            <span class="bot-handle-name mono" id="globalBotHandle">@RushRewardbot</span>
-          </div>
-        </div>
-        <div class="bot-ready-pill" id="globalBotStatus">READY</div>
-      </div>
-
-      <!-- VIEW 1: SCANNING / ANALYZING DEVICE -->
-      <div class="view-section" id="view-scanning">
-        <div class="loader">
-          <div class="orbit"></div>
-          <div class="orbit"></div>
-          <div class="orbit"></div>
-          <div class="satellite"></div>
-        </div>
-        <div class="section-tagline">DEVICE VERIFICATION</div>
-        <h1>Analyzing Device</h1>
-        <p class="desc">Analyzing hardware signature & network route verification...</p>
-        
-        <div class="progress-container">
-          <div class="progress-bar" id="scanBar"></div>
-        </div>
-
-        <div class="account-verified-card scanning-border">
-          <div class="bot-info-group">
-            <div class="bot-avatar-wrap">
-              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
-              <span class="bot-online-dot pulse"></span>
-            </div>
-            <div class="bot-meta-labels">
-              <span class="bot-verified-tag" style="color:var(--accent-sky);">TARGET BOT</span>
-              <span class="bot-handle-name mono" id="scanBotHandle">@RushRewardbot</span>
-            </div>
-          </div>
-          <div class="check-icon-wrap" style="color:var(--accent-sky);">
-            <i class="fas fa-network-wired"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIEW 2: VERIFIED SUCCESSFULLY (EXACT MATCH FOR RUSH REWARDS SCREENSHOT) -->
-      <div class="view-section active" id="view-success">
-        <div class="icon-wrapper success">
-          <svg class="shield-icon-svg" viewBox="0 0 24 24">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-        </div>
-        <div class="section-tagline">DEVICE VERIFICATION</div>
-        <h1 class="text-success">Verified Successfully</h1>
-        <p class="desc">You're verified successfully, you can use our bot now.</p>
-
-        <!-- ACCOUNT VERIFIED CARD WITH REAL BOT PHOTO -->
-        <div class="account-verified-card">
-          <div class="bot-info-group">
-            <div class="bot-avatar-wrap">
-              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img" id="successBotPhoto">
-              <span class="bot-online-dot"></span>
-            </div>
-            <div class="bot-meta-labels">
-              <span class="bot-verified-tag">ACCOUNT VERIFIED</span>
-              <span class="bot-handle-name mono" id="successBotHandle">RushRewardbot</span>
-            </div>
-          </div>
-          <div class="check-icon-wrap">
-            <i class="fa-solid fa-check"></i>
-          </div>
-        </div>
-
-        <button class="btn success" id="btnSuccessClose">
-          <span>CONTINUE TO BOT</span>
-          <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-        </button>
-      </div>
-
-      <!-- VIEW 3: ALREADY AUTHORIZED / SAME DEVICE RECORDED -->
-      <div class="view-section" id="view-already">
-        <div class="icon-wrapper info">
-          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-sky);">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="M12 8v4M12 16h.01"/>
-          </svg>
-        </div>
-        <div class="section-tagline" style="color:var(--accent-sky);">EXISTING DEVICE</div>
-        <h1 class="text-info-h">Already Authorized</h1>
-        <p class="desc">This hardware signature has already been recorded and authorized.</p>
-
-        <div class="account-verified-card info-border">
-          <div class="bot-info-group">
-            <div class="bot-avatar-wrap">
-              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
-              <span class="bot-online-dot"></span>
-            </div>
-            <div class="bot-meta-labels">
-              <span class="bot-verified-tag" style="color:var(--accent-sky);">ALREADY REGISTERED</span>
-              <span class="bot-handle-name mono" id="alreadyBotHandle">@RushRewardbot</span>
-            </div>
-          </div>
-          <div class="check-icon-wrap" style="color:var(--accent-sky);">
-            <i class="fa-solid fa-check-double"></i>
-          </div>
-        </div>
-
-        <button class="btn primary" id="btnAlreadyClose">
-          <span>CONTINUE TO BOT</span>
-          <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-        </button>
-      </div>
-
-      <!-- VIEW 4: FAILED (VPN / PROXY DETECTED) -->
-      <div class="view-section" id="view-failed">
-        <div class="icon-wrapper error">
-          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-rose);">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="m15 9-6 6M9 9l6 6"/>
-          </svg>
-        </div>
-        <div class="section-tagline" style="color:var(--accent-rose);">SECURITY ALERT</div>
-        <h1 class="text-error">Verification Blocked</h1>
-        <p class="desc" id="failedMsg">VPN or proxy connection detected. Please disable and retry.</p>
-
-        <div class="account-verified-card error-border">
-          <div class="bot-info-group">
-            <div class="bot-avatar-wrap">
-              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
-              <span class="bot-online-dot" style="background:var(--accent-rose); box-shadow:0 0 8px var(--accent-rose);"></span>
-            </div>
-            <div class="bot-meta-labels">
-              <span class="bot-verified-tag" style="color:var(--accent-rose);">FAILED ON BOT</span>
-              <span class="bot-handle-name mono" id="failedBotHandle">@RushRewardbot</span>
-            </div>
-          </div>
-          <div class="check-icon-wrap" style="color:var(--accent-rose);">
-            <i class="fas fa-triangle-exclamation"></i>
-          </div>
-        </div>
-
-        <button class="btn danger" id="btnFailClose">
-          <span>RETURN TO BOT</span>
-          <i class="fas fa-rotate-left" style="font-size:12px;"></i>
-        </button>
-      </div>
-
-      <!-- VIEW 5: CRITICAL (EXTERNAL BROWSER BLOCKED) -->
-      <div class="view-section" id="view-critical">
-        <div class="icon-wrapper error">
-          <svg class="shield-icon-svg" viewBox="0 0 24 24" style="stroke:var(--accent-rose);">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="m4.9 4.9 14.2 14.2"/>
-          </svg>
-        </div>
-        <div class="section-tagline" style="color:var(--accent-rose);">CLIENT INTEGRITY</div>
-        <h1 class="text-error">Access Denied</h1>
-        <p class="desc">Official Telegram Client Required. External browsers are blocked for security.</p>
-
-        <div class="account-verified-card error-border">
-          <div class="bot-info-group">
-            <div class="bot-avatar-wrap">
-              <img src="https://t.me/i/userpic/320/RushRewardbot.jpg" alt="Bot Photo" class="bot-photo-img">
-              <span class="bot-online-dot" style="background:var(--accent-rose);"></span>
-            </div>
-            <div class="bot-meta-labels">
-              <span class="bot-verified-tag" style="color:var(--accent-rose);">MISSION BLOCKED</span>
-              <span class="bot-handle-name mono" id="criticalBotHandle">@RushRewardbot</span>
-            </div>
-          </div>
-          <div class="check-icon-wrap" style="color:var(--accent-rose);">
-            <i class="fas fa-ban"></i>
-          </div>
-        </div>
-
-        <button class="btn danger" onclick="window.location.reload()">
-          <span>CLOSE & RETRY</span>
-          <i class="fas fa-arrow-rotate-right" style="font-size:12px;"></i>
-        </button>
-      </div>
-
+  <!-- ① TOP NAV BAR -->
+  <div class="topnav">
+    <button class="topnav-icon-btn" onclick="closeTelegramApp()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="topnav-title" id="topnavTitle">Device Verification</div>
+    <div class="topnav-actions">
+      <button class="topnav-icon-btn" aria-label="More">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="topnav-icon-btn" aria-label="Menu">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="5"  r="1.2" fill="currentColor"/>
+          <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+          <circle cx="12" cy="19" r="1.2" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
   </div>
 
-  <!-- FOOTER BRAND SIGNATURE -->
-  <div class="footer">
-    <p style="color: rgba(16, 185, 129, 0.75); font-size: 13px; font-weight: 600; margin-bottom: 4px;">
-      Your access is ready when you are.
-    </p>
-    <a href="https://t.me/" target="_blank">© 2026 Jenil Dobariya • Multi-Bot Device Security</a>
+  <!-- ② USER ROW + STATUS CHIP -->
+  <div class="user-row">
+    <div class="user-identity">
+      <div class="avatar-container" id="avatarBox">U</div>
+      <div class="text-info">
+        <h3 id="userName">USER</h3>
+        <p>ID <span id="userIdDisplay">---</span></p>
+      </div>
+    </div>
+    <!-- headerBadge: updated by script.js updateBadge() -->
+    <div class="status-pill pill-blue" id="headerBadge">
+      <span class="dot"></span>
+      <span id="headerStatusText">CHECKING</span>
+    </div>
   </div>
 
-  <!-- REAL BOT AVATAR & CLIENT DATA SYNC SCRIPT -->
+  <!-- ③ CARD STACK (always visible — chip + gradient update per result) -->
+  <div class="card-stack">
+    <div class="card-back"></div>
+    <div class="card-front" id="cardFront">
+      <div class="card-top-row">
+        <span class="card-label">Device verification</span>
+        <span class="card-status-chip" id="cardStatusChip">Checking</span>
+      </div>
+
+      <!-- Telegram paper-plane watermark -->
+      <div class="card-plane">
+        <svg viewBox="0 0 64 64">
+          <polyline points="6,6 58,32 6,58 14,32"/>
+          <line x1="14" y1="32" x2="52" y2="32"/>
+        </svg>
+      </div>
+
+      <div>
+        <div class="card-id-label">TELEGRAM ID</div>
+        <div class="card-id-digits" id="cardIdDigits">--- --- ---</div>
+        <div class="card-name"   id="cardName">USER</div>
+        <div class="card-handle" id="cardHandle">@handle</div>
+      </div>
+
+      <div class="card-badge">
+        <img id="botLogoImg" src="" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="card-badge-shield">
+        <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VIEW SECTIONS  (script.js switches active class)
+  ════════════════════════════════════════════════════════════ -->
+
+  <!-- VIEW 1: SCANNING -->
+  <div class="view-section active" id="view-scanning">
+    <div class="check-heading">
+      <h1>Checking your device</h1>
+      <p>This check starts automatically.</p>
+    </div>
+    <div class="progress-panel">
+      <div class="progress-panel-top">
+        <span class="label" id="scanLabel">Scanning hardware...</span>
+        <span class="pct"   id="scanPercent">0%</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" id="scanBar"></div>
+      </div>
+      <div class="checklist-row">
+        <div class="checklist-item pending" id="cl1">
+          <span class="cl-icon" id="ci1"></span>Connection
+        </div>
+        <div class="checklist-item pending" id="cl2">
+          <span class="cl-icon" id="ci2"></span>Device
+        </div>
+        <div class="checklist-item pending" id="cl3">
+          <span class="cl-icon" id="ci3"></span>Confirmation
+        </div>
+      </div>
+    </div>
+    <!-- Hidden compat IDs referenced by original inline script -->
+    <span id="scanBotHandle"    style="display:none;"></span>
+    <span id="globalBotHandle"  style="display:none;"></span>
+    <span id="globalBotTitle"   style="display:none;"></span>
+    <span id="globalBotStatus"  style="display:none;"></span>
+  </div>
+
+  <!-- VIEW 2: SUCCESS -->
+  <div class="view-section" id="view-success">
+    <div class="result-panel">
+      <div class="result-icon success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <h1>Verified</h1>
+      <p class="result-desc">You're all set — continue to use the bot.</p>
+
+      <div class="bot-result-card">
+        <div class="bot-info-group">
+          <div class="bot-avatar-wrap">
+            <img class="bot-photo-img" id="successBotPhoto" src="" alt="">
+            <span class="bot-online-dot"></span>
+          </div>
+          <div class="bot-meta-labels">
+            <span class="bot-verified-tag">Account verified</span>
+            <span class="bot-handle-name mono" id="successBotHandle">@bot</span>
+          </div>
+        </div>
+        <div class="check-icon-wrap"><i class="fa-solid fa-check"></i></div>
+      </div>
+
+      <button class="btn success" id="btnSuccessClose">
+        Continue to bot &nbsp;<i class="fas fa-chevron-right" style="font-size:11px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 3: ALREADY VERIFIED -->
+  <div class="view-section" id="view-already">
+    <div class="result-panel">
+      <div class="result-icon info-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+      </div>
+      <h1>Already registered</h1>
+      <p class="result-desc" id="alreadyDesc">This device is already linked to your account.</p>
+
+      <div class="bot-result-card info-border">
+        <div class="bot-info-group">
+          <div class="bot-avatar-wrap">
+            <img class="bot-photo-img" id="alreadyBotPhoto" src="" alt="">
+            <span class="bot-online-dot" style="background:#38bdf8; box-shadow:0 0 8px #38bdf8;"></span>
+          </div>
+          <div class="bot-meta-labels">
+            <span class="bot-verified-tag" style="color:#38bdf8;">Already registered</span>
+            <span class="bot-handle-name mono" id="alreadyBotHandle">@bot</span>
+          </div>
+        </div>
+        <div class="check-icon-wrap" style="color:#38bdf8;"><i class="fa-solid fa-check-double"></i></div>
+      </div>
+
+      <button class="btn primary" id="btnAlreadyClose">
+        Continue to bot &nbsp;<i class="fas fa-chevron-right" style="font-size:11px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 4: FAILED -->
+  <div class="view-section" id="view-failed">
+    <div class="result-panel">
+      <div class="result-icon error-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m15 9-6 6M9 9l6 6"/>
+        </svg>
+      </div>
+      <h1>Blocked</h1>
+      <p class="result-desc" id="failedMsg">VPN or proxy detected. Disable it and retry.</p>
+
+      <div class="bot-result-card error-border">
+        <div class="bot-info-group">
+          <div class="bot-avatar-wrap">
+            <img class="bot-photo-img" id="failedBotPhoto" src="" alt="">
+            <span class="bot-online-dot" style="background:#f43f5e; box-shadow:0 0 8px #f43f5e;"></span>
+          </div>
+          <div class="bot-meta-labels">
+            <span class="bot-verified-tag" style="color:#f43f5e;">Verification failed</span>
+            <span class="bot-handle-name mono" id="failedBotHandle">@bot</span>
+          </div>
+        </div>
+        <div class="check-icon-wrap" style="color:#f43f5e;"><i class="fas fa-triangle-exclamation"></i></div>
+      </div>
+
+      <button class="btn danger" id="btnFailClose">
+        Return to bot &nbsp;<i class="fas fa-rotate-left" style="font-size:11px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 5: CRITICAL (external browser) -->
+  <div class="view-section" id="view-critical">
+    <div class="result-panel">
+      <div class="result-icon error-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="m4.9 4.9 14.2 14.2"/>
+        </svg>
+      </div>
+      <h1>Access denied</h1>
+      <p class="result-desc">Open this link inside the official Telegram app to verify your device.</p>
+
+      <div class="bot-result-card error-border">
+        <div class="bot-info-group">
+          <div class="bot-avatar-wrap">
+            <img class="bot-photo-img" id="criticalBotPhoto" src="" alt="">
+            <span class="bot-online-dot" style="background:#f43f5e;"></span>
+          </div>
+          <div class="bot-meta-labels">
+            <span class="bot-verified-tag" style="color:#f43f5e;">External browser blocked</span>
+            <span class="bot-handle-name mono" id="criticalBotHandle">@bot</span>
+          </div>
+        </div>
+        <div class="check-icon-wrap" style="color:#f43f5e;"><i class="fas fa-ban"></i></div>
+      </div>
+
+      <button class="btn danger" onclick="window.location.reload()">
+        Retry &nbsp;<i class="fas fa-arrow-rotate-right" style="font-size:11px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ④ FOOTER NOTE (always visible) -->
+  <div class="footer-note">
+    <div class="footer-note-text">
+      <svg viewBox="0 0 24 24">
+        <rect x="5" y="11" width="14" height="9" rx="2"/>
+        <path d="M8 11V7a4 4 0 018 0v4"/>
+      </svg>
+      Keep Telegram open while we finish.
+    </div>
+    <button class="footer-note-spk" aria-label="Toggle sound">
+      <svg viewBox="0 0 24 24">
+        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+        <path d="M15.5 8.5a5 5 0 010 7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE INIT SCRIPT  (same logic as original, updated IDs)
+  ════════════════════════════════════════════════════════════ -->
   <script>
-    (function initVerificationPage() {
-      // 1. Extract URL Query Parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const rawBotParam = urlParams.get('botusername') || urlParams.get('bot') || 'RushRewardbot';
-      const cleanBotName = rawBotParam.replace(/^@/, '').trim();
+  (function initPage() {
 
-      // 2. Real Telegram Bot CDN Avatar URL
-      const directTgAvatarUrl = `https://t.me/i/userpic/320/${cleanBotName}.jpg`;
+    /* ── 1. URL params ── */
+    const urlParams   = new URLSearchParams(window.location.search);
+    const rawBot      = urlParams.get('botusername') || urlParams.get('bot') || 'RushRewardbot';
+    const botName     = rawBot.replace(/^@/, '').trim();
+    const tgAvatarUrl = `https://t.me/i/userpic/320/${botName}.jpg`;
 
-      // 3. Update all Bot Handles dynamically in DOM
-      const botHandleElements = [
-        'globalBotHandle', 'scanBotHandle', 'successBotHandle',
-        'alreadyBotHandle', 'failedBotHandle', 'criticalBotHandle'
-      ];
-      botHandleElements.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '@' + cleanBotName;
-      });
-
-      const titleEl = document.getElementById('globalBotTitle');
-      if (titleEl) titleEl.textContent = cleanBotName;
-
-      // 4. Update all Bot Photo Elements with Fallback Handling
-      const botImages = document.querySelectorAll('.bot-photo-img');
-      botImages.forEach(img => {
-        img.src = directTgAvatarUrl;
-        img.onerror = function() {
-          // If public Telegram avatar is hidden, fallback gracefully to clean cyber bot avatar
-          this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanBotName}&backgroundColor=0c1320`;
-        };
-      });
-
-      // 5. Try Serverless `/api/bot-info` for HD photo if deployed on Vercel
-      fetch(`/api/bot-info?botusername=${cleanBotName}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.success && data.photo_url) {
-            botImages.forEach(img => { img.src = data.photo_url; });
-          }
-        })
-        .catch(() => {
-          // Fallback is already handled by direct Telegram CDN URL above
-        });
-
-      // 6. Telegram WebApp User Context Sync
-      if (window.Telegram && window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
-        const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-        if (user) {
-          const uName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'USER';
-          const uId = user.id || '---';
-
-          const nameEl = document.getElementById('userName');
-          const idEl = document.getElementById('userIdDisplay');
-          const avatarBox = document.getElementById('avatarBox');
-
-          if (nameEl) nameEl.textContent = uName;
-          if (idEl) idEl.textContent = uId;
-
-          if (user.photo_url && avatarBox) {
-            avatarBox.innerHTML = `<img src="${user.photo_url}" alt="User Avatar">`;
-          } else if (avatarBox) {
-            const initial = user.first_name ? user.first_name.charAt(0).toUpperCase() : 'U';
-            avatarBox.innerHTML = `<span>${initial}</span>`;
-          }
-        }
-      }
-
-      // Close handlers for WebApp buttons
-      const closeAction = () => {
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.close) {
-          window.Telegram.WebApp.close();
-        } else {
-          window.history.back();
-        }
-      };
-
-      ['btnSuccessClose', 'btnAlreadyClose', 'btnFailClose'].forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) btn.addEventListener('click', closeAction);
-      });
-    })();
-
-    // Prevent inspection shortcuts
-    document.addEventListener('keydown', function(e) {
-      if (
-        e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        (e.ctrlKey && (e.key === "U" || e.key === "S"))
-      ) {
-        e.preventDefault();
-        return false;
-      }
+    /* ── 2. Populate bot handles ── */
+    ['successBotHandle','alreadyBotHandle','failedBotHandle',
+     'criticalBotHandle','scanBotHandle','globalBotHandle'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '@' + botName;
     });
+    const navTitle = document.getElementById('topnavTitle');
+    if (navTitle) navTitle.textContent = botName.replace(/bot$/i, '') + ' · Verification';
+
+    /* ── 3. Bot photos (all .bot-photo-img + card badge) ── */
+    const allBotImgs = document.querySelectorAll('.bot-photo-img');
+    const logoImg    = document.getElementById('botLogoImg');
+
+    function applyBotSrc(src) {
+      allBotImgs.forEach(img => { img.src = src; });
+      if (logoImg) logoImg.src = src;
+    }
+
+    applyBotSrc(tgAvatarUrl);
+
+    // Fallback to Dicebear avatars if Telegram CDN returns 404
+    allBotImgs.forEach(img => {
+      img.onerror = function() {
+        this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${botName}&backgroundColor=0c1320`;
+      };
+    });
+    if (logoImg) {
+      logoImg.onerror = function() { this.style.display = 'none'; };
+    }
+
+    // Try Vercel API for HD photo
+    fetch(`/api/bot-info?botusername=${botName}`)
+      .then(r => r.json())
+      .then(d => { if (d?.success && d.photo_url) applyBotSrc(d.photo_url); })
+      .catch(() => {});
+
+    /* ── 4. Telegram WebApp user context ── */
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg   = window.Telegram.WebApp;
+      tg.ready(); tg.expand();
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'USER';
+        const uid      = user.id || '---';
+        const nameEl   = document.getElementById('userName');
+        const idEl     = document.getElementById('userIdDisplay');
+        const cardName = document.getElementById('cardName');
+        const cardHndl = document.getElementById('cardHandle');
+        const cardId   = document.getElementById('cardIdDigits');
+        const avatarBx = document.getElementById('avatarBox');
+
+        if (nameEl)   nameEl.textContent   = fullName;
+        if (idEl)     idEl.textContent     = uid;
+        if (cardName) cardName.textContent  = fullName;
+        if (cardHndl && user.username) cardHndl.textContent = '@' + user.username;
+        if (cardId)   cardId.textContent   = String(uid).replace(/(\d{1,3})(?=(\d{3})+(?!\d))/g, '$1 ');
+
+        if (avatarBx) {
+          if (user.photo_url) {
+            avatarBx.innerHTML = `<img src="${user.photo_url}" alt="avatar">`;
+          } else {
+            avatarBx.textContent = (user.first_name?.[0] || 'U').toUpperCase();
+          }
+        }
+      }
+    }
+
+    /* ── 5. Mirror headerBadge state → card chip + card gradient ── */
+    const badge     = document.getElementById('headerBadge');
+    const chip      = document.getElementById('cardStatusChip');
+    const cardFront = document.getElementById('cardFront');
+
+    if (badge) {
+      new MutationObserver(() => {
+        if (badge.classList.contains('pill-green')) {
+          if (chip) chip.textContent = 'Verified';
+          if (chip) chip.style.background = 'rgba(16,185,129,0.25)';
+          if (cardFront) { cardFront.classList.remove('card-fail'); cardFront.classList.add('card-success'); }
+        } else if (badge.classList.contains('pill-red')) {
+          if (chip) chip.textContent = 'Failed';
+          if (chip) chip.style.background = 'rgba(244,63,94,0.25)';
+          if (cardFront) { cardFront.classList.remove('card-success'); cardFront.classList.add('card-fail'); }
+        } else {
+          if (chip) chip.textContent = 'Checking';
+          if (chip) chip.style.background = 'rgba(255,255,255,0.18)';
+          if (cardFront) { cardFront.classList.remove('card-success','card-fail'); }
+        }
+      }).observe(badge, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    /* ── 6. Sync scanBar → percentage text + checklist ── */
+    const scanBarEl   = document.getElementById('scanBar');
+    const scanPctEl   = document.getElementById('scanPercent');
+    const scanLblEl   = document.getElementById('scanLabel');
+    let   lastW       = '';
+
+    const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+      style="width:11px;height:11px"><path d="M20 6L9 17l-5-5"/></svg>`;
+
+    function markDone(itemId, iconId) {
+      const item = document.getElementById(itemId);
+      const icon = document.getElementById(iconId);
+      if (!item || item.classList.contains('done')) return;
+      item.classList.remove('pending','active');
+      item.classList.add('done');
+      if (icon) icon.innerHTML = CHECK_SVG;
+    }
+    function markActive(itemId) {
+      const item = document.getElementById(itemId);
+      if (!item || item.classList.contains('done')) return;
+      item.classList.remove('pending');
+      item.classList.add('active');
+    }
+
+    setInterval(() => {
+      if (!scanBarEl) return;
+      const w = scanBarEl.style.width || '0%';
+      if (w === lastW) return;
+      lastW = w;
+      const pct = parseInt(w) || 0;
+      if (scanPctEl) scanPctEl.textContent = pct + '%';
+
+      if (pct >= 35) {
+        markDone('cl1','ci1');
+        markActive('cl2');
+        if (scanLblEl) scanLblEl.textContent = 'Analyzing device...';
+      }
+      if (pct >= 70) {
+        markDone('cl2','ci2');
+        markActive('cl3');
+        if (scanLblEl) scanLblEl.textContent = 'Finishing verification...';
+      }
+      if (pct >= 100) {
+        markDone('cl3','ci3');
+      }
+    }, 80);
+
+    /* ── 7. Close / back handlers ── */
+    const closeAction = () => {
+      if (window.Telegram?.WebApp?.close) window.Telegram.WebApp.close();
+      else window.history.back();
+    };
+    ['btnSuccessClose','btnAlreadyClose','btnFailClose'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', closeAction);
+    });
+
+  })();
   </script>
 </body>
 </html>
