@@ -445,9 +445,9 @@ body::after{
 #view-scanning h1{
     order:2;
     width:100%;
-    margin:0 0 10px;
+    margin:0 0 7px;
     color:#f4f7fb;
-    font-size:30px;
+    font-size:26px;
     line-height:1.2;
     font-weight:800;
     letter-spacing:-1.5px;
@@ -460,9 +460,9 @@ body::after{
     order:3;
     width:100%;
     max-width:none;
-    margin:0 0 38px;
+    margin:0 0 25px;
     color:#a5b5c7;
-    font-size:15px;
+    font-size:14px;
     line-height:1.45;
 }
 
@@ -476,7 +476,7 @@ body::after{
     height:190px;
     margin:0;
     padding:30px 35px;
-    overflow:visible;
+    overflow:hidden;
     border-radius:26px;
     background:#1b2b3e;
     border:1px solid #304257;
@@ -510,6 +510,7 @@ body::after{
     left:35px;
     top:92px;
     width:80%;
+    max-width:calc(100% - 70px);
     height:15px;
     border-radius:999px;
     background:linear-gradient(90deg,#55b8fa,#4faef0);
@@ -1041,5 +1042,83 @@ body::after{
 
     .progress-bar{
         transition:none;
+    }
+}
+
+
+/* ---------- Telegram profile photo support ---------- */
+
+.avatar-container img,
+.avatar-container .avatar-image{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+}
+
+.avatar-container.has-photo{
+    padding:0;
+    background:#122335;
+    overflow:hidden;
+}
+
+.avatar-container.has-photo img{
+    opacity:1;
+}
+
+
+/* ---------- Final mobile progress safety ---------- */
+
+@media(max-width:600px){
+    #view-scanning .progress-container{
+        overflow:hidden;
+    }
+
+    #view-scanning .progress-bar{
+        max-width:calc(100% - 70px);
+    }
+
+    #view-scanning h1{
+        font-size:26px;
+        line-height:1.2;
+    }
+
+    #view-scanning .desc{
+        font-size:14px;
+        margin-bottom:24px;
+    }
+}
+
+@media(max-width:430px){
+    #view-scanning h1{
+        font-size:24px;
+    }
+
+    #view-scanning .desc{
+        font-size:13px;
+        margin-bottom:20px;
+    }
+
+    #view-scanning .progress-container{
+        padding:22px 25px;
+    }
+
+    #view-scanning .progress-container::before{
+        left:25px;
+        top:21px;
+        font-size:14px;
+    }
+
+    #view-scanning .progress-container::after{
+        right:25px;
+        top:14px;
+        font-size:27px;
+    }
+
+    #view-scanning .progress-bar{
+        left:25px;
+        max-width:calc(100% - 50px);
+        top:76px;
     }
 }
