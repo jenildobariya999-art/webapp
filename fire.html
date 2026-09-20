@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-<!-- script.js is loaded here as before, untouched -->
 <script src="script.js"></script>
 <script>
 document.addEventListener('contextmenu',e=>e.preventDefault());
@@ -22,13 +21,7 @@ document.addEventListener('dragstart',e=>e.preventDefault());
 <div class="particles" id="particles"></div>
 <div class="main-wrapper"><div class="auth-container">
 <div class="view-section" id="view-critical"><div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div><h1 class="text-error">Error Occurred</h1><p class="desc">User ID Not Found or Session Expired.</p><button class="btn danger" onclick="window.location.reload()">CLOSE &amp; RETRY</button></div>
-<div class="view-section" id="view-scanning"><div class="loader"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="satellite"></div></div><h1>Secure Verification</h1><p class="desc" style="margin-bottom:10px">Analyzing your device security profile...</p><!-- Circular Progress Bar -->
-<div class="circular-progress-wrapper">
-    <div class="circular-progress info" id="scanCircle" style="--progress: 0;">
-        <div class="circular-progress-dot"></div>
-    </div>
-    <div class="circular-progress-text" id="scanText">0<span>%</span></div>
-</div></div></div>
+<div class="view-section" id="view-scanning"><div class="loader"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="satellite"></div></div><h1>Secure Verification</h1><p class="desc" style="margin-bottom:10px">Analyzing your device security profile...</p><div class="progress-container"><div class="progress-bar" id="scanBar"></div></div></div>
 <div class="view-section" id="view-failed"><div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div><h1 class="text-error">Verification Failed</h1><p class="desc" id="failedMsg">We encountered an issue during verification.</p><button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button></div>
 <div class="view-section" id="view-success"><div class="icon-wrapper success"><i class="fa-solid fa-check"></i></div><h1 class="text-success">Verification Complete</h1><p class="desc">Your device has been successfully verified and secured.</p><button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button></div>
 <div class="view-section" id="view-already"><div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div><h1 class="text-info-h">Already Verified</h1><p class="desc">This device has already been authorized for use.</p><button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button></div>
@@ -43,56 +36,5 @@ document.addEventListener('keydown',function(e){if(e.key==="F12"||(e.ctrlKey&&e.
 <script>
 (()=>{let ctx=null;function getCtx(){if(!ctx){const AudioContext=window.AudioContext||window.webkitAudioContext;if(!AudioContext)return null;ctx=new AudioContext();}if(ctx.state==="suspended")ctx.resume();return ctx;}function unlock(){getCtx();}document.addEventListener("click",unlock,{once:true});document.addEventListener("touchstart",unlock,{once:true});function blip(type){const audioCtx=getCtx();if(!audioCtx)return;const now=audioCtx.currentTime;let freq=520,duration=.14,gainValue=.22,wave="triangle",glideTo=null;if(type==="hover"){freq=740;duration=.08;gainValue=.14;wave="sine";}if(type==="success"){freq=660;duration=.28;gainValue=.24;wave="sine";glideTo=990;}if(type==="error"){freq=220;duration=.28;gainValue=.22;wave="sawtooth";glideTo=140;}const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq,now);if(glideTo)osc.frequency.exponentialRampToValueAtTime(glideTo,now+duration);gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(gainValue,now+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+duration+.02);}document.addEventListener("click",function(e){const btn=e.target.closest(".btn");if(!btn)return;if(btn.classList.contains("success"))blip("success");else if(btn.classList.contains("danger"))blip("error");else blip("click");});const hoverTargets=".btn,.avatar-container,.status-pill";document.addEventListener("mouseover",function(e){const el=e.target.closest(hoverTargets);if(!el||el.dataset.soundHovering)return;el.dataset.soundHovering="1";blip("hover");});document.addEventListener("mouseout",function(e){const el=e.target.closest(hoverTargets);if(el)delete el.dataset.soundHovering;});const containers=document.querySelectorAll(".view-section");if(containers.length&&"MutationObserver"in window){const seen=new WeakSet();const observer=new MutationObserver(function(mutations){mutations.forEach(function(mutation){const el=mutation.target;if(el.classList.contains("active")&&!seen.has(el)){seen.add(el);if(el.querySelector(".icon-wrapper.success"))blip("success");else if(el.querySelector(".icon-wrapper.error"))blip("error");}});});containers.forEach(function(el){observer.observe(el,{attributes:true,attributeFilter:["class"]});});}})();
 </script>
-
-<!-- ============================================================ -->
-<!-- NEW INLINE SCRIPT: Handles Circular Progress Bar Animation   -->
-<!-- ============================================================ -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const viewScanning = document.getElementById('view-scanning');
-    const viewSuccess = document.getElementById('view-success');
-    const scanCircle = document.getElementById('scanCircle');
-    const scanText = document.getElementById('scanText');
-    const headerBadge = document.getElementById('headerBadge');
-    const headerStatusText = document.getElementById('headerStatusText');
-
-    // Ensure scanning view is active on load
-    viewScanning.classList.add('active');
-
-    let progress = 0;
-    const intervalTime = 35; // Speed of the animation (lower = faster)
-    
-    const timer = setInterval(() => {
-        progress += 1;
-        
-        // 1. Update the CSS variable --progress (drives the conic-gradient ring)
-        scanCircle.style.setProperty('--progress', progress);
-        
-        // 2. Update the percentage text
-        scanText.innerHTML = `${progress}<span>%</span>`;
-
-        // 3. Change color from Blue (info) to Green (success) near the end
-        if (progress > 85 && scanCircle.classList.contains('info')) {
-            scanCircle.classList.remove('info');
-            scanCircle.classList.add('success');
-        }
-
-        // 4. When complete, transition to Success view
-        if (progress >= 100) {
-            clearInterval(timer);
-            
-            setTimeout(() => {
-                viewScanning.classList.remove('active');
-                viewSuccess.classList.add('active');
-                
-                // Update header badge to green
-                headerBadge.className = 'status-pill pill-green';
-                headerStatusText.textContent = 'VERIFIED';
-            }, 600); // Small pause at 100% before transitioning
-        }
-    }, intervalTime);
-});
-</script>
-
 </body>
 </html>
