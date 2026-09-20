@@ -1,10 +1,21 @@
 /* ============================================================
    sound.js — tiny UI sound layer for the status console
    No audio files needed: tones are synthesized with the Web
-   Audio API. Drop this in after your markup:
+   Audio API. Add this AFTER your markup, just before </body>:
      <script src="sound.js"></script>
-   Sounds only start after the first user interaction, per
-   browser autoplay rules.
+
+   IMPORTANT — why sound might not play:
+   Browsers block audio from starting on their own; it can only
+   start after the user has clicked/tapped SOMEWHERE on the page
+   at least once. That's not a bug in this file — it's a browser
+   rule. This script listens for the very first click anywhere and
+   "unlocks" audio then, so as long as the script tag is present,
+   the first .btn/.status-pill/.avatar interaction after that will
+   make sound. If you still hear nothing, open the browser console
+   and check for a red error — most often it means the
+   <script src="sound.js"> tag is missing, points at the wrong
+   path, or the page is loaded from file:// (some browsers restrict
+   that — serve it over http/https instead).
    ============================================================ */
 
 (() => {
@@ -15,7 +26,15 @@
     return ctx;
   }
 
-  // Plays a short, soft tone. type: 'click' | 'hover' | 'success' | 'error'
+  function unlock() {
+    getCtx();
+    document.removeEventListener('click', unlock);
+    document.removeEventListener('touchstart', unlock);
+  }
+  document.addEventListener('click', unlock, { once: true });
+  document.addEventListener('touchstart', unlock, { once: true });
+
+  // type: 'click' | 'hover' | 'success' | 'error'
   function blip(type = 'click') {
     const audioCtx = getCtx();
     const now = audioCtx.currentTime;
@@ -44,7 +63,6 @@
   }
 
   function bindOnce() {
-    // Buttons: click tone
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn');
       if (!btn) return;
@@ -54,7 +72,6 @@
       blip(type);
     });
 
-    // Buttons, avatar, status pill: soft hover tone (throttled per element)
     const hoverTargets = '.btn, .avatar-container, .status-pill';
     document.addEventListener('mouseover', (e) => {
       const el = e.target.closest(hoverTargets);
@@ -67,9 +84,6 @@
       if (el) delete el.dataset.soundHovering;
     });
 
-    // Optional: fire success/error tone automatically when a view-section
-    // with the matching icon becomes active (e.g. via class toggle from
-    // your existing app JS). Observes .view-section.active changes.
     const containers = document.querySelectorAll('.view-section');
     if (containers.length && 'MutationObserver' in window) {
       const seen = new WeakSet();
