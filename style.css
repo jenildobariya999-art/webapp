@@ -1,38 +1,37 @@
 /* ============================================================
    Status Console — bot connection / auth flow
-   Dark, modern palette: deep graphite base, electric indigo +
-   cyan as the primary identity, and a distinctly clearer red
-   for failed/error states so it reads at a glance. Buttons now
-   live in their own footer bar, separated from the copy above.
-   Same class names as before — drop-in replacement.
+   Dark modern palette: near-black base, indigo/cyan as the one
+   accent family (no amber/yellow anywhere), rising glass bubbles
+   over a slow aurora backdrop, buttons anchored to the bottom of
+   each panel. Matched to the actual markup — same class/id names.
+
+   Sound: CSS can't play audio. A tiny companion script (sound.js)
+   is provided alongside this file — it fires a soft blip on
+   .btn clicks and .avatar-container/.status-pill hovers using the
+   Web Audio API, no external audio files needed. Include it after
+   your markup: <script src="sound.js"></script>
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Surfaces */
-  --bg: #05060a;
-  --surface: #0e1016;
-  --surface-raised: #151824;
-  --surface-footer: #10121a;
-  --border: rgba(255, 255, 255, 0.08);
+  /* Surfaces — pushed a shade blacker, with a touch more separation
+     between resting and raised layers for a crisper glass stack */
+  --bg: #030308;
+  --surface: #0a0c13;
+  --surface-raised: #151a2c;
+  --border: rgba(255, 255, 255, 0.09);
   --border-soft: rgba(255, 255, 255, 0.05);
 
   /* Text */
   --text-primary: #f4f5f9;
-  --text-secondary: #8c93ab;
+  --text-secondary: #8b92ab;
 
-  /* Primary identity — electric indigo/cyan */
+  /* Single accent family — indigo → cyan. No yellow/amber anywhere. */
   --primary: #6c7bff;
-  --primary-2: #29d6d6;
+  --primary-2: #22d3ee;
   --primary-dim: rgba(108, 123, 255, 0.14);
   --primary-glow: rgba(108, 123, 255, 0.45);
-
-  /* State: pending / working (amber, kept for "primary" action icon) */
-  --amber: #ffb454;
-  --amber-2: #ff8a3d;
-  --amber-dim: rgba(255, 180, 84, 0.14);
-  --amber-glow: rgba(255, 150, 84, 0.4);
 
   /* State: info */
   --blue: #5b9dff;
@@ -45,8 +44,7 @@
   --green-dim: rgba(46, 230, 168, 0.14);
   --green-glow: rgba(46, 230, 168, 0.4);
 
-  /* State: failed / error — a clean, unmistakable red-rose,
-     distinct from the amber/indigo/green family */
+  /* State: error / failed — a clean rose-red */
   --red: #ff4d5e;
   --red-2: #e62348;
   --red-dim: rgba(255, 77, 94, 0.15);
@@ -97,7 +95,13 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -5%, rgba(108, 123, 255, 0.1), transparent 60%),
+    radial-gradient(ellipse 700px 420px at 8% 100%, rgba(34, 211, 238, 0.07), transparent 65%),
+    radial-gradient(ellipse 700px 420px at 96% 85%, rgba(108, 123, 255, 0.06), transparent 65%),
+    var(--bg);
+  background-size: 100% 100%, 200% 200%, 200% 200%, 100% 100%;
+  animation: auroraDrift 22s ease-in-out infinite;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -107,8 +111,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Two soft, slow-drifting color fields — indigo/cyan up top,
-   a whisper of amber low down. Quiet, not busy. */
+/* Slow, near-imperceptible drift on the background aurora so the
+   whole canvas feels alive without competing with the bubbles */
+@keyframes auroraDrift {
+  0%, 100% { background-position: 0 0, 0% 0%, 100% 100%, 0 0; }
+  50%      { background-position: 0 0, 15% 10%, 85% 90%, 0 0; }
+}
+
+/* ---------- Bubbles ---------- */
+/* #particles is populated at runtime with .particle elements.
+   Each one renders as a soft glassy bubble that drifts upward
+   and sways slightly, then loops. If your JS sets inline
+   top/left/animation-duration/animation-delay per bubble, those
+   override the randomized defaults below via nth-child. */
+
 .particles {
   position: fixed;
   inset: 0;
@@ -117,46 +133,66 @@ body {
   overflow: hidden;
 }
 
-.particles::before,
-.particles::after {
-  content: '';
-  position: absolute;
-  width: 58vmax;
-  height: 58vmax;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.5;
-  will-change: transform;
-}
-
-.particles::before {
-  top: -22%;
-  left: -12%;
-  background: radial-gradient(circle at 30% 30%, var(--primary), transparent 70%);
-  animation: driftA 24s ease-in-out infinite;
-}
-
-.particles::after {
-  bottom: -26%;
-  right: -14%;
-  background: radial-gradient(circle at 60% 60%, var(--amber-2), transparent 70%);
-  opacity: 0.35;
-  animation: driftB 28s ease-in-out infinite;
-}
-
-@keyframes driftA {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(6%, 8%) scale(1.08); }
-}
-
-@keyframes driftB {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-8%, -5%) scale(1.1); }
-}
-
 .particle {
-  display: none;
+  display: block;
+  position: absolute;
+  bottom: -10%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 40%),
+    radial-gradient(circle at 68% 74%, var(--primary-dim), transparent 72%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 60%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 14px var(--primary-glow),
+    0 0 2px rgba(255, 255, 255, 0.3),
+    inset 0 0 10px rgba(255, 255, 255, 0.1),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  backdrop-filter: blur(1px);
+  animation: bubbleRise 12s ease-in infinite, bubbleSway 4.5s ease-in-out infinite;
+  will-change: transform, opacity;
 }
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-55vh) translateX(14px) scale(1) rotate(8deg);
+  }
+  92% {
+    opacity: 0.42;
+  }
+  100% {
+    transform: translateY(-115vh) translateX(-10px) scale(0.82) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+/* Gentle independent side-to-side wobble layered on top of the rise,
+   so bubbles feel buoyant rather than moving in a straight line */
+@keyframes bubbleSway {
+  0%, 100% { margin-left: 0; }
+  50% { margin-left: 10px; }
+}
+
+/* Randomized-looking spread/size/timing for bubbles that don't get
+   inline styles from JS, using nth-child so each one feels distinct. */
+.particle:nth-child(6n+1) { left: 6%;  width: 16px; height: 16px; animation-duration: 10s, 3.8s; animation-delay: 0s, 0.2s; }
+.particle:nth-child(6n+2) { left: 20%; width: 26px; height: 26px; animation-duration: 14s, 5.2s; animation-delay: 1.5s, 0.6s; }
+.particle:nth-child(6n+3) { left: 38%; width: 12px; height: 12px; animation-duration: 9s, 4s;   animation-delay: 3s, 1s; }
+.particle:nth-child(6n+4) { left: 55%; width: 30px; height: 30px; animation-duration: 16s, 6s;  animation-delay: 0.8s, 1.4s; }
+.particle:nth-child(6n+5) { left: 72%; width: 18px; height: 18px; animation-duration: 11s, 4.4s; animation-delay: 2.4s, 0.3s; }
+.particle:nth-child(6n)   { left: 88%; width: 22px; height: 22px; animation-duration: 13s, 5s;  animation-delay: 4s, 1.8s; }
+.particle:nth-child(4n+1) { filter: hue-rotate(-6deg) brightness(1.05); }
+.particle:nth-child(5n+2) { filter: hue-rotate(10deg) brightness(0.95); }
 
 /* ---------- Header ---------- */
 
@@ -186,7 +222,7 @@ body {
   height: 40px;
   border-radius: 11px;
   /* background-color is the fallback tile shown before a photo loads;
-     background-image is left for JS to set the Telegram photo URL.
+     background-image is left free for JS to set the Telegram photo.
      position/size are separate properties so a JS-injected photo
      gets cover/center instead of tiling small in the corner. */
   background-color: var(--surface-raised);
@@ -269,6 +305,12 @@ p.desc {
 .pill-blue .dot {
   background: var(--blue);
   box-shadow: 0 0 0 3px var(--blue-dim), 0 0 10px var(--blue-glow);
+  animation: pulseBlue 1.6s ease-in-out infinite;
+}
+
+@keyframes pulseBlue {
+  0%, 100% { box-shadow: 0 0 0 3px var(--blue-dim), 0 0 8px var(--blue-glow); }
+  50% { box-shadow: 0 0 0 5px var(--blue-dim), 0 0 16px var(--blue-glow); }
 }
 
 .pill-green {
@@ -311,15 +353,25 @@ p.desc {
 .auth-container {
   width: 100%;
   max-width: 430px;
-  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 60%);
+  min-height: 420px;
+  background:
+    radial-gradient(600px 260px at 50% -10%, rgba(108, 123, 255, 0.1), transparent 65%),
+    linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 60%);
   border-radius: 22px;
-  padding: 0;
+  padding: 46px 34px 32px;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(22px) saturate(150%);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
   position: relative;
   overflow: hidden;
+  display: flex;
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.auth-container:hover {
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 60px -20px var(--primary-glow);
+  transform: translateY(-2px);
 }
 
 /* Animated gradient border-glow along the top edge */
@@ -338,26 +390,21 @@ p.desc {
   z-index: 3;
 }
 
-/* Failed state swaps the top edge to the red identity automatically */
-.auth-container:has(.icon-wrapper.error)::before {
+/* Error / failed states swap the top edge to the red identity */
+.auth-container:has(.view-section.active .icon-wrapper.error)::before {
   background: linear-gradient(90deg, transparent, var(--red), var(--red-2), transparent);
   filter: drop-shadow(0 0 14px var(--red-glow));
+}
+
+/* Success state swaps the top edge to green */
+.auth-container:has(.view-section.active .icon-wrapper.success)::before {
+  background: linear-gradient(90deg, transparent, var(--green), var(--green-2), transparent);
+  filter: drop-shadow(0 0 14px var(--green-glow));
 }
 
 @keyframes shimmer {
   0%, 100% { background-position: 0% 0; }
   50% { background-position: 100% 0; }
-}
-
-/* Body of the card: copy + icon. Buttons live below, in their
-   own footer bar (see .footer-actions), which is the "moved"
-   button location — separated visually from the message above. */
-.card-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  padding: 46px 34px 32px;
 }
 
 .view-section {
@@ -433,13 +480,12 @@ p.desc {
   box-shadow: var(--shadow-md), 0 0 54px -8px var(--blue-glow);
 }
 .icon-wrapper.primary {
-  border-color: rgba(255, 180, 84, 0.4);
-  background: linear-gradient(160deg, var(--amber-dim), transparent 70%), var(--surface-raised);
-  box-shadow: var(--shadow-md), 0 0 54px -8px var(--amber-glow);
+  border-color: rgba(108, 123, 255, 0.4);
+  background: linear-gradient(160deg, var(--primary-dim), transparent 70%), var(--surface-raised);
+  box-shadow: var(--shadow-md), 0 0 54px -8px var(--primary-glow);
 }
 
-/* A short, restrained shake on the error icon only — reinforces
-   "failed" without being obnoxious about it. */
+/* A short, restrained shake on the error icon only */
 @keyframes shake {
   0%, 100% { transform: scale(1) translateX(0); }
   20% { transform: scale(1) translateX(-4px); }
@@ -455,7 +501,7 @@ p.desc {
 }
 
 .icon-wrapper.primary i {
-  color: var(--amber);
+  color: var(--primary-2);
 }
 .icon-wrapper.success i {
   color: var(--green);
@@ -468,7 +514,7 @@ p.desc {
 }
 
 /* Loader / scanning effect: a radar-style conic sweep rotating over
-   the icon, plus a pulsing outer ring for "actively scanning". */
+   the rings, plus a pulsing outer ring for "actively scanning". */
 .orbit,
 .satellite {
   position: absolute;
@@ -539,6 +585,7 @@ p.desc {
 
 /* ---------- Headline / copy ---------- */
 
+.btn,
 .footer a {
   position: relative;
 }
@@ -557,32 +604,45 @@ h1 {
 
 .text-error {
   color: var(--red);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 .text-success {
   color: var(--green);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 .text-info-h {
   color: var(--blue);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 
 p.desc {
   font-size: 15px;
-  margin-bottom: 6px;
+  margin-bottom: 28px;
   max-width: 320px;
   line-height: 1.65;
 }
 
 /* ---------- Progress ---------- */
 
+.btn,
+.progress-container {
+  max-width: 300px;
+  overflow: hidden;
+}
+
 .progress-container {
   width: 100%;
-  max-width: 300px;
   height: 6px;
-  overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   border-radius: 6px;
-  margin: 26px 0 4px;
+  margin: 4px 0 0;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -595,23 +655,23 @@ p.desc {
   transition: width 0.3s ease;
 }
 
-/* ---------- Buttons — moved into a dedicated footer bar ---------- */
+/* ---------- Buttons ---------- */
+/* Each .btn is the last element in its .view-section. Since the
+   section is a flex column filling the card's min-height, pushing
+   the button to the bottom with margin-top: auto moves it away from
+   sitting right under the copy and anchors it to the base of the
+   card instead — separated by a thin divider line. */
 
-.footer-actions {
+.btn,
+.footer {
   width: 100%;
-  padding: 20px 34px 28px;
-  border-top: 1px solid var(--border);
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.18)), var(--surface-footer);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .btn {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
+  margin-top: auto;
+  padding-top: 18px;
   padding: 15px 26px;
+  padding-top: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   font-family: 'Space Grotesk', sans-serif;
@@ -623,16 +683,45 @@ p.desc {
   letter-spacing: 0.2px;
   box-shadow: var(--shadow-sm);
   -webkit-tap-highlight-color: transparent;
-  position: relative;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Diagonal glass shine that sweeps across on hover */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.35) 42%, transparent 60%);
+  background-size: 220% 100%;
+  background-position: 130% 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-position 0.6s ease;
+  pointer-events: none;
+}
+
+.btn:hover::after {
+  opacity: 1;
+  background-position: -30% 0;
 }
 
 .btn:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
+  filter: brightness(1.12);
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.5);
 }
 
 .btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.99);
   filter: brightness(0.96);
 }
 
@@ -655,13 +744,6 @@ p.desc {
   box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--primary-glow);
 }
 
-/* If a page only has one .btn and no wrapping .footer-actions markup,
-   this still centers it sensibly at the base of the card. */
-.card-body > .btn {
-  max-width: 300px;
-  margin-top: 20px;
-}
-
 /* ---------- Footer ---------- */
 
 .footer,
@@ -672,9 +754,8 @@ p.desc {
 .footer {
   text-align: center;
   font-size: 13px;
-  padding: 16px 0;
+  padding: 15px 0;
   flex-shrink: 0;
-  width: 100%;
 }
 
 .footer a {
@@ -709,33 +790,24 @@ p.desc {
   .icon-wrapper.error,
   .orbit:nth-child(2),
   .orbit:nth-child(3),
-  .particles::before,
-  .particles::after,
+  .particle,
   .auth-container::before,
-  .pill-red .dot {
+  .pill-red .dot,
+  .pill-blue .dot,
+  body {
     animation: none !important;
   }
 }
 
 @media (max-width: 480px) {
   h1 {
-    font-size: 23px;
+    font-size: 22px;
   }
   p.desc {
     font-size: 14px;
   }
-  .card-body {
-    padding: 38px 24px 26px;
-  }
-  .footer-actions {
-    padding: 18px 24px 24px;
-  }
   .auth-container {
-    border-radius: 18px;
-  }
-  .particles::before,
-  .particles::after {
-    width: 90vmax;
-    height: 90vmax;
+    padding: 36px 24px 26px;
+    min-height: 400px;
   }
 }
