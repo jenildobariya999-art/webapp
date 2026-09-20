@@ -1,59 +1,41 @@
 /* ============================================================
    Secure Verification — Telegram Mini App Edition
    Deep navy base · neon green/red/blue accents · glowing rings
-   Includes: Circular Progress Bar with 1-100% and border
+   Includes CSS-only fix for overlapping active views.
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* ---- Surfaces (Deep Navy / Void) ---- */
   --bg: #060b17;
   --surface: #0d1428;
   --surface-raised: #131c35;
-  
-  /* ---- Borders ---- */
   --border: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.04);
   --border-glow: rgba(255, 255, 255, 0.15);
-
-  /* ---- Text ---- */
   --text-primary: #ffffff;
   --text-secondary: #8a94a6;
   --text-muted: #5b667a;
-
-  /* ---- State: Success (Green) ---- */
+  
   --green: #10b981;
   --green-glow: rgba(16, 185, 129, 0.4);
   --green-dim: rgba(16, 185, 129, 0.15);
-
-  /* ---- State: Error (Red) ---- */
+  
   --red: #ef4444;
   --red-glow: rgba(239, 68, 68, 0.4);
   --red-dim: rgba(239, 68, 68, 0.15);
-
-  /* ---- State: Info / Checking (Blue) ---- */
+  
   --blue: #3b82f6;
   --blue-glow: rgba(59, 130, 246, 0.4);
   --blue-dim: rgba(59, 130, 246, 0.15);
 
-  /* ---- Shadows ---- */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.8);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body, html {
-  font-family: 'Inter', sans-serif;
-  height: 100%;
-  overflow: hidden;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { font-family: 'Inter', sans-serif; height: 100%; overflow: hidden; }
 
 body {
   background: var(--bg);
@@ -70,7 +52,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle starry/particle background */
 body::before {
   content: '';
   position: fixed;
@@ -83,7 +64,7 @@ body::before {
   z-index: 0;
 }
 
-/* ---------- Header / Profile Card ---------- */
+/* ---------- Header ---------- */
 
 .header {
   width: 100%;
@@ -101,171 +82,133 @@ body::before {
   flex-shrink: 0;
 }
 
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.user-profile { display: flex; align-items: center; gap: 12px; }
 
 .avatar-container {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   background-color: var(--surface-raised);
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background-size: cover; background-position: center;
+  display: flex; justify-content: center; align-items: center;
   border: 2px solid var(--green);
   box-shadow: 0 0 15px var(--green-glow);
-  font-family: 'Sora', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
+  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 16px;
   color: var(--text-primary);
-  transition: all 0.3s ease;
 }
 
 .text-info h3 {
-  font-family: 'Sora', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.2px;
-  line-height: 1.2;
+  font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+  color: var(--text-primary); letter-spacing: 0.2px; line-height: 1.2;
 }
 
 .text-info p {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  letter-spacing: 0.3px;
-  margin-top: 2px;
+  font-size: 11px; font-weight: 500; color: var(--text-secondary);
+  letter-spacing: 0.3px; margin-top: 2px;
 }
 
-/* Status Pill */
 .status-pill {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-family: 'Sora', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  padding: 6px 14px; border-radius: 20px;
+  font-family: 'Sora', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;
   text-transform: uppercase;
-  transition: all 0.3s ease;
 }
 
-.pill-blue {
-  color: var(--blue);
-  background: var(--blue-dim);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 0 10px var(--blue-glow);
-}
-.pill-green {
-  color: var(--green);
-  background: var(--green-dim);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 10px var(--green-glow);
-}
-.pill-red {
-  color: var(--red);
-  background: var(--red-dim);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  box-shadow: 0 0 10px var(--red-glow);
-}
+.pill-blue { color: var(--blue); background: var(--blue-dim); border: 1px solid rgba(59, 130, 246, 0.3); box-shadow: 0 0 10px var(--blue-glow); }
+.pill-green { color: var(--green); background: var(--green-dim); border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 0 10px var(--green-glow); }
+.pill-red { color: var(--red); background: var(--red-dim); border: 1px solid rgba(239, 68, 68, 0.3); box-shadow: 0 0 10px var(--red-glow); }
 
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
+.dot { width: 6px; height: 6px; border-radius: 50%; }
 .pill-blue .dot { background: var(--blue); box-shadow: 0 0 8px var(--blue); animation: pulse 1.5s infinite; }
 .pill-green .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
 .pill-red .dot { background: var(--red); box-shadow: 0 0 8px var(--red); animation: pulse 1.5s infinite; }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
-}
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
 
 /* ---------- Main Panel ---------- */
 
 .main-wrapper {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  padding: 20px;
-  position: relative;
-  z-index: 2;
+  flex: 1; display: flex; justify-content: center; align-items: center;
+  width: 100%; padding: 20px; position: relative; z-index: 2;
 }
 
 .auth-container {
-  width: 100%;
-  max-width: 420px;
+  width: 100%; max-width: 420px;
   background: var(--surface);
-  border-radius: 28px;
-  padding: 40px 24px;
+  border-radius: 28px; padding: 40px 24px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  position: relative; overflow: hidden;
   transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* Dynamic border glow based on active view state */
-.auth-container:has(.icon-wrapper.success) { border-color: rgba(16, 185, 129, 0.3); box-shadow: var(--shadow-lg), 0 0 40px -10px var(--green-glow); }
-.auth-container:has(.icon-wrapper.error) { border-color: rgba(239, 68, 68, 0.3); box-shadow: var(--shadow-lg), 0 0 40px -10px var(--red-glow); }
-.auth-container:has(.icon-wrapper.info) { border-color: rgba(59, 130, 246, 0.3); box-shadow: var(--shadow-lg), 0 0 40px -10px var(--blue-glow); }
+/* CSS-ONLY FIX FOR SCREENSHOT 2: 
+   If JS accidentally activates two views, hide the second one */
+.view-section.active ~ .view-section.active { display: none !important; }
 
 .view-section {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
+  display: none; flex-direction: column; align-items: center; width: 100%;
 }
 .view-section.active {
-  display: flex;
-  animation: fadeIn 0.5s ease forwards;
+  display: flex; animation: fadeIn 0.5s ease forwards;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- Loader (Scanning View) ---------- */
+.loader {
+  width: 120px; height: 120px; position: relative; margin-bottom: 30px;
+  display: flex; justify-content: center; align-items: center;
 }
 
-/* ============================================================
-   CIRCULAR PROGRESS BAR (NEW)
-   ============================================================ */
+.orbit {
+  position: absolute; width: 100%; height: 100%; border-radius: 50%;
+  border: 3px solid transparent; animation: orbit 3s linear infinite;
+}
+
+/* Blue arc (Top-Right) */
+.orbit:nth-child(1) {
+  border-top-color: var(--blue); border-right-color: var(--blue);
+  animation-duration: 2s; box-shadow: 0 0 15px var(--blue-glow);
+}
+/* Green arc (Bottom-Right) */
+.orbit:nth-child(2) {
+  border-bottom-color: var(--green); border-left-color: var(--green);
+  animation-duration: 3s; animation-direction: reverse;
+  width: 80%; height: 80%; top: 10%; left: 10%;
+  box-shadow: 0 0 15px var(--green-glow);
+}
+/* Red arc (Top-Left) */
+.orbit:nth-child(3) {
+  border-top-color: var(--red); border-left-color: var(--red);
+  animation-duration: 4s; width: 60%; height: 60%; top: 20%; left: 20%;
+  box-shadow: 0 0 15px var(--red-glow);
+}
+
+@keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.satellite {
+  position: absolute; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--blue); box-shadow: 0 0 15px var(--blue);
+  top: 50%; left: 50%; margin: -6px 0 0 -6px;
+  animation: coreBeat 1.5s ease-in-out infinite;
+}
+
+@keyframes coreBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+
+/* ---------- Circular Progress Bar ---------- */
 
 .circular-progress-wrapper {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  margin-bottom: 25px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative; width: 140px; height: 140px;
+  margin-bottom: 25px; display: flex; justify-content: center; align-items: center;
 }
 
 .circular-progress {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
+  position: absolute; inset: 0; border-radius: 50%;
   /* The conic-gradient creates the progress arc based on --progress variable */
   background: conic-gradient(
     var(--blue) calc(var(--progress) * 1%),
     var(--border-soft) 0
   );
-  /* Add a border as requested */
   border: 2px solid var(--border-glow);
   box-shadow: 0 0 25px var(--blue-glow), inset 0 0 15px rgba(0, 0, 0, 0.5);
   transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -273,45 +216,25 @@ body::before {
 
 /* The inner hole of the ring */
 .circular-progress::before {
-  content: '';
-  position: absolute;
-  inset: 10px;
-  background: var(--surface);
-  border-radius: 50%;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6);
-  z-index: 1;
+  content: ''; position: absolute; inset: 10px;
+  background: var(--surface); border-radius: 50%;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6); z-index: 1;
 }
 
-/* The percentage text inside the circle */
+/* The percentage text */
 .circular-progress-text {
-  position: relative;
-  z-index: 2;
-  font-family: 'Sora', sans-serif;
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--text-primary);
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
+  position: relative; z-index: 2;
+  font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 800;
+  color: var(--text-primary); display: flex; align-items: baseline; gap: 2px;
 }
+.circular-progress-text span { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
 
-.circular-progress-text span {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-/* Animated glowing dot that travels along the ring */
+/* The glowing dot that travels along the ring */
 .circular-progress-dot {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: var(--blue);
-  border-radius: 50%;
+  position: absolute; width: 12px; height: 12px;
+  background: var(--blue); border-radius: 50%;
   box-shadow: 0 0 12px var(--blue), 0 0 20px var(--blue);
-  z-index: 3;
-  top: 0;
-  left: 50%;
+  z-index: 3; top: 0; left: 50%;
   transform: translateX(-50%) translateY(-50%);
   transform-origin: 50% 100%;
   rotate: calc(var(--progress) * 3.6deg);
@@ -319,145 +242,42 @@ body::before {
 }
 
 /* State variations for the circular progress bar */
-.circular-progress.success {
-  background: conic-gradient(var(--green) calc(var(--progress) * 1%), var(--border-soft) 0);
-  border-color: var(--green);
-  box-shadow: 0 0 25px var(--green-glow), inset 0 0 15px rgba(0, 0, 0, 0.5);
-}
+.circular-progress.success { background: conic-gradient(var(--green) calc(var(--progress) * 1%), var(--border-soft) 0); border-color: var(--green); box-shadow: 0 0 25px var(--green-glow), inset 0 0 15px rgba(0, 0, 0, 0.5); }
 .circular-progress.success + .circular-progress-text { color: var(--green); }
 .circular-progress.success + .circular-progress-text span { color: var(--green); }
 .circular-progress.success .circular-progress-dot { background: var(--green); box-shadow: 0 0 12px var(--green); }
 
-.circular-progress.error {
-  background: conic-gradient(var(--red) calc(var(--progress) * 1%), var(--border-soft) 0);
-  border-color: var(--red);
-  box-shadow: 0 0 25px var(--red-glow), inset 0 0 15px rgba(0, 0, 0, 0.5);
-}
+.circular-progress.error { background: conic-gradient(var(--red) calc(var(--progress) * 1%), var(--border-soft) 0); border-color: var(--red); box-shadow: 0 0 25px var(--red-glow), inset 0 0 15px rgba(0, 0, 0, 0.5); }
 .circular-progress.error + .circular-progress-text { color: var(--red); }
 .circular-progress.error + .circular-progress-text span { color: var(--red); }
 .circular-progress.error .circular-progress-dot { background: var(--red); box-shadow: 0 0 12px var(--red); }
 
-/* ============================================================
-   END CIRCULAR PROGRESS BAR
-   ============================================================ */
-
-/* ---------- Loader (Scanning View) ---------- */
-
-.loader {
-  width: 120px;
-  height: 120px;
-  position: relative;
-  margin-bottom: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.orbit {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  animation: orbit 3s linear infinite;
-}
-.orbit:first-child {
-  border-top: 2px solid var(--blue);
-  border-right: 2px solid var(--blue);
-  animation-duration: 2s;
-  box-shadow: 0 0 15px var(--blue-glow);
-}
-.orbit:nth-child(2) {
-  border-bottom: 2px solid var(--green);
-  border-left: 2px solid var(--green);
-  animation-duration: 3s;
-  animation-direction: reverse;
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 10%;
-  box-shadow: 0 0 15px var(--green-glow);
-}
-.orbit:nth-child(3) {
-  border-top: 2px solid var(--red);
-  border-bottom: 2px solid var(--red);
-  animation-duration: 4s;
-  width: 60%;
-  height: 60%;
-  top: 20%;
-  left: 20%;
-  box-shadow: 0 0 15px var(--red-glow);
-}
-
-@keyframes orbit {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.satellite {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 15px var(--blue);
-  top: 50%;
-  left: 50%;
-  margin: -6px 0 0 -6px;
-  animation: coreBeat 1.5s ease-in-out infinite;
-}
-
-@keyframes coreBeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-}
-
 /* ---------- Status Icons (Success / Error / Info) ---------- */
 
 .icon-wrapper {
-  width: 100px;
-  height: 100px;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 24px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border);
+  width: 100px; height: 100px; position: relative;
+  display: flex; justify-content: center; align-items: center;
+  margin-bottom: 24px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
 }
 
 .icon-wrapper.success { border-color: var(--green); box-shadow: 0 0 25px var(--green-glow), inset 0 0 20px var(--green-dim); }
 .icon-wrapper.success::before, .icon-wrapper.success::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--green);
-  opacity: 0.4;
+  content: ''; position: absolute; border-radius: 50%; border: 1px solid var(--green); opacity: 0.4;
 }
 .icon-wrapper.success::before { width: 130%; height: 130%; border-style: dashed; animation: rotate 10s linear infinite; }
 .icon-wrapper.success::after { width: 160%; height: 160%; opacity: 0.1; animation: rotate 15s linear infinite reverse; }
 
 .icon-wrapper.error { border-color: var(--red); box-shadow: 0 0 25px var(--red-glow), inset 0 0 20px var(--red-dim); }
 .icon-wrapper.error::before {
-  content: '';
-  position: absolute;
-  width: 140%; height: 140%;
-  border-radius: 50%;
-  border: 1px solid var(--red);
-  opacity: 0.2;
-  animation: pulseRing 2s infinite;
+  content: ''; position: absolute; width: 140%; height: 140%;
+  border-radius: 50%; border: 1px solid var(--red); opacity: 0.2; animation: pulseRing 2s infinite;
 }
 
 .icon-wrapper.info { border-color: var(--blue); box-shadow: 0 0 25px var(--blue-glow), inset 0 0 20px var(--blue-dim); }
 .icon-wrapper.info::before {
-  content: '';
-  position: absolute;
-  width: 140%; height: 140%;
-  border-radius: 50%;
-  border: 1px solid var(--blue);
-  opacity: 0.2;
-  animation: pulseRing 2s infinite;
+  content: ''; position: absolute; width: 140%; height: 140%;
+  border-radius: 50%; border: 1px solid var(--blue); opacity: 0.2; animation: pulseRing 2s infinite;
 }
 
 @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -471,12 +291,8 @@ body::before {
 /* ---------- Typography ---------- */
 
 h1 {
-  font-family: 'Sora', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  margin-bottom: 12px;
-  line-height: 1.2;
-  letter-spacing: -0.3px;
+  font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 800;
+  margin-bottom: 12px; line-height: 1.2; letter-spacing: -0.3px;
   color: var(--text-primary);
 }
 h1.text-success { color: var(--green); }
@@ -484,28 +300,18 @@ h1.text-error { color: var(--red); }
 h1.text-info-h { color: var(--blue); }
 
 p.desc {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 30px;
-  max-width: 320px;
+  font-size: 14px; color: var(--text-secondary);
+  line-height: 1.5; margin-bottom: 30px; max-width: 320px;
 }
 
 /* ---------- Buttons ---------- */
 
 .btn {
-  width: 100%;
-  max-width: 300px;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 16px;
-  font-family: 'Sora', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
+  width: 100%; max-width: 300px; padding: 16px 24px;
+  border: none; border-radius: 16px;
+  font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer;
+  transition: all 0.2s ease; text-transform: uppercase;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -521,20 +327,10 @@ p.desc {
 /* ---------- Footer ---------- */
 
 .footer {
-  width: 100%;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-muted);
-  padding: 15px 0;
-  position: relative;
-  z-index: 2;
+  width: 100%; text-align: center; font-size: 13px; font-weight: 600;
+  color: var(--blue); padding: 15px 0; position: relative; z-index: 2;
 }
-.footer a {
-  color: var(--blue);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s ease;
-}
+.footer a { color: var(--blue); text-decoration: none; transition: color 0.2s ease; }
 .footer a:hover { color: var(--text-primary); text-decoration: underline; }
 
 /* ---------- Motion & Accessibility ---------- */
