@@ -172,7 +172,16 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 11px;
-  background: linear-gradient(145deg, var(--surface-raised), var(--surface));
+  /* background-color is the fallback tile shown before a photo loads;
+     background-image is left for JS to set the Telegram photo URL.
+     position/size are separate properties (not part of the shorthand
+     used elsewhere) so a JS-injected photo still gets cover/center
+     instead of tiling small in the corner. */
+  background-color: var(--surface-raised);
+  background-image: linear-gradient(145deg, var(--surface-raised), var(--surface));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -319,6 +328,7 @@ p.desc {
   display: none;
   flex-direction: column;
   align-items: center;
+  min-height: 340px;
   width: 100%;
   text-align: center;
   animation: containerEnter 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
@@ -411,7 +421,9 @@ p.desc {
   color: var(--blue);
 }
 
-/* Loader rings: dashed ring for structure, gradient arc for motion */
+/* Loader / scanning effect: a radar-style conic sweep rotating over
+   the icon, a pulsing outer ring for "actively scanning", and a
+   dashed ring for structure. Reads as active work, not just a spinner. */
 .orbit,
 .satellite {
   position: absolute;
@@ -428,16 +440,27 @@ p.desc {
   border: 1.5px dashed var(--border);
 }
 
+/* Radar sweep: a conic gradient wedge rotating around the ring,
+   masked to a thin band so it reads as a scanning beam. */
 .orbit:nth-child(2) {
   border: none;
-  border-top: 2.5px solid transparent;
-  border-image: linear-gradient(90deg, var(--blue-2), var(--amber)) 1;
   width: 100%;
   height: 100%;
   top: 0;
   left: 0;
-  filter: drop-shadow(0 0 8px var(--blue-glow));
-  animation: orbit 1.3s linear infinite;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 270deg,
+    var(--blue-2) 330deg,
+    var(--amber) 355deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  filter: drop-shadow(0 0 10px var(--blue-glow));
+  animation: scanSweep 1.6s linear infinite;
 }
 
 .orbit:nth-child(3) {
@@ -445,15 +468,29 @@ p.desc {
   height: 76%;
   top: 12%;
   left: 12%;
-  border: 1.5px dashed var(--border-soft);
+  border: 1.5px solid var(--border-soft);
+  animation: scanPulse 2.2s ease-in-out infinite;
 }
 
-@keyframes orbit {
+@keyframes scanSweep {
   from {
     transform: rotate(0);
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes scanPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+    box-shadow: 0 0 0 0 var(--blue-glow);
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.5;
+    box-shadow: 0 0 18px 2px var(--blue-glow);
   }
 }
 
@@ -545,6 +582,23 @@ p.desc {
   letter-spacing: 0.2px;
   box-shadow: var(--shadow-sm);
   -webkit-tap-highlight-color: transparent;
+  /* Anchored to the bottom of the card, separated from the copy
+     above it, instead of sitting inline right after the progress bar. */
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid transparent;
+  position: relative;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background: var(--border);
 }
 
 .btn:hover {
