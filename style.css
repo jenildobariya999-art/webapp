@@ -522,44 +522,77 @@ p.desc {
 .icon-wrapper.error i { color: var(--red); }
 .icon-wrapper.info i { color: var(--blue); }
 
-/* Loader — sonar-style pulse rings (no rotating radar sweep).
-   Each .orbit is a plain ring that expands outward and fades,
-   staggered so they chase one another outward from the centre,
-   like ripples on water rather than a scanning beam. A calm dot
-   sits fixed in the middle so the loader still reads as "alive"
-   even between pulses. */
+/* Loader — clean circular gradient spinner. A soft static guide
+   ring sits still, a two-tone gradient arc spins smoothly around
+   it (continuous circular motion, not a narrow scanning beam),
+   and a slower faint outer ring turns the opposite way for depth.
+   A steady glowing core sits in the centre. */
 .orbit,
 .satellite { position: absolute; }
 
-.orbit {
+/* Static guide ring */
+.orbit:nth-child(1) {
   width: 100%;
   height: 100%;
   top: 0;
   left: 0;
   border-radius: 50%;
-  border: 1.5px solid var(--primary);
-  opacity: 0;
-  transform: scale(0.35);
-  animation: sonarPulse 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
-  filter: drop-shadow(0 0 8px var(--primary-glow));
+  border: 2px solid var(--border);
 }
+
+/* Primary spinner: a full circular band whose gradient rotates,
+   with the mask trimmed to a ring so it reads as a clean loading
+   circle rather than a filled disc or a single sweeping beam */
 .orbit:nth-child(2) {
-  border-color: var(--primary-2);
-  animation-delay: 0.6s;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--primary) 0deg,
+    var(--primary-2) 140deg,
+    transparent 260deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+  filter: drop-shadow(0 0 10px var(--primary-glow));
+  animation: spin 1.8s linear infinite;
 }
+
+/* Secondary ring: thinner, dimmer, spins the opposite way and
+   slower — gives the loader a sense of depth without competing
+   with the primary arc */
 .orbit:nth-child(3) {
-  border-color: var(--blue);
-  animation-delay: 1.2s;
+  width: 76%;
+  height: 76%;
+  top: 12%;
+  left: 12%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 90deg,
+    var(--blue) 0deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  opacity: 0.6;
+  animation: spinReverse 3.2s linear infinite;
 }
 
-@keyframes sonarPulse {
-  0%   { transform: scale(0.35); opacity: 0; }
-  15%  { opacity: 0.75; }
-  100% { transform: scale(1); opacity: 0; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes spinReverse {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
 }
 
-/* Small steady core so the centre of the loader isn't empty
-   between ripple pulses */
+/* Steady glowing core at the centre */
 .satellite {
   display: block;
   width: 10px;
@@ -570,11 +603,11 @@ p.desc {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
   box-shadow: 0 0 14px var(--primary-glow);
-  animation: coreBeat 2.4s ease-in-out infinite;
+  animation: coreBeat 2.2s ease-in-out infinite;
 }
 @keyframes coreBeat {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.25); }
+  50% { transform: scale(1.2); }
 }
 
 /* ---------- Headline / copy ---------- */
