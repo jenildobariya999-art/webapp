@@ -4,12 +4,6 @@
    accent family (no amber/yellow anywhere), rising glass bubbles
    over a slow aurora backdrop, buttons anchored to the bottom of
    each panel. Matched to the actual markup — same class/id names.
-
-   Sound: CSS can't play audio. A tiny companion script (sound.js)
-   is provided alongside this file — it fires a soft blip on
-   .btn clicks and .avatar-container/.status-pill hovers using the
-   Web Audio API, no external audio files needed. Include it after
-   your markup: <script src="sound.js"></script>
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
@@ -247,6 +241,12 @@ body {
   box-shadow: 0 6px 18px var(--primary-glow);
 }
 
+.avatar-container:focus-visible,
+.status-pill:focus-visible {
+  outline: 2px solid var(--primary-2);
+  outline-offset: 2px;
+}
+
 .status-pill,
 .text-info h3,
 h1 {
@@ -283,11 +283,13 @@ p.desc {
   align-items: center;
   gap: 7px;
   backdrop-filter: blur(8px);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .status-pill:hover {
   transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: var(--shadow-sm);
 }
 
 .dot {
@@ -372,6 +374,18 @@ p.desc {
 .auth-container:hover {
   box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 60px -20px var(--primary-glow);
   transform: translateY(-2px);
+}
+
+/* Very fine film-grain texture over the card so the near-black
+   surface reads as matte glass rather than a flat fill */
+.auth-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Animated gradient border-glow along the top edge */
@@ -592,10 +606,11 @@ p.desc {
 
 h1 {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 27px;
+  font-size: clamp(22px, 5vw, 27px);
   font-weight: 800;
   margin-bottom: 10px;
   letter-spacing: -0.3px;
+  line-height: 1.2;
   background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
   -webkit-background-clip: text;
   background-clip: text;
@@ -649,10 +664,28 @@ p.desc {
 .progress-bar {
   height: 100%;
   width: 0%;
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(90deg, var(--primary), var(--primary-2));
   box-shadow: 0 0 12px var(--primary-glow);
   border-radius: 6px;
   transition: width 0.3s ease;
+}
+
+/* Soft diagonal shimmer traveling along the filled portion, so
+   progress reads as "active" rather than a static filled bar */
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: progressShimmer 1.8s linear infinite;
+}
+
+@keyframes progressShimmer {
+  from { background-position: 140% 0; }
+  to { background-position: -40% 0; }
 }
 
 /* ---------- Buttons ---------- */
@@ -794,6 +827,7 @@ p.desc {
   .auth-container::before,
   .pill-red .dot,
   .pill-blue .dot,
+  .progress-bar::after,
   body {
     animation: none !important;
   }
