@@ -423,72 +423,122 @@ body {
   }
 }
 
-/* ---------- Loader: three scanning rings ---------- */
+/* ---------- Loader: radar scan ---------- */
+.loader {
+  margin: 8px 0 38px;
+}
+
+/* Radar disc: cross-hair, range rings, and an outward "ping" */
 .loader::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 40%, #131d42, #0a1024 70%);
-  box-shadow: 0 0 50px rgba(59, 130, 246, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(rgba(148, 163, 255, 0.12), rgba(148, 163, 255, 0.12)) center / 1px 100% no-repeat,
+    linear-gradient(rgba(148, 163, 255, 0.12), rgba(148, 163, 255, 0.12)) center / 100% 1px no-repeat,
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 13px, rgba(148, 163, 255, 0.1) 13px 14px),
+    radial-gradient(circle at 50% 40%, #131d42, #0a1024 72%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 0 rgba(59, 130, 246, 0.35),
+    0 0 50px rgba(59, 130, 246, 0.25);
+  animation: radarPing 2.4s ease-out infinite;
+}
+
+/* Sweeping beam with a fading tail */
+.loader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(59, 130, 246, 0) 0deg,
+    rgba(59, 130, 246, 0) 230deg,
+    rgba(59, 130, 246, 0.5) 350deg,
+    rgba(125, 190, 255, 0.95) 360deg
+  );
+  animation: spin 2.2s linear infinite;
+  pointer-events: none;
 }
 
 .orbit {
   position: absolute;
+  z-index: 1;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 3px solid transparent;
+  border: 2px solid transparent;
   animation: spin 3s linear infinite;
 }
 
 .orbit:first-child {
   border-color: var(--blue) var(--blue) transparent var(--blue);
-  animation-duration: 4s;
-  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.7));
+  animation-duration: 5s;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.8));
 }
 
 .orbit:nth-child(2) {
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 10%;
+  width: 76%;
+  height: 76%;
+  top: 12%;
+  left: 12%;
   border-color: #10c98a #10c98a transparent #10c98a;
-  animation-duration: 6s;
+  animation-duration: 7s;
   animation-direction: reverse;
-  filter: drop-shadow(0 0 5px rgba(16, 201, 138, 0.6));
+  filter: drop-shadow(0 0 5px rgba(16, 201, 138, 0.7));
 }
 
 .orbit:nth-child(3) {
-  width: 60%;
-  height: 60%;
-  top: 20%;
-  left: 20%;
+  width: 52%;
+  height: 52%;
+  top: 24%;
+  left: 24%;
   border-color: var(--red) transparent var(--red) var(--red);
-  animation-duration: 8s;
-  filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.6));
+  animation-duration: 9s;
+  filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.7));
 }
 
+/* Core: stays dead centre, whatever element it sits in */
 .satellite {
   position: absolute;
+  z-index: 2;
   top: 50%;
-  left: -4.5px;
+  left: 50%;
   width: 12px;
   height: 12px;
+  margin: -6px 0 0 -6px;
   border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 12px var(--blue);
-  transform: translateY(-50%);
-  animation: satellite 2s ease-in-out infinite;
+  background: #7dbeff;
+  box-shadow: 0 0 14px var(--blue), 0 0 0 4px rgba(59, 130, 246, 0.25);
+  transform: none;
+  animation: corePulse 1.4s ease-in-out infinite;
 }
 
-@keyframes satellite {
+@keyframes radarPing {
+  0% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 0 0 0 rgba(59, 130, 246, 0.4),
+      0 0 50px rgba(59, 130, 246, 0.25);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 0 0 30px rgba(59, 130, 246, 0),
+      0 0 50px rgba(59, 130, 246, 0.25);
+  }
+}
+
+@keyframes corePulse {
   0%,
   100% {
-    transform: translateY(-50%) scale(1);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-50%) scale(1.25);
+    transform: scale(1.3);
   }
 }
 
@@ -539,6 +589,24 @@ p.desc {
   background: linear-gradient(90deg, #3b82f6, #7b83f5, #22d3ee);
   box-shadow: 0 0 14px rgba(59, 130, 246, 0.7);
   transition: width 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Light glint travelling along the bar while it fills */
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: translateX(-100%);
+  animation: barScan 1.4s ease-in-out infinite;
+}
+
+@keyframes barScan {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* ---------- Buttons ---------- */
@@ -795,5 +863,10 @@ p.desc {
   *::after {
     animation: none !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .loader::after,
+  .progress-bar::after {
+    display: none;
   }
 }

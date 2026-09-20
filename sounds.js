@@ -16,6 +16,8 @@
    If you still hear nothing: raise MEDIA volume (not ringer), turn off
    silent mode, and make sure the speaker button is not crossed out.
 
+   Sounds:  success = rising bell chime | error = falling low tones (denied)
+            info (already verified) = two soft dings | scanning = sonar ping
    Manual:  Sfx.play('success'|'error'|'info'|'primary'|'click'|'hover'|'on')
             Sfx.setMuted(true)    Sfx.status()
    ========================================================================== */
@@ -52,12 +54,22 @@
       case 'saw':
         return 2 * ((p / (2 * Math.PI)) % 1) - 1;
       default:
-        /* soft square: a few odd harmonics, so it is bright but not harsh */
-        return (4 / Math.PI) * (Math.sin(p) + Math.sin(3 * p) / 3 + Math.sin(5 * p) / 5 + Math.sin(7 * p) / 7);
+        /* soft square: a few odd harmonics, warm rather than harsh */
+        return (4 / Math.PI) * (Math.sin(p) + Math.sin(3 * p) / 3 + Math.sin(5 * p) / 5);
     }
   }
 
-  function synth(notes, total) {
+  /* A bell is a few slightly inharmonic partials; the higher ones fade
+     faster, which is what gives the glassy "ding". [ratio, level, decay] */
+  var BELL = [
+    [1, 1, 1],
+    [2.01, 0.45, 1.7],
+    [3.02, 0.22, 2.4],
+    [4.16, 0.12, 3.2],
+    [5.43, 0.07, 4.2]
+  ];
+
+  function synth(notes, total, echo) {
     var n = Math.ceil(total * SR);
     var out = new Float32Array(n);
 
@@ -67,20 +79,29 @@
       var vol = nt.vol == null ? 0.4 : nt.vol;
       var phase = 0;
       var prev = 0;
+      var ph = [0, 0, 0, 0, 0];
+      var pluck = nt.type === 'bell' || nt.env === 'pluck';
 
       for (var i = 0; i < len && start + i < n; i++) {
         var t = i / len;
         var attack = Math.min(1, i / (SR * 0.004));
-        /* full level for 60% of the note, then a quick decay: punchy and clear */
-        var env = t < 0.6 ? 1 : Math.pow(0.0001, (t - 0.6) / 0.4);
-        var s;
+        /* pluck = instant hit then a smooth fade; hold = steady then a quick fade */
+        var env = pluck ? Math.pow(0.001, t) : t < 0.6 ? 1 : Math.pow(0.0001, (t - 0.6) / 0.4);
+        var s = 0;
 
         if (nt.type === 'noise') {
           var r = Math.random() * 2 - 1;
-          s = (r - prev) * 0.5; /* differencing = high-pass, a crisp "tick" */
+          s = (r - prev) * 0.5; /* differencing = high-pass, a crisp tick */
           prev = r;
+        } else if (nt.type === 'bell') {
+          for (var b = 0; b < BELL.length; b++) {
+            ph[b] += (2 * Math.PI * nt.freq * BELL[b][0]) / SR;
+            s += Math.sin(ph[b]) * BELL[b][1] * Math.pow(0.001, t * (BELL[b][2] - 1) * 0.4);
+          }
+          s /= 1.6;
         } else {
           var f = nt.freq * (nt.slide ? Math.pow(nt.slide, t) : 1);
+          if (nt.vib) f += nt.vib * Math.sin((2 * Math.PI * 6 * i) / SR);
           phase += (2 * Math.PI * f) / SR;
           s = wave(nt.type, phase);
         }
@@ -88,62 +109,72 @@
       }
     });
 
+    /* Optional echo tail: [delay seconds, feedback] */
+    if (echo) {
+      var d = Math.floor(echo[0] * SR);
+      for (var e = d; e < n; e++) out[e] += out[e - d] * echo[1];
+    }
+
     /* Gentle saturation makes it loud without harsh clipping */
-    for (var k = 0; k < n; k++) out[k] = Math.tanh(out[k] * 1.5);
+    for (var k = 0; k < n; k++) out[k] = Math.tanh(out[k] * 1.4);
     return out;
   }
 
-  function chord(freqs, at, dur, type, vol) {
-    return freqs.map(function (f) {
-      return { freq: f, at: at, dur: dur, type: type, vol: vol };
-    });
-  }
-
+  /* ---------- The sounds ----------
+     success  : bright rising bell arpeggio + sparkle (a reward)
+     error    : two falling tones a tritone apart, with a low thump (denied)
+     info     : two soft descending dings (already verified: "noted")
+     primary  : sonar sweep + ping (scanning starts)                     */
   var defs = {
     click: {
-      total: 0.12,
+      total: 0.1,
       notes: [
-        { type: 'noise', dur: 0.03, vol: 0.55 },
-        { freq: 440, slide: 2, dur: 0.08, vol: 0.45 }
+        { type: 'noise', dur: 0.02, vol: 0.28 },
+        { type: 'sine', freq: 620, slide: 0.6, dur: 0.07, vol: 0.5, env: 'pluck' }
       ]
     },
-    hover: { total: 0.06, notes: [{ freq: 1319, dur: 0.04, vol: 0.18 }] },
+    hover: { total: 0.05, notes: [{ type: 'sine', freq: 2200, dur: 0.03, vol: 0.2, env: 'pluck' }] },
     success: {
-      total: 1.05,
-      notes: [523.25, 659.25, 783.99, 1046.5]
-        .map(function (f, i) {
-          return { freq: f, at: i * 0.09, dur: 0.12, vol: 0.45 };
-        })
-        .concat(chord([1046.5, 1318.5, 1568], 0.38, 0.65, 'triangle', 0.4))
-        .concat([{ freq: 1046.5, at: 0.38, dur: 0.3, vol: 0.15 }])
+      total: 2.0,
+      echo: [0.17, 0.32],
+      notes: [
+        { type: 'sine', freq: 261.63, dur: 1.0, vol: 0.28, env: 'pluck' },
+        { type: 'bell', freq: 783.99, at: 0, dur: 0.9, vol: 0.42 },
+        { type: 'bell', freq: 1046.5, at: 0.09, dur: 0.9, vol: 0.42 },
+        { type: 'bell', freq: 1318.5, at: 0.18, dur: 0.9, vol: 0.42 },
+        { type: 'bell', freq: 1568, at: 0.27, dur: 1.0, vol: 0.42 },
+        { type: 'bell', freq: 2093, at: 0.42, dur: 0.9, vol: 0.22 }
+      ]
     },
     error: {
-      total: 0.7,
+      total: 1.0,
       notes: [
-        { freq: 311, slide: 0.5, dur: 0.24, vol: 0.5 },
-        { freq: 233, slide: 0.4, at: 0.2, dur: 0.4, vol: 0.5 },
-        { freq: 90, dur: 0.6, type: 'saw', vol: 0.3 }
+        { type: 'triangle', freq: 311.13, dur: 0.2, vol: 0.65 },
+        { type: 'square', freq: 220, slide: 0.92, at: 0.18, dur: 0.55, vol: 0.4, vib: 4 },
+        { type: 'sine', freq: 110, dur: 0.5, vol: 0.55, env: 'pluck' }
       ]
     },
     info: {
-      total: 0.45,
+      total: 1.4,
+      echo: [0.2, 0.28],
       notes: [
-        { freq: 784, dur: 0.15, vol: 0.45 },
-        { freq: 1046.5, at: 0.13, dur: 0.28, vol: 0.45 }
+        { type: 'bell', freq: 1174.66, at: 0, dur: 0.6, vol: 0.58 },
+        { type: 'bell', freq: 880, at: 0.17, dur: 0.85, vol: 0.58 }
       ]
     },
     primary: {
-      total: 0.5,
+      total: 1.6,
+      echo: [0.22, 0.4],
       notes: [
-        { freq: 196, slide: 4, dur: 0.3, vol: 0.4 },
-        { freq: 1175, at: 0.3, dur: 0.16, type: 'triangle', vol: 0.45 }
+        { type: 'sine', freq: 320, slide: 3.2, dur: 0.38, vol: 0.34 },
+        { type: 'bell', freq: 1568, at: 0.36, dur: 0.9, vol: 0.45 }
       ]
     },
     on: {
-      total: 0.5,
+      total: 0.8,
       notes: [
-        { freq: 988, dur: 0.08, vol: 0.45 },
-        { freq: 1319, at: 0.08, dur: 0.38, vol: 0.45 }
+        { type: 'bell', freq: 1046.5, at: 0, dur: 0.4, vol: 0.4 },
+        { type: 'bell', freq: 1568, at: 0.09, dur: 0.6, vol: 0.4 }
       ]
     }
   };
@@ -154,10 +185,10 @@
     if (name === 'tick') {
       var step = Math.round((arg || 0) * 10);
       key = 'tick' + step;
-      def = { total: 0.07, notes: [{ freq: 600 + step * 90, dur: 0.05, vol: 0.28 }] };
+      def = { total: 0.07, notes: [{ type: 'sine', freq: 900 + step * 70, dur: 0.05, vol: 0.3, env: 'pluck' }] };
     }
     if (!def) return null;
-    if (!cache[key]) cache[key] = { samples: synth(def.notes, def.total), buf: null, url: null };
+    if (!cache[key]) cache[key] = { samples: synth(def.notes, def.total, def.echo), buf: null, url: null };
     return cache[key];
   }
 
@@ -282,10 +313,17 @@
      ====================================================================== */
   function stateOf(view) {
     var icon = view.querySelector('.icon-wrapper');
-    if (!icon) return 'primary';
-    if (icon.classList.contains('success')) return 'success';
-    if (icon.classList.contains('error')) return 'error';
-    if (icon.classList.contains('info')) return 'info';
+    if (icon) {
+      var c = icon.classList;
+      if (c.contains('success')) return 'success';
+      if (c.contains('error')) return 'error';
+      if (c.contains('info') || c.contains('warning')) return 'info';
+    }
+    /* Fall back to wording in the view's id/class, e.g. "view-already" */
+    var label = ((view.id || '') + ' ' + (view.className || '')).toLowerCase();
+    if (/already|exist|used|duplicate/.test(label)) return 'info';
+    if (/fail|error|denied|blocked|reject/.test(label)) return 'error';
+    if (/success|verified|done/.test(label)) return 'success';
     return 'primary';
   }
 
