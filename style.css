@@ -1,7 +1,7 @@
 /* ============================================================
    Status Console — bot connection / auth flow
-   A flat, technical panel look: hairline borders, one accent
-   color per state, a single restrained loading animation.
+   A flat, technical panel look with a bit more depth: soft
+   glows tied to state color, layered shadows, subtle gradients.
    Same class names as before — drop-in replacement.
    ============================================================ */
 
@@ -9,31 +9,60 @@
 
 :root {
   /* Surfaces */
-  --bg: #0b0d12;
+  --bg: #0a0c11;
   --surface: #12151b;
   --surface-raised: #171b22;
   --border: #262b34;
   --border-soft: #1c2027;
 
   /* Text */
-  --text-primary: #eef1f5;
-  --text-secondary: #838d9e;
+  --text-primary: #f3f5f8;
+  --text-secondary: #8891a1;
 
   /* State colors (flat, no gradients) */
   --amber: #f2a541;   /* pending / primary */
   --amber-dim: rgba(242, 165, 65, 0.12);
+  --amber-glow: rgba(242, 165, 65, 0.28);
   --blue: #4c8dff;    /* info */
   --blue-dim: rgba(76, 141, 255, 0.12);
+  --blue-glow: rgba(76, 141, 255, 0.28);
   --green: #33c17a;   /* success */
   --green-dim: rgba(51, 193, 122, 0.12);
+  --green-glow: rgba(51, 193, 122, 0.28);
   --red: #ef5350;     /* error */
   --red-dim: rgba(239, 83, 80, 0.12);
+  --red-glow: rgba(239, 83, 80, 0.28);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--amber-dim);
+  color: var(--text-primary);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .particles,
@@ -49,13 +78,16 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -5%, rgba(242, 165, 65, 0.06), transparent 60%),
+    var(--bg);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Faint schematic grid instead of floating blurred blobs.
@@ -67,8 +99,8 @@ body {
   width: 100%;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, transparent 75%);
 }
@@ -85,8 +117,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), rgba(18, 21, 27, 0.94));
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(6px);
   z-index: 10;
   height: 70px;
   flex-shrink: 0;
@@ -107,9 +141,16 @@ body {
   justify-content: center;
   align-items: center;
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
   color: var(--text-primary);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.avatar-container:hover {
+  border-color: var(--amber);
+  transform: translateY(-1px);
 }
 
 .status-pill,
@@ -147,6 +188,12 @@ p.desc {
   display: flex;
   align-items: center;
   gap: 7px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-pill:hover {
+  transform: translateY(-1px);
 }
 
 .dot {
@@ -154,6 +201,8 @@ p.desc {
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 0 3px currentColor;
+  opacity: 0.9;
 }
 
 .pill-blue {
@@ -163,6 +212,7 @@ p.desc {
 }
 .pill-blue .dot {
   background: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-dim), 0 0 8px var(--blue-glow);
 }
 
 .pill-green {
@@ -172,6 +222,7 @@ p.desc {
 }
 .pill-green .dot {
   background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-dim), 0 0 8px var(--green-glow);
 }
 
 .pill-red {
@@ -181,6 +232,7 @@ p.desc {
 }
 .pill-red .dot {
   background: var(--red);
+  box-shadow: 0 0 0 3px var(--red-dim), 0 0 8px var(--red-glow);
 }
 
 /* ---------- Main panel ---------- */
@@ -197,14 +249,15 @@ p.desc {
 .auth-container {
   width: 100%;
   max-width: 420px;
-  background: var(--surface);
-  border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 14%);
+  border-radius: 14px;
   padding: 44px 32px;
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.03);
   position: relative;
 }
 
-/* Thin accent line along the top edge, in place of the
+/* Soft accent line + glow along the top edge, in place of the
    rotating conic-gradient glow. One quiet, fixed detail. */
 .auth-container::before {
   content: '';
@@ -213,8 +266,9 @@ p.desc {
   left: 24px;
   right: 24px;
   height: 2px;
-  background: var(--amber);
+  background: linear-gradient(90deg, transparent, var(--amber) 20%, var(--amber) 80%, transparent);
   border-radius: 2px;
+  box-shadow: 0 0 16px var(--amber-glow);
 }
 
 .view-section {
@@ -252,16 +306,18 @@ p.desc {
 }
 
 .icon-wrapper {
-  border-radius: 16px;
+  border-radius: 18px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: var(--surface-raised);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
   transform: scale(0.9);
   opacity: 0;
   animation: iconPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
   animation-delay: 0.1s;
+  transition: box-shadow 0.3s ease;
 }
 
 @keyframes iconPop {
@@ -274,23 +330,28 @@ p.desc {
 .icon-wrapper.success {
   border-color: rgba(51, 193, 122, 0.35);
   background: var(--green-dim);
+  box-shadow: var(--shadow-md), 0 0 40px -10px var(--green-glow);
 }
 .icon-wrapper.error {
   border-color: rgba(239, 83, 80, 0.35);
   background: var(--red-dim);
+  box-shadow: var(--shadow-md), 0 0 40px -10px var(--red-glow);
 }
 .icon-wrapper.info {
   border-color: rgba(76, 141, 255, 0.35);
   background: var(--blue-dim);
+  box-shadow: var(--shadow-md), 0 0 40px -10px var(--blue-glow);
 }
 .icon-wrapper.primary {
   border-color: rgba(242, 165, 65, 0.35);
   background: var(--amber-dim);
+  box-shadow: var(--shadow-md), 0 0 40px -10px var(--amber-glow);
 }
 
 .icon-wrapper i {
   font-size: 42px;
   z-index: 2;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .icon-wrapper.primary i {
@@ -331,6 +392,7 @@ p.desc {
   height: 100%;
   top: 0;
   left: 0;
+  filter: drop-shadow(0 0 6px var(--amber-glow));
   animation: orbit 1.4s linear infinite;
 }
 
@@ -364,10 +426,11 @@ p.desc {
 
 h1 {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 25px;
+  font-size: 26px;
   font-weight: 700;
   margin-bottom: 10px;
   color: var(--text-primary);
+  letter-spacing: -0.2px;
 }
 
 .text-error {
@@ -397,17 +460,19 @@ p.desc {
 
 .progress-container {
   width: 100%;
-  height: 4px;
+  height: 5px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: 2px;
+  border-radius: 3px;
   margin: 24px 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: var(--amber);
+  background: linear-gradient(90deg, var(--amber), #ffc36e);
+  box-shadow: 0 0 10px var(--amber-glow);
   transition: width 0.3s ease;
 }
 
@@ -428,18 +493,21 @@ p.desc {
   font-weight: 600;
   color: var(--bg);
   cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
   letter-spacing: 0.2px;
+  box-shadow: var(--shadow-sm);
   -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn:active {
   transform: translateY(0);
+  filter: brightness(0.96);
 }
 
 .btn:focus-visible {
@@ -448,13 +516,13 @@ p.desc {
 }
 
 .btn.success {
-  background: var(--green);
+  background: linear-gradient(180deg, #3ed08a, var(--green));
 }
 .btn.danger {
-  background: var(--red);
+  background: linear-gradient(180deg, #f2645f, var(--red));
 }
 .btn.primary {
-  background: var(--amber);
+  background: linear-gradient(180deg, #ffb659, var(--amber));
 }
 
 /* ---------- Footer ---------- */
