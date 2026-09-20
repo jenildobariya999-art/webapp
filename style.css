@@ -1,57 +1,64 @@
 /* ============================================================
    Status Console — bot connection / auth flow
-   NEON GLASS edition: void-black base, violet → magenta as the
-   primary accent (state colors for info/success/error kept as-is
-   so meaning stays consistent), iridescent soap-film bubbles,
-   full-perimeter animated gradient border on the card, pill-shaped
-   glowing buttons. Matched to the actual markup — same class/id
-   names as before, just restyled.
+   NEON GLASS edition v2
+   Void-black base · violet → magenta accent · iridescent soap
+   bubbles · full-perimeter animated ring · pill-shaped glow.
+   Same class/id names as before — restyled only.
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Surfaces — true void black */
+  /* ---- Surfaces ---- */
   --bg: #030004;
   --surface: #0b0710;
   --surface-raised: #17101f;
-  /* Violet-tinted borders instead of flat grey/white, so every
-     line in the UI feels part of the same palette rather than a
-     generic default border color */
+  --surface-glass: rgba(20, 12, 28, 0.55);
+
+  /* ---- Borders ---- */
   --border: rgba(184, 150, 255, 0.16);
   --border-soft: rgba(184, 150, 255, 0.08);
+  --border-strong: rgba(184, 150, 255, 0.28);
 
-  /* Text */
+  /* ---- Text ---- */
   --text-primary: #f6f3fb;
   --text-secondary: #9b8fb0;
+  --text-muted: #6e6482;
 
-  /* Primary accent — violet → magenta (was indigo → cyan) */
+  /* ---- Primary accent (violet → magenta) ---- */
   --primary: #a259ff;
   --primary-2: #ff4fd8;
   --primary-dim: rgba(162, 89, 255, 0.16);
   --primary-glow: rgba(199, 79, 255, 0.5);
+  --primary-glow-soft: rgba(199, 79, 255, 0.25);
 
-  /* State: info */
+  /* ---- State: info ---- */
   --blue: #5b9dff;
   --blue-dim: rgba(91, 157, 255, 0.14);
   --blue-glow: rgba(91, 157, 255, 0.4);
 
-  /* State: success */
+  /* ---- State: success ---- */
   --green: #2ee6a8;
   --green-2: #17c98d;
   --green-dim: rgba(46, 230, 168, 0.14);
   --green-glow: rgba(46, 230, 168, 0.4);
 
-  /* State: error / failed */
+  /* ---- State: error ---- */
   --red: #ff4d5e;
   --red-2: #e62348;
   --red-dim: rgba(255, 77, 94, 0.15);
   --red-glow: rgba(255, 45, 85, 0.5);
 
-  /* Shadows */
+  /* ---- Shadows ---- */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 32px 90px rgba(0, 0, 0, 0.65), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -67,7 +74,11 @@
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
 .particles,
@@ -79,17 +90,18 @@ html {
 
 body,
 html {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 body {
   background:
-    radial-gradient(ellipse 900px 520px at 50% -8%, rgba(162, 89, 255, 0.16), transparent 62%),
+    radial-gradient(ellipse 900px 520px at 50% -8%, rgba(162, 89, 255, 0.18), transparent 62%),
     radial-gradient(ellipse 650px 420px at 4% 102%, rgba(255, 79, 216, 0.10), transparent 65%),
     radial-gradient(ellipse 650px 420px at 98% 90%, rgba(162, 89, 255, 0.10), transparent 65%),
     var(--bg);
   background-size: 100% 100%, 200% 200%, 200% 200%, 100% 100%;
-  animation: auroraDrift 20s ease-in-out infinite;
+  animation: auroraDrift 22s ease-in-out infinite;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -97,6 +109,18 @@ body {
   position: relative;
   user-select: none;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle vignette so the void feels intentional, not accidental */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 @keyframes auroraDrift {
@@ -105,10 +129,6 @@ body {
 }
 
 /* ---------- Bubbles: iridescent soap-film ---------- */
-/* #particles is populated at runtime with .particle elements. Each
-   renders as a thin, translucent soap-bubble with a faint rainbow
-   film (conic-gradient) instead of a flat glow — closer to a real
-   bubble catching light as it drifts and wobbles upward. */
 
 .particles {
   position: fixed;
@@ -118,8 +138,6 @@ body {
   overflow: hidden;
 }
 
-/* Two large, very soft blurred orbs drifting slowly behind the
-   bubbles for extra depth — purely decorative, non-interactive */
 .particles::before,
 .particles::after {
   content: '';
@@ -130,8 +148,9 @@ body {
   max-height: 560px;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.35;
+  opacity: 0.4;
   pointer-events: none;
+  will-change: transform;
 }
 .particles::before {
   top: -10%;
@@ -147,7 +166,7 @@ body {
 }
 @keyframes blobFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(4%, 6%) scale(1.12); }
+  50%      { transform: translate(4%, 6%) scale(1.12); }
 }
 
 .particle {
@@ -158,18 +177,26 @@ body {
   height: 22px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 38%),
-    conic-gradient(from 120deg, rgba(162, 89, 255, 0.35), rgba(255, 79, 216, 0.3), rgba(120, 220, 255, 0.25), rgba(162, 89, 255, 0.35));
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 40%),
+    conic-gradient(from 120deg,
+      rgba(162, 89, 255, 0.38),
+      rgba(255, 79, 216, 0.32),
+      rgba(120, 220, 255, 0.28),
+      rgba(162, 89, 255, 0.38));
   background-blend-mode: screen;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    0 0 16px var(--primary-glow),
-    0 0 3px rgba(255, 255, 255, 0.4),
-    inset 0 0 10px rgba(255, 255, 255, 0.12),
-    inset -4px -4px 8px rgba(0, 0, 0, 0.3);
+    0 0 16px var(--primary-glow-soft),
+    0 0 3px rgba(255, 255, 255, 0.45),
+    inset 0 0 10px rgba(255, 255, 255, 0.14),
+    inset -4px -4px 8px rgba(0, 0, 0, 0.32);
   opacity: 0;
   backdrop-filter: blur(0.5px);
-  animation: bubbleRise 13s ease-in infinite, bubbleSway 4.2s ease-in-out infinite, filmShift 6s linear infinite;
+  -webkit-backdrop-filter: blur(0.5px);
+  animation:
+    bubbleRise 13s ease-in infinite,
+    bubbleSway 4.2s ease-in-out infinite,
+    filmShift 6s linear infinite;
   will-change: transform, opacity;
 }
 
@@ -182,21 +209,19 @@ body {
 }
 @keyframes bubbleSway {
   0%, 100% { margin-left: 0; }
-  50% { margin-left: 12px; }
+  50%      { margin-left: 12px; }
 }
-/* Rotates the rainbow film's angle so the iridescence shimmers
-   as if catching light from different directions */
 @keyframes filmShift {
   from { filter: hue-rotate(0deg); }
   to   { filter: hue-rotate(360deg); }
 }
 
-.particle:nth-child(6n+1) { left: 6%;  width: 15px; height: 15px; animation-duration: 11s, 3.6s, 7s; animation-delay: 0s, 0.2s, 0s; }
-.particle:nth-child(6n+2) { left: 20%; width: 28px; height: 28px; animation-duration: 15s, 5s,   8s; animation-delay: 1.5s, 0.6s, 1s; }
-.particle:nth-child(6n+3) { left: 38%; width: 11px; height: 11px; animation-duration: 9s,  3.8s, 5.5s; animation-delay: 3s, 1s, 0.4s; }
-.particle:nth-child(6n+4) { left: 55%; width: 32px; height: 32px; animation-duration: 17s, 6s,   9s; animation-delay: 0.8s, 1.4s, 2s; }
+.particle:nth-child(6n+1) { left: 6%;  width: 15px; height: 15px; animation-duration: 11s, 3.6s, 7s;   animation-delay: 0s,   0.2s, 0s; }
+.particle:nth-child(6n+2) { left: 20%; width: 28px; height: 28px; animation-duration: 15s, 5s,   8s;   animation-delay: 1.5s, 0.6s, 1s; }
+.particle:nth-child(6n+3) { left: 38%; width: 11px; height: 11px; animation-duration: 9s,  3.8s, 5.5s; animation-delay: 3s,   1s,   0.4s; }
+.particle:nth-child(6n+4) { left: 55%; width: 32px; height: 32px; animation-duration: 17s, 6s,   9s;   animation-delay: 0.8s, 1.4s, 2s; }
 .particle:nth-child(6n+5) { left: 72%; width: 18px; height: 18px; animation-duration: 12s, 4.4s, 6.5s; animation-delay: 2.4s, 0.3s, 1.2s; }
-.particle:nth-child(6n)   { left: 88%; width: 24px; height: 24px; animation-duration: 14s, 5.3s, 7.5s; animation-delay: 4s, 1.8s, 0.6s; }
+.particle:nth-child(6n)   { left: 88%; width: 24px; height: 24px; animation-duration: 14s, 5.3s, 7.5s; animation-delay: 4s,   1.8s, 0.6s; }
 
 /* ---------- Header ---------- */
 
@@ -207,7 +232,6 @@ body {
   justify-content: space-between;
   align-items: center;
   background: rgba(6, 3, 9, 0.6);
-  border-bottom: none;
   position: relative;
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
@@ -216,8 +240,6 @@ body {
   flex-shrink: 0;
 }
 
-/* Soft fading gradient line instead of a hard flat edge — reads
-   as a glow, not a ruler line */
 .header::after {
   content: '';
   position: absolute;
@@ -225,7 +247,11 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+  background: linear-gradient(90deg,
+    transparent,
+    var(--border) 20%,
+    var(--border) 80%,
+    transparent);
 }
 
 .user-profile {
@@ -247,17 +273,20 @@ body {
   justify-content: center;
   align-items: center;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  box-shadow: var(--shadow-sm), var(--shadow-inset-top);
   font-family: 'Sora', sans-serif;
   font-weight: 700;
   color: var(--text-primary);
-  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    border-color 0.25s var(--ease-smooth),
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.25s var(--ease-smooth);
 }
 
 .avatar-container:hover {
   border-color: var(--primary);
   transform: translateY(-1px) rotate(-2deg);
-  box-shadow: 0 6px 20px var(--primary-glow), var(--shadow-sm);
+  box-shadow: 0 6px 20px var(--primary-glow-soft), var(--shadow-sm);
 }
 
 .avatar-container:focus-visible,
@@ -277,6 +306,7 @@ h1 {
   font-size: 14px;
   color: var(--text-primary);
   letter-spacing: 0.2px;
+  line-height: 1.3;
 }
 
 .text-info p,
@@ -288,6 +318,7 @@ p.desc {
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.3px;
+  line-height: 1.4;
 }
 
 .status-pill {
@@ -302,7 +333,11 @@ p.desc {
   align-items: center;
   gap: 7px;
   backdrop-filter: blur(8px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s var(--ease-smooth),
+    background 0.2s var(--ease-smooth);
 }
 
 .status-pill:hover {
@@ -330,7 +365,7 @@ p.desc {
 }
 @keyframes pulseBlue {
   0%, 100% { box-shadow: 0 0 0 3px var(--blue-dim), 0 0 8px var(--blue-glow); }
-  50% { box-shadow: 0 0 0 5px var(--blue-dim), 0 0 16px var(--blue-glow); }
+  50%      { box-shadow: 0 0 0 5px var(--blue-dim), 0 0 16px var(--blue-glow); }
 }
 
 .pill-green {
@@ -355,7 +390,7 @@ p.desc {
 }
 @keyframes pulseRed {
   0%, 100% { box-shadow: 0 0 0 3px var(--red-dim), 0 0 8px var(--red-glow); }
-  50% { box-shadow: 0 0 0 5px var(--red-dim), 0 0 16px var(--red-glow); }
+  50%      { box-shadow: 0 0 0 5px var(--red-dim), 0 0 16px var(--red-glow); }
 }
 
 /* ---------- Main panel ---------- */
@@ -367,45 +402,52 @@ p.desc {
   align-items: center;
   width: 100%;
   padding: 20px;
+  position: relative;
+  z-index: 2;
 }
 
-/* Card sits inside a padded wrapper (.auth-container-outer created
-   via ::before trick) so a full-perimeter animated gradient ring
-   can wrap it, rather than just a glow line across the top. */
 .auth-container {
   width: 100%;
   max-width: 430px;
   min-height: 420px;
   background:
-    radial-gradient(600px 280px at 50% -10%, rgba(162, 89, 255, 0.14), transparent 65%),
+    radial-gradient(600px 280px at 50% -10%, rgba(162, 89, 255, 0.16), transparent 65%),
     linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 60%);
   border-radius: 28px;
   padding: 46px 34px 32px;
   border: 1px solid transparent;
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-lg), var(--shadow-inset-top);
   backdrop-filter: blur(24px) saturate(160%);
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   position: relative;
   overflow: hidden;
   display: flex;
-  transition: box-shadow 0.4s ease, transform 0.4s ease;
+  isolation: isolate;
+  transition:
+    box-shadow 0.4s var(--ease-smooth),
+    transform 0.4s var(--ease-spring);
 }
 
 .auth-container:hover {
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 0 70px -18px var(--primary-glow);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 70px -18px var(--primary-glow);
   transform: translateY(-2px);
 }
 
-/* Animated gradient ring travelling around the FULL perimeter,
-   drawn with a rotating conic-gradient masked to a thin outline —
-   replaces the old top-edge-only shimmer for a bigger visual swing */
+/* Animated gradient ring around the full perimeter */
 .auth-container::before {
   content: '';
   position: absolute;
   inset: -1px;
   border-radius: 29px;
   padding: 1.5px;
-  background: conic-gradient(from 0deg, var(--primary), var(--primary-2), var(--blue), var(--primary));
+  background: conic-gradient(from 0deg,
+    var(--primary),
+    var(--primary-2),
+    var(--blue),
+    var(--primary));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -429,7 +471,7 @@ p.desc {
   filter: drop-shadow(0 0 14px var(--green-glow));
 }
 
-/* Fine grain texture so the black glass reads as matte, not flat */
+/* Fine grain texture */
 .auth-container::after {
   content: '';
   position: absolute;
@@ -438,6 +480,8 @@ p.desc {
   mix-blend-mode: overlay;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 4;
+  border-radius: inherit;
 }
 
 .view-section {
@@ -446,12 +490,12 @@ p.desc {
   align-items: center;
   width: 100%;
   text-align: center;
-  animation: containerEnter 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: containerEnter 0.55s var(--ease-out) forwards;
 }
 .view-section.active { display: flex; }
 @keyframes containerEnter {
   from { transform: translateY(14px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* ---------- Status icon / loader ---------- */
@@ -474,9 +518,9 @@ p.desc {
   box-shadow: var(--shadow-md);
   transform: scale(0.9) rotate(-4deg);
   opacity: 0;
-  animation: iconPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+  animation: iconPop 0.5s var(--ease-spring) forwards;
   animation-delay: 0.1s;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s var(--ease-smooth);
 }
 @keyframes iconPop {
   to { transform: scale(1) rotate(0deg); opacity: 1; }
@@ -491,7 +535,9 @@ p.desc {
   border-color: rgba(255, 77, 94, 0.45);
   background: linear-gradient(160deg, var(--red-dim), transparent 70%), var(--surface-raised);
   box-shadow: var(--shadow-md), 0 0 60px -6px var(--red-glow);
-  animation: iconPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards, shake 0.5s ease 0.55s;
+  animation:
+    iconPop 0.5s var(--ease-spring) forwards,
+    shake 0.5s ease 0.55s;
 }
 .icon-wrapper.info {
   border-color: rgba(91, 157, 255, 0.4);
@@ -506,10 +552,10 @@ p.desc {
 
 @keyframes shake {
   0%, 100% { transform: scale(1) translateX(0); }
-  20% { transform: scale(1) translateX(-4px); }
-  40% { transform: scale(1) translateX(4px); }
-  60% { transform: scale(1) translateX(-3px); }
-  80% { transform: scale(1) translateX(3px); }
+  20%      { transform: scale(1) translateX(-4px); }
+  40%      { transform: scale(1) translateX(4px); }
+  60%      { transform: scale(1) translateX(-3px); }
+  80%      { transform: scale(1) translateX(3px); }
 }
 
 .icon-wrapper i {
@@ -519,18 +565,13 @@ p.desc {
 }
 .icon-wrapper.primary i { color: var(--primary-2); }
 .icon-wrapper.success i { color: var(--green); }
-.icon-wrapper.error i { color: var(--red); }
-.icon-wrapper.info i { color: var(--blue); }
+.icon-wrapper.error   i { color: var(--red); }
+.icon-wrapper.info    i { color: var(--blue); }
 
-/* Loader — clean circular gradient spinner. A soft static guide
-   ring sits still, a two-tone gradient arc spins smoothly around
-   it (continuous circular motion, not a narrow scanning beam),
-   and a slower faint outer ring turns the opposite way for depth.
-   A steady glowing core sits in the centre. */
+/* Loader — circular gradient spinner */
 .orbit,
 .satellite { position: absolute; }
 
-/* Static guide ring */
 .orbit:nth-child(1) {
   width: 100%;
   height: 100%;
@@ -540,9 +581,6 @@ p.desc {
   border: 2px solid var(--border);
 }
 
-/* Primary spinner: a full circular band whose gradient rotates,
-   with the mask trimmed to a ring so it reads as a clean loading
-   circle rather than a filled disc or a single sweeping beam */
 .orbit:nth-child(2) {
   width: 100%;
   height: 100%;
@@ -562,9 +600,6 @@ p.desc {
   animation: spin 1.8s linear infinite;
 }
 
-/* Secondary ring: thinner, dimmer, spins the opposite way and
-   slower — gives the loader a sense of depth without competing
-   with the primary arc */
 .orbit:nth-child(3) {
   width: 76%;
   height: 76%;
@@ -592,7 +627,6 @@ p.desc {
   to   { transform: rotate(0deg); }
 }
 
-/* Steady glowing core at the centre */
 .satellite {
   display: block;
   width: 10px;
@@ -607,7 +641,7 @@ p.desc {
 }
 @keyframes coreBeat {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  50%      { transform: scale(1.2); }
 }
 
 /* ---------- Headline / copy ---------- */
@@ -622,7 +656,10 @@ h1 {
   margin-bottom: 10px;
   letter-spacing: -0.4px;
   line-height: 1.2;
-  background: linear-gradient(120deg, var(--text-primary) 20%, var(--primary-2) 55%, var(--primary) 85%);
+  background: linear-gradient(120deg,
+    var(--text-primary) 20%,
+    var(--primary-2) 55%,
+    var(--primary) 85%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -631,12 +668,20 @@ h1 {
 }
 @keyframes textSheen {
   0%, 100% { background-position: 0% center; }
-  50% { background-position: 100% center; }
+  50%      { background-position: 100% center; }
 }
 
-.text-error { color: var(--red); background: none; -webkit-background-clip: initial; background-clip: initial; animation: none; }
-.text-success { color: var(--green); background: none; -webkit-background-clip: initial; background-clip: initial; animation: none; }
-.text-info-h { color: var(--blue); background: none; -webkit-background-clip: initial; background-clip: initial; animation: none; }
+.text-error,
+.text-success,
+.text-info-h {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  animation: none;
+}
+.text-error   { color: var(--red); }
+.text-success { color: var(--green); }
+.text-info-h  { color: var(--blue); }
 
 p.desc {
   font-size: 15px;
@@ -669,22 +714,25 @@ p.desc {
   background: linear-gradient(90deg, var(--primary), var(--primary-2));
   box-shadow: 0 0 12px var(--primary-glow);
   border-radius: 999px;
-  transition: width 0.3s ease;
+  transition: width 0.3s var(--ease-smooth);
 }
 .progress-bar::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
+  background: linear-gradient(110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 70%);
   background-size: 200% 100%;
   animation: progressShimmer 1.8s linear infinite;
 }
 @keyframes progressShimmer {
   from { background-position: 140% 0; }
-  to { background-position: -40% 0; }
+  to   { background-position: -40% 0; }
 }
 
-/* ---------- Buttons: pill-shaped, glowing ---------- */
+/* ---------- Buttons ---------- */
 
 .btn,
 .footer { width: 100%; }
@@ -699,12 +747,18 @@ p.desc {
   font-weight: 700;
   color: #0a0410;
   cursor: pointer;
-  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
   letter-spacing: 0.2px;
-  /* Inset top highlight gives the pill a glassy bevel instead of
-     a separate floating line hovering above it */
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.18s var(--ease-spring),
+    filter 0.18s var(--ease-smooth),
+    box-shadow 0.18s var(--ease-smooth);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .btn::after {
@@ -712,39 +766,62 @@ p.desc {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.4) 42%, transparent 60%);
+  background: linear-gradient(115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.4) 42%,
+    transparent 60%);
   background-size: 220% 100%;
   background-position: 130% 0;
   opacity: 0;
-  transition: opacity 0.2s ease, background-position 0.6s ease;
+  transition:
+    opacity 0.2s var(--ease-smooth),
+    background-position 0.6s var(--ease-smooth);
   pointer-events: none;
+  z-index: 1;
 }
-.btn:hover::after { opacity: 1; background-position: -30% 0; }
+.btn:hover::after {
+  opacity: 1;
+  background-position: -30% 0;
+}
 
 .btn:hover {
   filter: brightness(1.14);
   transform: translateY(-2px) scale(1.015);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 12px 30px -8px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 12px 30px -8px rgba(0, 0, 0, 0.55);
 }
 .btn:active {
   transform: translateY(0) scale(0.985);
   filter: brightness(0.96);
   transition-duration: 0.08s;
 }
-.btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.btn:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
 
 .btn.success {
   background: linear-gradient(135deg, #4ef0c0, var(--green-2));
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 24px -6px var(--green-glow);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 24px -6px var(--green-glow);
 }
 .btn.danger {
   background: linear-gradient(135deg, #ff8792, var(--red-2));
   color: #17040a;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 26px -6px var(--red-glow);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 26px -6px var(--red-glow);
 }
 .btn.primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 26px -6px var(--primary-glow);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 26px -6px var(--primary-glow);
 }
 
 /* ---------- Footer ---------- */
@@ -757,8 +834,13 @@ p.desc {
   font-size: 13px;
   padding: 15px 0;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
-.footer a { text-decoration: none; transition: color 0.2s ease; }
+.footer a {
+  text-decoration: none;
+  transition: color 0.2s var(--ease-smooth);
+}
 .footer a::after {
   content: '';
   position: absolute;
@@ -767,7 +849,7 @@ p.desc {
   width: 0;
   height: 1px;
   background: linear-gradient(90deg, var(--primary), var(--primary-2));
-  transition: width 0.25s ease;
+  transition: width 0.25s var(--ease-smooth);
 }
 .footer a:hover { color: var(--text-primary); }
 .footer a:hover::after { width: 100%; }
@@ -791,10 +873,43 @@ p.desc {
   body {
     animation: none !important;
   }
+  .particle { opacity: 0.4; }
 }
 
 @media (max-width: 480px) {
   h1 { font-size: 22px; }
   p.desc { font-size: 14px; }
-  .auth-container { padding: 36px 24px 26px; min-height: 400px; }
+  .auth-container {
+    padding: 36px 24px 26px;
+    min-height: 400px;
+    border-radius: 24px;
+  }
+  .auth-container::before { border-radius: 25px; }
+  .icon-wrapper,
+  .loader { width: 96px; height: 96px; margin-bottom: 24px; }
+  .icon-wrapper i { font-size: 38px; }
+}
+
+/* ---------- Reduced transparency fallback ---------- */
+
+@media (prefers-reduced-transparency: reduce) {
+  .header,
+  .status-pill,
+  .auth-container {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: var(--surface);
+  }
+  .particles::before,
+  .particles::after { opacity: 0.15; }
+}
+
+/* ---------- High contrast mode ---------- */
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: rgba(184, 150, 255, 0.4);
+    --text-secondary: #c4b8d6;
+  }
+  .auth-container::after { display: none; }
 }
