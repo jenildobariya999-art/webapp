@@ -1,49 +1,61 @@
 /* ============================================================
    Status Console — bot connection / auth flow
-   Redesign: glassmorphic panel, animated aurora backdrop,
-   vivid gradient accents per state. Same class names as
-   before — drop-in replacement for the existing HTML.
+   Dark, modern palette: deep graphite base, electric indigo +
+   cyan as the primary identity, and a distinctly clearer red
+   for failed/error states so it reads at a glance. Buttons now
+   live in their own footer bar, separated from the copy above.
+   Same class names as before — drop-in replacement.
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
   /* Surfaces */
-  --bg: #060714;
-  --surface: rgba(23, 22, 45, 0.55);
-  --surface-raised: rgba(35, 32, 64, 0.65);
-  --border: rgba(255, 255, 255, 0.09);
+  --bg: #05060a;
+  --surface: #0e1016;
+  --surface-raised: #151824;
+  --surface-footer: #10121a;
+  --border: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.05);
 
   /* Text */
-  --text-primary: #f5f4fb;
-  --text-secondary: #9a94c2;
+  --text-primary: #f4f5f9;
+  --text-secondary: #8c93ab;
 
-  /* State colors */
+  /* Primary identity — electric indigo/cyan */
+  --primary: #6c7bff;
+  --primary-2: #29d6d6;
+  --primary-dim: rgba(108, 123, 255, 0.14);
+  --primary-glow: rgba(108, 123, 255, 0.45);
+
+  /* State: pending / working (amber, kept for "primary" action icon) */
   --amber: #ffb454;
-  --amber-2: #ff7a59;
+  --amber-2: #ff8a3d;
   --amber-dim: rgba(255, 180, 84, 0.14);
-  --amber-glow: rgba(255, 150, 84, 0.45);
+  --amber-glow: rgba(255, 150, 84, 0.4);
 
-  --blue: #6ea8ff;
-  --blue-2: #8b6fff;
-  --blue-dim: rgba(110, 168, 255, 0.14);
-  --blue-glow: rgba(139, 111, 255, 0.45);
+  /* State: info */
+  --blue: #5b9dff;
+  --blue-dim: rgba(91, 157, 255, 0.14);
+  --blue-glow: rgba(91, 157, 255, 0.4);
 
-  --green: #3fe0a5;
-  --green-2: #29c98f;
-  --green-dim: rgba(63, 224, 165, 0.14);
-  --green-glow: rgba(63, 224, 165, 0.4);
+  /* State: success */
+  --green: #2ee6a8;
+  --green-2: #17c98d;
+  --green-dim: rgba(46, 230, 168, 0.14);
+  --green-glow: rgba(46, 230, 168, 0.4);
 
-  --red: #ff6b6b;
-  --red-2: #ff4d8f;
-  --red-dim: rgba(255, 107, 107, 0.14);
-  --red-glow: rgba(255, 77, 143, 0.4);
+  /* State: failed / error — a clean, unmistakable red-rose,
+     distinct from the amber/indigo/green family */
+  --red: #ff4d5e;
+  --red-2: #e62348;
+  --red-dim: rgba(255, 77, 94, 0.15);
+  --red-glow: rgba(255, 45, 85, 0.5);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.55), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 32px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -53,7 +65,7 @@
 }
 
 ::selection {
-  background: var(--blue-dim);
+  background: var(--primary-dim);
   color: var(--text-primary);
 }
 
@@ -95,8 +107,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Slow-drifting aurora blobs instead of a static grid — the
-   backdrop now has quiet, living color. */
+/* Two soft, slow-drifting color fields — indigo/cyan up top,
+   a whisper of amber low down. Quiet, not busy. */
 .particles {
   position: fixed;
   inset: 0;
@@ -109,26 +121,27 @@ body {
 .particles::after {
   content: '';
   position: absolute;
-  width: 60vmax;
-  height: 60vmax;
+  width: 58vmax;
+  height: 58vmax;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.55;
+  filter: blur(100px);
+  opacity: 0.5;
   will-change: transform;
 }
 
 .particles::before {
-  top: -20%;
-  left: -10%;
-  background: radial-gradient(circle at 30% 30%, var(--blue-2), transparent 70%);
-  animation: driftA 22s ease-in-out infinite;
+  top: -22%;
+  left: -12%;
+  background: radial-gradient(circle at 30% 30%, var(--primary), transparent 70%);
+  animation: driftA 24s ease-in-out infinite;
 }
 
 .particles::after {
-  bottom: -25%;
-  right: -15%;
+  bottom: -26%;
+  right: -14%;
   background: radial-gradient(circle at 60% 60%, var(--amber-2), transparent 70%);
-  animation: driftB 26s ease-in-out infinite;
+  opacity: 0.35;
+  animation: driftB 28s ease-in-out infinite;
 }
 
 @keyframes driftA {
@@ -153,7 +166,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(10, 10, 22, 0.55);
+  background: rgba(6, 7, 12, 0.6);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
@@ -174,9 +187,8 @@ body {
   border-radius: 11px;
   /* background-color is the fallback tile shown before a photo loads;
      background-image is left for JS to set the Telegram photo URL.
-     position/size are separate properties (not part of the shorthand
-     used elsewhere) so a JS-injected photo still gets cover/center
-     instead of tiling small in the corner. */
+     position/size are separate properties so a JS-injected photo
+     gets cover/center instead of tiling small in the corner. */
   background-color: var(--surface-raised);
   background-image: linear-gradient(145deg, var(--surface-raised), var(--surface));
   background-position: center;
@@ -194,9 +206,9 @@ body {
 }
 
 .avatar-container:hover {
-  border-color: var(--blue-2);
+  border-color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px var(--blue-glow);
+  box-shadow: 0 6px 18px var(--primary-glow);
 }
 
 .status-pill,
@@ -251,7 +263,7 @@ p.desc {
 
 .pill-blue {
   color: var(--blue);
-  border-color: rgba(110, 168, 255, 0.3);
+  border-color: rgba(91, 157, 255, 0.3);
   background: var(--blue-dim);
 }
 .pill-blue .dot {
@@ -261,7 +273,7 @@ p.desc {
 
 .pill-green {
   color: var(--green);
-  border-color: rgba(63, 224, 165, 0.3);
+  border-color: rgba(46, 230, 168, 0.3);
   background: var(--green-dim);
 }
 .pill-green .dot {
@@ -271,12 +283,18 @@ p.desc {
 
 .pill-red {
   color: var(--red);
-  border-color: rgba(255, 107, 107, 0.3);
+  border-color: rgba(255, 77, 94, 0.35);
   background: var(--red-dim);
 }
 .pill-red .dot {
   background: var(--red);
   box-shadow: 0 0 0 3px var(--red-dim), 0 0 10px var(--red-glow);
+  animation: pulseRed 1.6s ease-in-out infinite;
+}
+
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 0 3px var(--red-dim), 0 0 8px var(--red-glow); }
+  50% { box-shadow: 0 0 0 5px var(--red-dim), 0 0 16px var(--red-glow); }
 }
 
 /* ---------- Main panel ---------- */
@@ -293,13 +311,13 @@ p.desc {
 .auth-container {
   width: 100%;
   max-width: 430px;
-  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 60%);
   border-radius: 22px;
-  padding: 48px 34px;
+  padding: 0;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
   position: relative;
   overflow: hidden;
 }
@@ -312,11 +330,18 @@ p.desc {
   left: 12%;
   right: 12%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, var(--blue-2), var(--amber), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--primary-2), transparent);
   background-size: 200% 100%;
   border-radius: 0 0 3px 3px;
-  filter: drop-shadow(0 0 12px var(--blue-glow));
+  filter: drop-shadow(0 0 12px var(--primary-glow));
   animation: shimmer 5s ease-in-out infinite;
+  z-index: 3;
+}
+
+/* Failed state swaps the top edge to the red identity automatically */
+.auth-container:has(.icon-wrapper.error)::before {
+  background: linear-gradient(90deg, transparent, var(--red), var(--red-2), transparent);
+  filter: drop-shadow(0 0 14px var(--red-glow));
 }
 
 @keyframes shimmer {
@@ -324,11 +349,21 @@ p.desc {
   50% { background-position: 100% 0; }
 }
 
+/* Body of the card: copy + icon. Buttons live below, in their
+   own footer bar (see .footer-actions), which is the "moved"
+   button location — separated visually from the message above. */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 46px 34px 32px;
+}
+
 .view-section {
   display: none;
   flex-direction: column;
   align-items: center;
-  min-height: 340px;
   width: 100%;
   text-align: center;
   animation: containerEnter 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
@@ -382,24 +417,35 @@ p.desc {
 }
 
 .icon-wrapper.success {
-  border-color: rgba(63, 224, 165, 0.4);
+  border-color: rgba(46, 230, 168, 0.4);
   background: linear-gradient(160deg, var(--green-dim), transparent 70%), var(--surface-raised);
-  box-shadow: var(--shadow-md), 0 0 50px -8px var(--green-glow);
+  box-shadow: var(--shadow-md), 0 0 54px -8px var(--green-glow);
 }
 .icon-wrapper.error {
-  border-color: rgba(255, 107, 107, 0.4);
+  border-color: rgba(255, 77, 94, 0.45);
   background: linear-gradient(160deg, var(--red-dim), transparent 70%), var(--surface-raised);
-  box-shadow: var(--shadow-md), 0 0 50px -8px var(--red-glow);
+  box-shadow: var(--shadow-md), 0 0 60px -6px var(--red-glow);
+  animation: iconPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards, shake 0.5s ease 0.55s;
 }
 .icon-wrapper.info {
-  border-color: rgba(110, 168, 255, 0.4);
+  border-color: rgba(91, 157, 255, 0.4);
   background: linear-gradient(160deg, var(--blue-dim), transparent 70%), var(--surface-raised);
-  box-shadow: var(--shadow-md), 0 0 50px -8px var(--blue-glow);
+  box-shadow: var(--shadow-md), 0 0 54px -8px var(--blue-glow);
 }
 .icon-wrapper.primary {
   border-color: rgba(255, 180, 84, 0.4);
   background: linear-gradient(160deg, var(--amber-dim), transparent 70%), var(--surface-raised);
-  box-shadow: var(--shadow-md), 0 0 50px -8px var(--amber-glow);
+  box-shadow: var(--shadow-md), 0 0 54px -8px var(--amber-glow);
+}
+
+/* A short, restrained shake on the error icon only — reinforces
+   "failed" without being obnoxious about it. */
+@keyframes shake {
+  0%, 100% { transform: scale(1) translateX(0); }
+  20% { transform: scale(1) translateX(-4px); }
+  40% { transform: scale(1) translateX(4px); }
+  60% { transform: scale(1) translateX(-3px); }
+  80% { transform: scale(1) translateX(3px); }
 }
 
 .icon-wrapper i {
@@ -422,8 +468,7 @@ p.desc {
 }
 
 /* Loader / scanning effect: a radar-style conic sweep rotating over
-   the icon, a pulsing outer ring for "actively scanning", and a
-   dashed ring for structure. Reads as active work, not just a spinner. */
+   the icon, plus a pulsing outer ring for "actively scanning". */
 .orbit,
 .satellite {
   position: absolute;
@@ -440,8 +485,6 @@ p.desc {
   border: 1.5px dashed var(--border);
 }
 
-/* Radar sweep: a conic gradient wedge rotating around the ring,
-   masked to a thin band so it reads as a scanning beam. */
 .orbit:nth-child(2) {
   border: none;
   width: 100%;
@@ -453,13 +496,13 @@ p.desc {
     from 0deg,
     transparent 0deg,
     transparent 270deg,
-    var(--blue-2) 330deg,
-    var(--amber) 355deg,
+    var(--primary) 330deg,
+    var(--primary-2) 355deg,
     transparent 360deg
   );
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-  filter: drop-shadow(0 0 10px var(--blue-glow));
+  filter: drop-shadow(0 0 10px var(--primary-glow));
   animation: scanSweep 1.6s linear infinite;
 }
 
@@ -473,24 +516,20 @@ p.desc {
 }
 
 @keyframes scanSweep {
-  from {
-    transform: rotate(0);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes scanPulse {
   0%, 100% {
     transform: scale(1);
     opacity: 0.9;
-    box-shadow: 0 0 0 0 var(--blue-glow);
+    box-shadow: 0 0 0 0 var(--primary-glow);
   }
   50% {
     transform: scale(1.06);
     opacity: 0.5;
-    box-shadow: 0 0 18px 2px var(--blue-glow);
+    box-shadow: 0 0 18px 2px var(--primary-glow);
   }
 }
 
@@ -500,7 +539,6 @@ p.desc {
 
 /* ---------- Headline / copy ---------- */
 
-.btn,
 .footer a {
   position: relative;
 }
@@ -529,76 +567,63 @@ h1 {
 
 p.desc {
   font-size: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 6px;
   max-width: 320px;
   line-height: 1.65;
 }
 
 /* ---------- Progress ---------- */
 
-.btn,
-.progress-container {
-  max-width: 300px;
-  overflow: hidden;
-}
-
 .progress-container {
   width: 100%;
+  max-width: 300px;
   height: 6px;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   border-radius: 6px;
-  margin: 26px 0;
+  margin: 26px 0 4px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--blue-2), var(--amber));
-  box-shadow: 0 0 12px var(--amber-glow);
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  box-shadow: 0 0 12px var(--primary-glow);
   border-radius: 6px;
   transition: width 0.3s ease;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Buttons — moved into a dedicated footer bar ---------- */
 
-.btn,
-.footer,
-.footer a:hover::after {
+.footer-actions {
   width: 100%;
+  padding: 20px 34px 28px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.18)), var(--surface-footer);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .btn {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   padding: 15px 26px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 15px;
   font-weight: 700;
-  color: #0a0a16;
+  color: #06070c;
   cursor: pointer;
   transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
   letter-spacing: 0.2px;
   box-shadow: var(--shadow-sm);
   -webkit-tap-highlight-color: transparent;
-  /* Anchored to the bottom of the card, separated from the copy
-     above it, instead of sitting inline right after the progress bar. */
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid transparent;
   position: relative;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 1px;
-  background: var(--border);
 }
 
 .btn:hover {
@@ -617,16 +642,24 @@ p.desc {
 }
 
 .btn.success {
-  background: linear-gradient(135deg, #4ef0b6, var(--green-2));
+  background: linear-gradient(135deg, #4ef0c0, var(--green-2));
   box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--green-glow);
 }
 .btn.danger {
-  background: linear-gradient(135deg, #ff8b8b, var(--red-2));
-  box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--red-glow);
+  background: linear-gradient(135deg, #ff8792, var(--red-2));
+  color: #17040a;
+  box-shadow: var(--shadow-sm), 0 8px 26px -6px var(--red-glow);
 }
 .btn.primary {
-  background: linear-gradient(135deg, var(--amber), var(--amber-2));
-  box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--amber-glow);
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--primary-glow);
+}
+
+/* If a page only has one .btn and no wrapping .footer-actions markup,
+   this still centers it sensibly at the base of the card. */
+.card-body > .btn {
+  max-width: 300px;
+  margin-top: 20px;
 }
 
 /* ---------- Footer ---------- */
@@ -641,6 +674,7 @@ p.desc {
   font-size: 13px;
   padding: 16px 0;
   flex-shrink: 0;
+  width: 100%;
 }
 
 .footer a {
@@ -655,7 +689,7 @@ p.desc {
   left: 0;
   width: 0;
   height: 1px;
-  background: linear-gradient(90deg, var(--blue-2), var(--amber));
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
   transition: width 0.25s ease;
 }
 
@@ -672,10 +706,13 @@ p.desc {
 @media (prefers-reduced-motion: reduce) {
   .view-section,
   .icon-wrapper,
+  .icon-wrapper.error,
   .orbit:nth-child(2),
+  .orbit:nth-child(3),
   .particles::before,
   .particles::after,
-  .auth-container::before {
+  .auth-container::before,
+  .pill-red .dot {
     animation: none !important;
   }
 }
@@ -687,8 +724,13 @@ p.desc {
   p.desc {
     font-size: 14px;
   }
+  .card-body {
+    padding: 38px 24px 26px;
+  }
+  .footer-actions {
+    padding: 18px 24px 24px;
+  }
   .auth-container {
-    padding: 38px 24px;
     border-radius: 18px;
   }
   .particles::before,
