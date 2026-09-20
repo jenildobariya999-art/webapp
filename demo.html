@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Status Console — sound test</title>
+<style>
 /* ============================================================
    Status Console — bot connection / auth flow
    NEON GLASS edition: void-black base, violet → magenta as the
@@ -15,11 +22,8 @@
   --bg: #030004;
   --surface: #0b0710;
   --surface-raised: #17101f;
-  /* Violet-tinted borders instead of flat grey/white, so every
-     line in the UI feels part of the same palette rather than a
-     generic default border color */
-  --border: rgba(184, 150, 255, 0.16);
-  --border-soft: rgba(184, 150, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-soft: rgba(255, 255, 255, 0.05);
 
   /* Text */
   --text-primary: #f6f3fb;
@@ -207,25 +211,12 @@ body {
   justify-content: space-between;
   align-items: center;
   background: rgba(6, 3, 9, 0.6);
-  border-bottom: none;
-  position: relative;
+  border-bottom: 1px solid var(--border);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   z-index: 10;
   height: 70px;
   flex-shrink: 0;
-}
-
-/* Soft fading gradient line instead of a hard flat edge — reads
-   as a glow, not a ruler line */
-.header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
 }
 
 .user-profile {
@@ -257,7 +248,7 @@ body {
 .avatar-container:hover {
   border-color: var(--primary);
   transform: translateY(-1px) rotate(-2deg);
-  box-shadow: 0 6px 20px var(--primary-glow), var(--shadow-sm);
+  box-shadow: 0 6px 20px var(--primary-glow);
 }
 
 .avatar-container:focus-visible,
@@ -410,9 +401,8 @@ p.desc {
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-  animation: ringSpin 10s linear infinite;
-  filter: drop-shadow(0 0 8px var(--primary-glow));
-  opacity: 0.8;
+  animation: ringSpin 6s linear infinite;
+  filter: drop-shadow(0 0 10px var(--primary-glow));
   z-index: 3;
   pointer-events: none;
 }
@@ -610,7 +600,6 @@ p.desc {
   margin-bottom: 28px;
   max-width: 320px;
   line-height: 1.65;
-  color: var(--text-secondary);
 }
 
 /* ---------- Progress ---------- */
@@ -659,7 +648,7 @@ p.desc {
 .btn {
   margin-top: auto;
   padding: 16px 26px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   font-family: 'Sora', sans-serif;
   font-size: 15px;
@@ -668,10 +657,19 @@ p.desc {
   cursor: pointer;
   transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
   letter-spacing: 0.2px;
-  /* Inset top highlight gives the pill a glassy bevel instead of
-     a separate floating line hovering above it */
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
   -webkit-tap-highlight-color: transparent;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 1px;
+  background: var(--border);
 }
 
 .btn::after {
@@ -690,28 +688,24 @@ p.desc {
 
 .btn:hover {
   filter: brightness(1.14);
-  transform: translateY(-2px) scale(1.015);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 12px 30px -8px rgba(0, 0, 0, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.55);
 }
-.btn:active {
-  transform: translateY(0) scale(0.985);
-  filter: brightness(0.96);
-  transition-duration: 0.08s;
-}
+.btn:active { transform: translateY(0) scale(0.98); filter: brightness(0.96); }
 .btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 
 .btn.success {
   background: linear-gradient(135deg, #4ef0c0, var(--green-2));
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 24px -6px var(--green-glow);
+  box-shadow: var(--shadow-sm), 0 8px 24px -6px var(--green-glow);
 }
 .btn.danger {
   background: linear-gradient(135deg, #ff8792, var(--red-2));
   color: #17040a;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 26px -6px var(--red-glow);
+  box-shadow: var(--shadow-sm), 0 8px 26px -6px var(--red-glow);
 }
 .btn.primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 26px -6px var(--primary-glow);
+  box-shadow: var(--shadow-sm), 0 8px 26px -6px var(--primary-glow);
 }
 
 /* ---------- Footer ---------- */
@@ -765,3 +759,181 @@ p.desc {
   p.desc { font-size: 14px; }
   .auth-container { padding: 36px 24px 26px; min-height: 400px; }
 }
+
+/* --- demo-only additions, not part of style.css --- */
+:root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.test-note {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(20, 10, 28, 0.85);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+</style>
+</head>
+<body>
+
+<div class="test-note">Tap any button below — you should hear a sound.</div>
+
+<div class="particles" id="particles"></div>
+
+<div class="header">
+  <div class="user-profile">
+    <div class="avatar-container" tabindex="0">JS</div>
+    <div class="text-info">
+      <h3>Status Console</h3>
+      <p>Sound + loader test</p>
+    </div>
+  </div>
+  <div class="status-pill pill-blue" tabindex="0">
+    <span class="dot"></span> Connecting
+  </div>
+</div>
+
+<div class="main-wrapper">
+  <div class="auth-container">
+
+    <div class="view-section active" id="view-loading">
+      <div class="loader">
+        <div class="orbit"></div>
+        <div class="orbit"></div>
+        <div class="orbit"></div>
+        <div class="satellite"></div>
+      </div>
+      <h1>Connecting…</h1>
+      <p class="desc">New sonar-style loader — soft rings pulse outward, no scanning sweep.</p>
+      <div class="progress-container">
+        <div class="progress-bar" style="width: 55%"></div>
+      </div>
+      <button class="btn primary" onclick="showView('success')">Simulate success (click for sound)</button>
+    </div>
+
+    <div class="view-section" id="view-success">
+      <div class="icon-wrapper success">
+        <i>✓</i>
+      </div>
+      <h1 class="text-success">Connected</h1>
+      <p class="desc">This tone played automatically when this panel appeared — that's the MutationObserver hook working.</p>
+      <button class="btn success" onclick="showView('error')">Now try an error (click for sound)</button>
+    </div>
+
+    <div class="view-section" id="view-error">
+      <div class="icon-wrapper error">
+        <i>✕</i>
+      </div>
+      <h1 class="text-error">Failed</h1>
+      <p class="desc">Auto-played an error tone on entry. Try hovering the buttons and pill above for the hover blip too.</p>
+      <button class="btn danger" onclick="showView('loading')">Back to loading</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Generate the rising bubbles
+const particlesEl = document.getElementById('particles');
+for (let i = 0; i < 18; i++) {
+  const p = document.createElement('span');
+  p.className = 'particle';
+  particlesEl.appendChild(p);
+}
+
+function showView(id) {
+  document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+}
+</script>
+
+<script>
+/* ============================================================
+   Inline sound layer — identical logic to sound.js, pasted
+   directly into the page so there is zero chance of a missing
+   or wrong <script src> path breaking it for this test.
+   ============================================================ */
+(() => {
+  let ctx;
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function unlock() {
+    getCtx();
+    document.removeEventListener('click', unlock);
+    document.removeEventListener('touchstart', unlock);
+  }
+  document.addEventListener('click', unlock, { once: true });
+  document.addEventListener('touchstart', unlock, { once: true });
+
+  function blip(type = 'click') {
+    const audioCtx = getCtx();
+    const now = audioCtx.currentTime;
+    const presets = {
+      hover:   { freq: 740,  duration: 0.06, gain: 0.05, wave: 'sine'     },
+      click:   { freq: 520,  duration: 0.12, gain: 0.09, wave: 'triangle' },
+      success: { freq: 660,  duration: 0.22, gain: 0.10, wave: 'sine', glideTo: 990 },
+      error:   { freq: 220,  duration: 0.24, gain: 0.10, wave: 'sawtooth', glideTo: 140 },
+    };
+    const p = presets[type] || presets.click;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = p.wave;
+    osc.frequency.setValueAtTime(p.freq, now);
+    if (p.glideTo) osc.frequency.exponentialRampToValueAtTime(p.glideTo, now + p.duration);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(p.gain, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + p.duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + p.duration + 0.02);
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn');
+    if (!btn) return;
+    const type = btn.classList.contains('success') ? 'success'
+               : btn.classList.contains('danger')  ? 'error'
+               : 'click';
+    blip(type);
+  });
+
+  const hoverTargets = '.btn, .avatar-container, .status-pill';
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest(hoverTargets);
+    if (!el || el.dataset.soundHovering) return;
+    el.dataset.soundHovering = '1';
+    blip('hover');
+  });
+  document.addEventListener('mouseout', (e) => {
+    const el = e.target.closest(hoverTargets);
+    if (el) delete el.dataset.soundHovering;
+  });
+
+  const containers = document.querySelectorAll('.view-section');
+  const seen = new WeakSet();
+  const obs = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      const el = m.target;
+      if (el.classList.contains('active') && !seen.has(el)) {
+        seen.add(el);
+        if (el.querySelector('.icon-wrapper.success')) blip('success');
+        else if (el.querySelector('.icon-wrapper.error')) blip('error');
+      }
+    }
+  });
+  containers.forEach((el) => obs.observe(el, { attributes: true, attributeFilter: ['class'] }));
+})();
+</script>
+
+</body>
+</html>
