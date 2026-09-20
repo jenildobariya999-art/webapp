@@ -21,200 +21,399 @@
 </head>
 <body>
     
-    <header class=header><div class=user-profile><div class=avatar-container id=avatarBox>U</div><div class=text-info><h3 id=userName>USER</h3><p>ID: <span id=userIdDisplay>---</span></p></div></div><div class="status-pill pill-blue" id=headerBadge><span class=dot></span><span id=headerStatusText>SCANNING</span></div></header><div class=particles id=particles></div><div class=main-wrapper><div class=auth-container><div class=view-section id=view-critical><div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div><h1 class=text-error>Error Occurred</h1><p class=desc>User ID Not Found or Session Expired.</p><button class="btn danger" onclick=window.location.reload()>CLOSE & RETRY</button></div><div class=view-section id=view-scanning><div class=loader><div class=orbit></div><div class=orbit></div><div class=orbit></div><div class=satellite></div></div><h1>Secure Verification</h1><p class=desc style=margin-bottom:10px>Analyzing your device security profile...</p><div class=progress-container><div class=progress-bar id=scanBar></div></div></div><div class=view-section id=view-failed><div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div><h1 class=text-error>Verification Failed</h1><p class=desc id=failedMsg>We encountered an issue during verification.</p><button class="btn danger" id=btnFailClose>CONTINUE TO BOT</button></div><div class=view-section id=view-success><div class="icon-wrapper success"><i class="fa-solid fa-check"></i></div><h1 class=text-success>Verification Complete</h1><p class=desc>Your device has been successfully verified and secured.</p><button class="btn success" id=btnSuccessClose>CONTINUE TO BOT</button></div><div class=view-section id=view-already><div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div><h1 class=text-info-h>Already Verified</h1><p class=desc>This device has already been authorized for use.</p><button class="btn primary" id=btnAlreadyClose>CONTINUE TO BOT</button></div></div></div><div class=footer><a href=https://t.me/Jenish_Dobariya1 target=_blank>Designed By Jenil Dobariya</a></div>
-    
+                    
+    <!-- SECURITY KEYBOARD PROTECTION -->
     <script>
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener("keydown", function(e) {
+
             if (
                 e.key === "F12" ||
-                (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-                (e.ctrlKey && (e.key === "U" || e.key === "S"))
+                (
+                    e.ctrlKey &&
+                    e.shiftKey &&
+                    (
+                        e.key === "I" ||
+                        e.key === "J" ||
+                        e.key === "C"
+                    )
+                ) ||
+                (
+                    e.ctrlKey &&
+                    (
+                        e.key === "U" ||
+                        e.key === "S"
+                    )
+                )
             ) {
                 e.preventDefault();
                 return false;
             }
+
         });
 
         (function() {
-            const threshold = 160;
-            setInterval(function() {
-                const widthDiff = window.outerWidth - window.innerWidth;
-                const heightDiff = window.outerHeight - window.innerHeight;
 
-                if (widthDiff > threshold || heightDiff > threshold) {
+            const threshold = 160;
+
+            setInterval(function() {
+
+                const widthDiff =
+                    window.outerWidth - window.innerWidth;
+
+                const heightDiff =
+                    window.outerHeight - window.innerHeight;
+
+                if (
+                    widthDiff > threshold ||
+                    heightDiff > threshold
+                ) {
                     document.body.innerHTML = "";
                     window.location.href = "about:blank";
                 }
+
             }, 1000);
+
         })();
     </script>
 
-    <!-- UI SOUND LAYER -->
+
+    <!-- LOUD UI SOUND SYSTEM -->
     <script>
-    (() => {
-      let ctx;
+        (() => {
 
-      function getCtx() {
-        if (!ctx) {
-          ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (ctx.state === 'suspended') ctx.resume();
-        return ctx;
-      }
+            let ctx = null;
 
-      function unlock() {
-        getCtx();
-        document.removeEventListener('click', unlock);
-        document.removeEventListener('touchstart', unlock);
-      }
+            function getCtx() {
 
-      document.addEventListener('click', unlock, { once: true });
-      document.addEventListener('touchstart', unlock, { once: true });
+                if (!ctx) {
 
-      function blip(type = 'click') {
-        const audioCtx = getCtx();
-        const now = audioCtx.currentTime;
+                    const AudioContext =
+                        window.AudioContext ||
+                        window.webkitAudioContext;
 
-        const presets = {
-          hover: {
-            freq: 740,
-            duration: 0.06,
-            gain: 0.05,
-            wave: 'sine'
-          },
-          click: {
-            freq: 520,
-            duration: 0.12,
-            gain: 0.09,
-            wave: 'triangle'
-          },
-          success: {
-            freq: 660,
-            duration: 0.22,
-            gain: 0.10,
-            wave: 'sine',
-            glideTo: 990
-          },
-          error: {
-            freq: 220,
-            duration: 0.24,
-            gain: 0.10,
-            wave: 'sawtooth',
-            glideTo: 140
-          }
-        };
+                    if (!AudioContext) {
+                        return null;
+                    }
 
-        const p = presets[type] || presets.click;
+                    ctx = new AudioContext();
+                }
 
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+                if (ctx.state === "suspended") {
+                    ctx.resume();
+                }
 
-        osc.type = p.wave;
-        osc.frequency.setValueAtTime(p.freq, now);
+                return ctx;
+            }
 
-        if (p.glideTo) {
-          osc.frequency.exponentialRampToValueAtTime(
-            p.glideTo,
-            now + p.duration
-          );
-        }
 
-        gain.gain.setValueAtTime(0, now);
+            function unlock() {
+                getCtx();
+            }
 
-        gain.gain.linearRampToValueAtTime(
-          p.gain,
-          now + 0.012
-        );
 
-        gain.gain.exponentialRampToValueAtTime(
-          0.0001,
-          now + p.duration
-        );
+            document.addEventListener(
+                "click",
+                unlock,
+                { once: true }
+            );
 
-        osc.connect(gain).connect(audioCtx.destination);
+            document.addEventListener(
+                "touchstart",
+                unlock,
+                { once: true }
+            );
 
-        osc.start(now);
-        osc.stop(now + p.duration + 0.02);
-      }
 
-      // Button click sounds
-      document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn');
+            function blip(type) {
 
-        if (!btn) return;
+                const audioCtx = getCtx();
 
-        const type =
-          btn.classList.contains('success')
-            ? 'success'
-            : btn.classList.contains('danger')
-              ? 'error'
-              : 'click';
+                if (!audioCtx) {
+                    return;
+                }
 
-        blip(type);
-      });
+                const now =
+                    audioCtx.currentTime;
 
-      // Hover sounds
-      const hoverTargets =
-        '.btn, .avatar-container, .status-pill';
+                let freq = 520;
+                let duration = 0.14;
+                let gainValue = 0.22;
+                let wave = "triangle";
+                let glideTo = null;
 
-      document.addEventListener('mouseover', (e) => {
-        const el = e.target.closest(hoverTargets);
 
-        if (!el || el.dataset.soundHovering) return;
+                if (type === "hover") {
 
-        el.dataset.soundHovering = '1';
-        blip('hover');
-      });
+                    freq = 740;
+                    duration = 0.08;
+                    gainValue = 0.14;
+                    wave = "sine";
 
-      document.addEventListener('mouseout', (e) => {
-        const el = e.target.closest(hoverTargets);
+                }
 
-        if (el) {
-          delete el.dataset.soundHovering;
-        }
-      });
 
-      // Success / error sounds when a view becomes active
-      const containers =
-        document.querySelectorAll('.view-section');
+                if (type === "success") {
 
-      if (
-        containers.length &&
-        'MutationObserver' in window
-      ) {
-        const seen = new WeakSet();
+                    freq = 660;
+                    duration = 0.28;
+                    gainValue = 0.24;
+                    wave = "sine";
+                    glideTo = 990;
 
-        const obs = new MutationObserver((mutations) => {
-          for (const m of mutations) {
-            const el = m.target;
+                }
+
+
+                if (type === "error") {
+
+                    freq = 220;
+                    duration = 0.28;
+                    gainValue = 0.22;
+                    wave = "sawtooth";
+                    glideTo = 140;
+
+                }
+
+
+                const osc =
+                    audioCtx.createOscillator();
+
+                const gain =
+                    audioCtx.createGain();
+
+
+                osc.type = wave;
+
+                osc.frequency.setValueAtTime(
+                    freq,
+                    now
+                );
+
+
+                if (glideTo) {
+
+                    osc.frequency
+                        .exponentialRampToValueAtTime(
+                            glideTo,
+                            now + duration
+                        );
+
+                }
+
+
+                gain.gain.setValueAtTime(
+                    0,
+                    now
+                );
+
+
+                gain.gain.linearRampToValueAtTime(
+                    gainValue,
+                    now + 0.012
+                );
+
+
+                gain.gain.exponentialRampToValueAtTime(
+                    0.0001,
+                    now + duration
+                );
+
+
+                osc.connect(gain);
+
+                gain.connect(
+                    audioCtx.destination
+                );
+
+
+                osc.start(now);
+
+                osc.stop(
+                    now + duration + 0.02
+                );
+
+            }
+
+
+            /* BUTTON CLICK SOUND */
+
+            document.addEventListener(
+                "click",
+                function(e) {
+
+                    const btn =
+                        e.target.closest(".btn");
+
+                    if (!btn) {
+                        return;
+                    }
+
+
+                    if (
+                        btn.classList.contains(
+                            "success"
+                        )
+                    ) {
+
+                        blip("success");
+
+                    } else if (
+                        btn.classList.contains(
+                            "danger"
+                        )
+                    ) {
+
+                        blip("error");
+
+                    } else {
+
+                        blip("click");
+
+                    }
+
+                }
+            );
+
+
+            /* HOVER SOUND */
+
+            const hoverTargets =
+                ".btn, .avatar-container, .status-pill";
+
+
+            document.addEventListener(
+                "mouseover",
+                function(e) {
+
+                    const el =
+                        e.target.closest(
+                            hoverTargets
+                        );
+
+                    if (
+                        !el ||
+                        el.dataset.soundHovering
+                    ) {
+                        return;
+                    }
+
+
+                    el.dataset.soundHovering =
+                        "1";
+
+                    blip("hover");
+
+                }
+            );
+
+
+            document.addEventListener(
+                "mouseout",
+                function(e) {
+
+                    const el =
+                        e.target.closest(
+                            hoverTargets
+                        );
+
+                    if (el) {
+
+                        delete
+                            el.dataset.soundHovering;
+
+                    }
+
+                }
+            );
+
+
+            /* SUCCESS / ERROR VIEW SOUND */
+
+            const containers =
+                document.querySelectorAll(
+                    ".view-section"
+                );
+
 
             if (
-              el.classList.contains('active') &&
-              !seen.has(el)
+                containers.length &&
+                "MutationObserver" in window
             ) {
-              seen.add(el);
 
-              if (
-                el.querySelector('.icon-wrapper.success')
-              ) {
-                blip('success');
-              } else if (
-                el.querySelector('.icon-wrapper.error')
-              ) {
-                blip('error');
-              }
+                const seen =
+                    new WeakSet();
+
+
+                const observer =
+                    new MutationObserver(
+                        function(mutations) {
+
+                            mutations.forEach(
+                                function(mutation) {
+
+                                    const el =
+                                        mutation.target;
+
+
+                                    if (
+                                        el.classList.contains(
+                                            "active"
+                                        ) &&
+                                        !seen.has(el)
+                                    ) {
+
+                                        seen.add(el);
+
+
+                                        if (
+                                            el.querySelector(
+                                                ".icon-wrapper.success"
+                                            )
+                                        ) {
+
+                                            blip(
+                                                "success"
+                                            );
+
+                                        } else if (
+                                            el.querySelector(
+                                                ".icon-wrapper.error"
+                                            )
+                                        ) {
+
+                                            blip(
+                                                "error"
+                                            );
+
+                                        }
+
+                                    }
+
+                                }
+                            );
+
+                        }
+                    );
+
+
+                containers.forEach(
+                    function(el) {
+
+                        observer.observe(
+                            el,
+                            {
+                                attributes: true,
+                                attributeFilter: [
+                                    "class"
+                                ]
+                            }
+                        );
+
+                    }
+                );
+
             }
-          }
-        });
 
-        containers.forEach((el) => {
-          obs.observe(el, {
-            attributes: true,
-            attributeFilter: ['class']
-          });
-        });
-      }
-    })();
+        })();
     </script>
 
 </body>
