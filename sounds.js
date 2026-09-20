@@ -1,21 +1,23 @@
 /* ==========================================================================
-   sounds.js: zero-file sound effects for the status portal.
-   Uses the Web Audio API to synthesise every sound, so there is nothing to
-   download and nothing to license.
+   sounds.js: loud, clear 8-bit sound effects. No audio files needed;
+   everything is synthesised with the Web Audio API.
 
    Add before </body>:   <script src="sounds.js" defer></script>
 
-   What it does automatically:
-   - Button presses make a key "thunk" (pointer or keyboard)
-   - Hovering a button or footer link makes a soft tick
-   - When a .view-section becomes .active it plays a sound matching its
-     icon: success, error, info, or a rising chime for the default view
-   - Progress bar width changes tick upward as it fills
-   - Adds a mute button (remembered between visits)
+   Automatic:
+   - Button press: crisp "click-blip" (mouse, touch and keyboard)
+   - Hover on buttons / footer links: tiny high tick
+   - A .view-section becoming .active plays its sound:
+       success = level-up jingle, error = descending buzz,
+       info = two-note ding-dong, default = power-up sweep
+   - Progress bar ticks upward in pitch as it fills
+   - Mute button (remembered). Shows "Tap for sound" until first tap,
+     because browsers keep audio locked until the user interacts.
+   - On that first tap, the current screen's sound plays once so you
+     immediately hear that audio works.
 
-   Manual use:  Sfx.play('success' | 'error' | 'info' | 'primary' | 'click' | 'hover')
-                Sfx.setMuted(true)
-   Browsers block audio until the first tap or key press; that is expected.
+   Manual:  Sfx.play('success'|'error'|'info'|'primary'|'click'|'hover'|'on')
+            Sfx.setMuted(true)
    ========================================================================== */
 (function () {
   'use strict';
@@ -24,6 +26,7 @@
   var ctx = null;
   var master = null;
   var muted = false;
+  var unlocked = false;
 
   try {
     muted = localStorage.getItem(STORE_KEY) === '1';
@@ -37,76 +40,121 @@
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
+
       master = ctx.createGain();
-      master.gain.value = 0.55;
+      master.gain.value = 0.9;
+
+      /* Soften harsh square-wave overtones without dulling the sound */
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 6500;
+
       var comp = ctx.createDynamicsCompressor();
-      master.connect(comp);
+      comp.threshold.value = -14;
+      comp.ratio.value = 6;
+
+      master.connect(lp);
+      lp.connect(comp);
       comp.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
 
-  /* One synthesised note. `slide` is a multiplier for the end frequency. */
+  /* One note: full volume for most of its length, then a quick decay,
+     which is what makes chiptune notes sound clear and punchy. */
   function tone(o) {
     var c = ensure();
     if (!c || muted) return;
-    var start = c.currentTime + (o.at || 0);
+    var t0 = c.currentTime + (o.at || 0);
     var dur = o.dur || 0.15;
+    var vol = o.vol || 0.3;
     var osc = c.createOscillator();
     var gain = c.createGain();
 
-    osc.type = o.type || 'sine';
-    osc.frequency.setValueAtTime(o.freq, start);
+    osc.type = o.type || 'square';
+    osc.frequency.setValueAtTime(o.freq, t0);
     if (o.slide) {
-      osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.freq * o.slide), start + dur);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.freq * o.slide), t0 + dur);
     }
 
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.linearRampToValueAtTime(o.vol || 0.2, start + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.004);
+    gain.gain.setValueAtTime(vol, t0 + dur * 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
 
     osc.connect(gain);
     gain.connect(master);
-    osc.start(start);
-    osc.stop(start + dur + 0.05);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  /* Short burst of filtered noise, for the "click" part of a key press */
+  function noise(o) {
+    var c = ensure();
+    if (!c || muted) return;
+    var t0 = c.currentTime + (o.at || 0);
+    var dur = o.dur || 0.03;
+    var size = Math.max(1, Math.floor(c.sampleRate * dur));
+    var buf = c.createBuffer(1, size, c.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+
+    var src = c.createBufferSource();
+    src.buffer = buf;
+
+    var hp = c.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = o.hp || 2000;
+
+    var gain = c.createGain();
+    gain.gain.setValueAtTime(o.vol || 0.25, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    src.connect(hp);
+    hp.connect(gain);
+    gain.connect(master);
+    src.start(t0);
   }
 
   /* ---------- Sound library ---------- */
-  var NOTE = { C5: 523.25, E5: 659.25, G5: 783.99, C6: 1046.5, A4: 440, D5: 587.33 };
-
   var sounds = {
     click: function () {
-      tone({ freq: 320, slide: 0.35, dur: 0.09, type: 'triangle', vol: 0.32 });
-      tone({ freq: 1800, slide: 0.5, dur: 0.03, type: 'square', vol: 0.05 });
+      noise({ dur: 0.03, vol: 0.3, hp: 2500 });
+      tone({ freq: 440, slide: 2, dur: 0.08, vol: 0.32 });
     },
     hover: function () {
-      tone({ freq: 880, dur: 0.035, type: 'sine', vol: 0.05 });
+      tone({ freq: 1319, dur: 0.04, vol: 0.1 });
     },
     success: function () {
-      [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.C6].forEach(function (f, i) {
-        tone({ freq: f, at: i * 0.085, dur: 0.32, type: 'triangle', vol: 0.2 });
+      /* Rising four-note run, then a held chord */
+      [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
+        tone({ freq: f, at: i * 0.08, dur: 0.11, vol: 0.28 });
       });
-      tone({ freq: NOTE.C6 * 2, at: 0.34, dur: 0.4, type: 'sine', vol: 0.06 });
+      [1046.5, 1318.5, 1568].forEach(function (f) {
+        tone({ freq: f, at: 0.34, dur: 0.6, type: 'triangle', vol: 0.3 });
+      });
+      tone({ freq: 1046.5, at: 0.34, dur: 0.25, vol: 0.12 });
     },
     error: function () {
-      tone({ freq: 233, slide: 0.6, dur: 0.2, type: 'sawtooth', vol: 0.13 });
-      tone({ freq: 175, slide: 0.6, at: 0.17, dur: 0.3, type: 'sawtooth', vol: 0.13 });
+      tone({ freq: 311, slide: 0.5, dur: 0.22, vol: 0.32 });
+      tone({ freq: 233, slide: 0.4, at: 0.2, dur: 0.38, vol: 0.32 });
+      tone({ freq: 90, dur: 0.6, type: 'sawtooth', vol: 0.22 });
     },
     info: function () {
-      tone({ freq: NOTE.D5, dur: 0.16, type: 'sine', vol: 0.2 });
-      tone({ freq: NOTE.A4 * 2, at: 0.11, dur: 0.24, type: 'sine', vol: 0.2 });
+      tone({ freq: 784, dur: 0.14, vol: 0.28 });
+      tone({ freq: 1046.5, at: 0.13, dur: 0.24, vol: 0.28 });
     },
     primary: function () {
-      tone({ freq: NOTE.A4, slide: 1.6, dur: 0.28, type: 'sine', vol: 0.18 });
-      tone({ freq: NOTE.A4 * 1.5, slide: 1.6, at: 0.06, dur: 0.28, type: 'triangle', vol: 0.08 });
+      tone({ freq: 196, slide: 4, dur: 0.28, vol: 0.26 });
+      tone({ freq: 1175, at: 0.3, dur: 0.14, type: 'triangle', vol: 0.32 });
     },
     tick: function (progress) {
-      tone({ freq: 700 + progress * 900, dur: 0.03, type: 'sine', vol: 0.05 });
+      tone({ freq: 600 + progress * 900, dur: 0.045, vol: 0.14 });
     },
     on: function () {
-      tone({ freq: 660, dur: 0.08, type: 'triangle', vol: 0.2 });
-      tone({ freq: 990, at: 0.07, dur: 0.12, type: 'triangle', vol: 0.2 });
+      tone({ freq: 988, dur: 0.07, vol: 0.3 });
+      tone({ freq: 1319, at: 0.07, dur: 0.35, vol: 0.3 });
     }
   };
 
@@ -114,11 +162,34 @@
     if (sounds[name]) sounds[name](arg);
   }
 
+  function stateOf(view) {
+    var icon = view.querySelector('.icon-wrapper');
+    if (!icon) return 'primary';
+    if (icon.classList.contains('success')) return 'success';
+    if (icon.classList.contains('error')) return 'error';
+    if (icon.classList.contains('info')) return 'info';
+    return 'primary';
+  }
+
   /* ---------- Unlock audio on first interaction ---------- */
-  function unlock() {
+  function unlock(e) {
     ensure();
+    if (unlocked) return;
+    unlocked = true;
     window.removeEventListener('pointerdown', unlock, true);
     window.removeEventListener('keydown', unlock, true);
+
+    var toggle = document.querySelector('.sfx-toggle');
+    if (toggle) toggle.classList.remove('sfx-hint');
+
+    /* Let the person hear that audio works, unless they tapped a control
+       that makes its own sound. */
+    var t = e && e.target;
+    var onControl = t && t.closest && t.closest('.btn, .sfx-toggle');
+    if (!onControl) {
+      var view = document.querySelector('.view-section.active');
+      if (view) play(stateOf(view));
+    }
   }
   window.addEventListener('pointerdown', unlock, true);
   window.addEventListener('keydown', unlock, true);
@@ -151,15 +222,6 @@
   });
 
   /* ---------- View changes and progress ---------- */
-  function stateOf(view) {
-    var icon = view.querySelector('.icon-wrapper');
-    if (!icon) return 'primary';
-    if (icon.classList.contains('success')) return 'success';
-    if (icon.classList.contains('error')) return 'error';
-    if (icon.classList.contains('info')) return 'info';
-    return 'primary';
-  }
-
   var lastStep = -1;
 
   var observer = new MutationObserver(function (mutations) {
@@ -174,8 +236,9 @@
       if (m.attributeName === 'style' && el.classList.contains('progress-bar')) {
         var pct = parseFloat(el.style.width) || 0;
         var step = Math.floor(pct / 10);
-        if (pct === 0) lastStep = -1;
-        else if (step > lastStep && pct < 100) {
+        if (pct === 0) {
+          lastStep = -1;
+        } else if (step > lastStep && pct < 100) {
           lastStep = step;
           play('tick', pct / 100);
         }
@@ -185,9 +248,9 @@
 
   /* ---------- Mute toggle ---------- */
   var ICON_ON =
-    '<svg class="sfx-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+    '<svg class="sfx-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
   var ICON_OFF =
-    '<svg class="sfx-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
+    '<svg class="sfx-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>';
 
   function setMuted(value) {
     muted = !!value;
@@ -206,7 +269,7 @@
   function init() {
     var toggle = document.createElement('button');
     toggle.type = 'button';
-    toggle.className = 'sfx-toggle';
+    toggle.className = 'sfx-toggle' + (unlocked ? '' : ' sfx-hint');
     toggle.innerHTML = ICON_ON + ICON_OFF;
     document.body.appendChild(toggle);
     setMuted(muted);
