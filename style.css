@@ -241,7 +241,7 @@ body {
 .avatar-container:hover {
   border-color: var(--primary);
   transform: translateY(-1px) rotate(-2deg);
-  box-shadow: 0 6px 20px var(--primary-glow);
+  box-shadow: 0 6px 20px var(--primary-glow), var(--shadow-sm);
 }
 
 .avatar-container:focus-visible,
@@ -593,6 +593,7 @@ p.desc {
   margin-bottom: 28px;
   max-width: 320px;
   line-height: 1.65;
+  color: var(--text-secondary);
 }
 
 /* ---------- Progress ---------- */
@@ -681,10 +682,14 @@ p.desc {
 
 .btn:hover {
   filter: brightness(1.14);
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px) scale(1.015);
   box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.55);
 }
-.btn:active { transform: translateY(0) scale(0.98); filter: brightness(0.96); }
+.btn:active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.96);
+  transition-duration: 0.08s;
+}
 .btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 
 .btn.success {
