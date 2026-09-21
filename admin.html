@@ -115,7 +115,7 @@
 </div>
 <!-- END: Passcode Modal Overlay -->
 <!-- BEGIN: Inspector Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur-lg" id="inspector-modal">
+<div class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur-lg" id="inspector-modal" onclick="if(event.target===this) closeInspector()">
 <div class="glass-card w-full max-w-md p-5 flex flex-col max-h-[85vh]">
 <div class="flex items-center justify-between pb-3 border-b border-white/10">
 <div class="flex items-center gap-2">
@@ -144,7 +144,7 @@
 </div>
 <!-- END: Inspector Modal -->
 <!-- BEGIN: MainContainer -->
-<div class="max-w-md mx-auto px-4 pt-3 flex flex-col gap-3.5">
+<div class="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto px-4 pt-3 flex flex-col gap-3.5">
 <!-- BEGIN: HeaderSection -->
 <header class="flex flex-col gap-3 pt-1" data-purpose="admin-header">
 <div class="flex items-center justify-between">
@@ -203,7 +203,7 @@
 <!-- END: HeaderSection -->
 <!-- BEGIN: AnalyticsCardsGrid -->
 <!-- Strict '---' Fallback 2x2 Grid -->
-<section class="grid grid-cols-2 gap-2.5" data-purpose="metrics-grid">
+<section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" data-purpose="metrics-grid">
 <!-- Card 1: Total Users -->
 <div class="glass-card p-3.5 flex flex-col justify-between h-32 relative overflow-hidden group">
 <div class="flex items-center justify-between">
@@ -379,6 +379,7 @@
         document.getElementById('auth-modal').classList.add('hidden');
       }, 300);
       isAuthenticated = true;
+      try { sessionStorage.setItem('dobariya_session', '1'); } catch (e) {}
       // Fetch live data once authenticated
       fetchLiveTelemetry(false);
     } else {
@@ -396,18 +397,27 @@
 
   function handleLogout() {
     isAuthenticated = false;
+    activeTelemetryData = null;
+    try { sessionStorage.removeItem('dobariya_session'); } catch (e) {}
     document.getElementById('passcode-input').value = '';
     document.getElementById('passcode-error').classList.add('hidden');
+    renderMetricsAndTable();
     const modal = document.getElementById('auth-modal');
     modal.classList.remove('hidden');
     setTimeout(() => {
       modal.classList.remove('opacity-0', 'pointer-events-none');
+      document.getElementById('passcode-input')?.focus();
     }, 10);
   }
 
   // Allow enter key in passcode input
   document.getElementById('passcode-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') checkPasscode();
+  });
+
+  // Escape closes the inspector modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeInspector();
   });
 
   // DATASET & STRICT '---' STATE ENGINE
@@ -469,6 +479,11 @@
       endpointDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
       endpointLabel.innerText = '/api/admin (---)';
 
+      document.getElementById('label-user-state').innerText = 'Unfetched state';
+      document.getElementById('label-bot-state').innerText = 'Awaiting feed';
+      document.getElementById('label-pass-state').innerText = 'Clean signatures';
+      document.getElementById('label-block-state').innerText = 'VPN & Clones';
+
       tbody.innerHTML = '';
       emptyState.classList.remove('hidden');
       return;
@@ -509,12 +524,17 @@
     const totalPass = activeTelemetryData.filter(isItemPassed).length;
     const totalBlocked = totalCount - totalPass;
 
-    totalUsersEl.innerText = totalCount;
-    connectedBotsEl.innerText = uniqueBotsCount;
-    verifiedPassEl.innerText = totalPass;
-    blockedEl.innerText = totalBlocked;
+    totalUsersEl.innerText = totalCount.toLocaleString();
+    connectedBotsEl.innerText = uniqueBotsCount.toLocaleString();
+    verifiedPassEl.innerText = totalPass.toLocaleString();
+    blockedEl.innerText = totalBlocked.toLocaleString();
 
-    logBadgeEl.innerText = `${filtered.length} Records`;
+    document.getElementById('label-user-state').innerText = `${totalCount} identities logged`;
+    document.getElementById('label-bot-state').innerText = `${uniqueBotsCount} bot${uniqueBotsCount === 1 ? '' : 's'} streaming`;
+    document.getElementById('label-pass-state').innerText = `${totalPass} clean signature${totalPass === 1 ? '' : 's'}`;
+    document.getElementById('label-block-state').innerText = `${totalBlocked} flagged (VPN/clone)`;
+
+    logBadgeEl.innerText = `${filtered.length} Record${filtered.length === 1 ? '' : 's'}`;
 
     // Render Table Rows
     tbody.innerHTML = '';
@@ -640,7 +660,17 @@
 
   // Initial load - Starts in strictly --- fallback state until fetched or PIN unlocked
   document.addEventListener('DOMContentLoaded', () => {
-    renderMetricsAndTable();
+    let hasSession = false;
+    try { hasSession = sessionStorage.getItem('dobariya_session') === '1'; } catch (e) {}
+
+    if (hasSession) {
+      isAuthenticated = true;
+      document.getElementById('auth-modal').classList.add('hidden');
+      fetchLiveTelemetry(false);
+    } else {
+      renderMetricsAndTable();
+      document.getElementById('passcode-input')?.focus();
+    }
   });
 </script>
 <!-- END: LogicAndStateHandling -->
