@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Dobariya Data Matrix</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          obsidian: '#090d16',
+          surface: 'rgba(16, 22, 38, 0.72)',
+          softCyan: '#38bdf8',
+          softMint: '#34d399',
+          softRose: '#fb7185',
+          softLavender: '#818cf8',
+          softSlate: '#94a3b8'
+        },
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'SFMono-Regular', 'Menlo', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body {
+    background-color: #080b13;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 85% 25%, rgba(129, 140, 248, 0.09) 0%, transparent 45%),
+      radial-gradient(circle at 50% 75%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 90% 90%, rgba(251, 113, 133, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+  .glass-card {
+    background: rgba(15, 22, 39, 0.72);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card:hover { border-color: rgba(255, 255, 255, 0.12); }
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 10px; }
+  @keyframes gentlePulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  .pulse-dot { animation: gentlePulse 2.4s infinite ease-in-out; }
+  .field-label { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
+  .field-input {
+    width: 100%; background: rgba(11,16,28,0.8); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 8px 10px; font-size: 12px; color: #e2e8f0; font-family: 'JetBrains Mono', monospace;
+  }
+  .field-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,0.2); }
+  .field-input[readonly], .field-input:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body class="text-slate-100 font-sans min-h-screen pb-16 antialiased selection:bg-sky-500/30 selection:text-white">
+
+<!-- PASSCODE MODAL -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300" id="auth-modal">
+<div class="glass-card w-full max-w-xs p-6 flex flex-col items-center text-center shadow-2xl border border-white/10">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-sky-500/20 border border-sky-400/30 flex items-center justify-center mb-4 text-sky-400 shadow-lg shadow-sky-500/10">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</div>
+<h3 class="text-base font-bold text-white tracking-tight">Admin Passcode</h3>
+<p class="text-xs text-slate-400 mt-1 mb-4">Enter system PIN to unlock Data Matrix</p>
+<div class="w-full relative mb-3">
+<input class="w-full text-center tracking-[0.25em] py-2.5 px-4 bg-slate-900/80 border border-slate-700/70 rounded-xl text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" id="passcode-input" maxlength="12" placeholder="Enter PIN" type="password"/>
+<p class="hidden text-[11px] text-rose-400 mt-1.5 font-medium" id="passcode-error">Incorrect key.</p>
+</div>
+<div class="flex w-full gap-2 mt-1">
+<button class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] text-white text-xs font-semibold rounded-xl shadow-lg shadow-sky-500/20 transition duration-150" onclick="checkPasscode()">
+    Unlock Matrix
+  </button>
+</div>
+</div>
+</div>
+
+<!-- ROW EDITOR MODAL (Add / Edit) -->
+<div class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur-lg" id="editor-modal" onclick="if(event.target===this) closeEditor()">
+<div class="glass-card w-full max-w-lg p-5 flex flex-col max-h-[85vh]">
+<div class="flex items-center justify-between pb-3 border-b border-white/10">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-sky-400" id="editor-mode-dot"></div>
+<h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono" id="editor-title">Row Editor</h3>
+</div>
+<button class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" onclick="closeEditor()">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<div class="my-3 overflow-y-auto flex-1 pr-1" id="editor-fields">
+</div>
+<p class="hidden text-[11px] text-rose-400 mb-2" id="editor-error"></p>
+<div class="flex items-center justify-between pt-2 border-t border-white/10">
+<button class="hidden px-3 py-1.5 text-xs bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/25 font-medium rounded-xl active:scale-95 transition" id="editor-delete-btn" onclick="deleteCurrentRow()">
+    Delete Row
+  </button>
+<div class="flex gap-2 ml-auto">
+<button class="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/15 text-slate-200 font-medium rounded-xl border border-white/10 active:scale-95 transition" onclick="closeEditor()">
+      Cancel
+    </button>
+<button class="px-3 py-1.5 text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 font-medium rounded-xl active:scale-95 transition" id="editor-save-btn" onclick="saveCurrentRow()">
+      Save
+    </button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto px-4 pt-3 flex flex-col gap-3.5">
+<header class="flex flex-col gap-3 pt-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/90 via-sky-500/80 to-teal-400/70 p-[1px] shadow-lg shadow-sky-500/15">
+<div class="w-full h-full bg-[#0d1322] rounded-[15px] flex items-center justify-center font-bold text-sm text-sky-200 tracking-wider">DB</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h1 class="text-lg font-extrabold tracking-tight text-white">Dobariya</h1>
+<span class="px-2 py-0.5 text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-400/20 rounded-full tracking-wide">Data Matrix</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="w-2 h-2 rounded-full bg-slate-500 pulse-dot" id="backend-status-dot"></span>
+<span class="text-[11px] text-slate-400 font-medium tracking-tight" id="backend-status-text">Offline (---)</span>
+</div>
+</div>
+</div>
+<button class="px-2.5 py-1.5 text-[11px] font-medium text-rose-300/80 hover:text-rose-200 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition active:scale-95" onclick="handleLogout()">Lock</button>
+</div>
+
+<!-- Table selector + actions -->
+<div class="flex items-center gap-2 p-1.5 rounded-2xl glass-pill">
+<div class="relative flex-1">
+<select class="w-full appearance-none bg-[#0b101c]/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-medium focus:outline-none focus:border-sky-400 transition cursor-pointer pr-8" id="table-select" onchange="onTableChange()">
+<option value="">Loading tables...</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 text-sky-300 border border-sky-400/30 rounded-xl text-xs font-semibold active:scale-95 transition shadow-sm" onclick="refreshRows(true)">
+<svg class="w-3.5 h-3.5" fill="none" id="sync-icon" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>Sync</span>
+</button>
+<button class="p-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/30 rounded-xl text-emerald-300 transition active:scale-95" onclick="openAddRow()" title="Add Row">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+</header>
+
+<!-- METRICS -->
+<section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+<div class="glass-card p-3.5 flex flex-col justify-between h-28">
+<span class="text-[11px] font-semibold tracking-wider text-sky-300 uppercase">Table</span>
+<span class="text-xl font-extrabold text-white tracking-tight font-mono truncate" id="metric-table-name">---</span>
+<span class="text-[10px] text-slate-400" id="metric-table-sub">Unfetched</span>
+</div>
+<div class="glass-card p-3.5 flex flex-col justify-between h-28">
+<span class="text-[11px] font-semibold tracking-wider text-indigo-300 uppercase">Total Rows</span>
+<span class="text-2xl font-extrabold text-white tracking-tight font-mono" id="metric-total-rows">---</span>
+<span class="text-[10px] text-slate-400" id="metric-rows-sub">Awaiting feed</span>
+</div>
+<div class="glass-card p-3.5 flex flex-col justify-between h-28">
+<span class="text-[11px] font-semibold tracking-wider text-emerald-300 uppercase">Loaded</span>
+<span class="text-2xl font-extrabold text-emerald-400 tracking-tight font-mono" id="metric-loaded-rows">---</span>
+<span class="text-[10px] text-emerald-400/80">In view</span>
+</div>
+<div class="glass-card p-3.5 flex flex-col justify-between h-28">
+<span class="text-[11px] font-semibold tracking-wider text-rose-300 uppercase">Columns</span>
+<span class="text-2xl font-extrabold text-rose-400 tracking-tight font-mono" id="metric-columns">---</span>
+<span class="text-[10px] text-rose-400/80">Detected fields</span>
+</div>
+</section>
+
+<!-- SEARCH -->
+<section class="glass-card p-3 flex flex-col gap-2.5">
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<input class="w-full pl-9 pr-3.5 py-2 bg-[#0b101c]/80 border border-white/10 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition" id="search-input" oninput="applyFilters()" placeholder="Search loaded rows..." type="text"/>
+</div>
+</section>
+
+<!-- TABLE -->
+<section class="glass-card overflow-hidden">
+<div class="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-200 tracking-wider uppercase">Records</span>
+<span class="text-[10px] text-slate-400">Tap a row to edit</span>
+</div>
+<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-white/5 text-sky-300 border border-white/10" id="log-count-tag">--- Records</span>
+</div>
+<div class="overflow-x-auto min-h-[220px]">
+<table class="w-full text-left border-collapse min-w-[500px]">
+<thead>
+<tr class="text-[10px] uppercase font-mono text-slate-400 border-b border-white/10 bg-[#070b14]/70" id="table-head-row"></tr>
+</thead>
+<tbody class="divide-y divide-white/[0.05] font-mono text-xs text-slate-300" id="data-rows"></tbody>
+</table>
+<div class="flex flex-col items-center justify-center p-8 text-center" id="table-empty-state">
+<p class="text-xs font-semibold text-slate-300">Waiting for data stream...</p>
+<p class="text-[11px] text-slate-500 mt-0.5">Unlock and pick a table to begin</p>
+</div>
+</div>
+<div class="hidden px-4 py-3 border-t border-white/10 flex items-center justify-center" id="load-more-wrap">
+<button class="px-3.5 py-1.5 text-[11px] font-semibold text-sky-300 bg-sky-500/15 border border-sky-400/30 rounded-xl hover:bg-sky-500/25 active:scale-95 transition" onclick="loadMore()">Load More</button>
+</div>
+</section>
+</div>
+
+<script>
+  // ===== SUPABASE CONFIG =====
+  const SUPABASE_URL = 'https://neeppziqbuwxhmhpifda.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNTU4NzksImV4cCI6MjEwNDczMTg3OX0.qq1HiE8KDZBbAWI8kGE5JSjr11OfDAY2SEsyFj3_EI4';
+  const REST = SUPABASE_URL + '/rest/v1';
+  const HEADERS = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY, 'Content-Type': 'application/json' };
+
+  const CORRECT_PIN = 'jenil2026';
+  const PAGE_SIZE = 100;
+
+  let schemaTables = {};      // { tableName: { columns:[{name,type,format,description,default,required}], pk: 'id' } }
+  let currentTable = null;
+  let currentColumns = [];
+  let currentPk = null;
+  let loadedRows = [];
+  let totalRowCount = null;
+  let offset = 0;
+  let editorMode = 'add';     // 'add' | 'edit'
+  let editingRowKey = null;
+
+  // ---------- AUTH ----------
+  function checkPasscode() {
+    const input = document.getElementById('passcode-input').value;
+    const err = document.getElementById('passcode-error');
+    if (input === CORRECT_PIN) {
+      document.getElementById('auth-modal').classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => document.getElementById('auth-modal').classList.add('hidden'), 300);
+      try { sessionStorage.setItem('dobariya_data_session', '1'); } catch (e) {}
+      bootstrapSchema();
+    } else {
+      err.classList.remove('hidden');
+      const box = document.getElementById('passcode-input');
+      box.classList.add('border-rose-500');
+      setTimeout(() => box.classList.remove('border-rose-500'), 1000);
+    }
+  }
+
+  function handleLogout() {
+    try { sessionStorage.removeItem('dobariya_data_session'); } catch (e) {}
+    document.getElementById('passcode-input').value = '';
+    document.getElementById('passcode-error').classList.add('hidden');
+    const modal = document.getElementById('auth-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      document.getElementById('passcode-input')?.focus();
+    }, 10);
+  }
+
+  document.getElementById('passcode-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') checkPasscode();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeEditor();
+  });
+
+  // ---------- SCHEMA DISCOVERY ----------
+  async function bootstrapSchema() {
+    setBackendStatus('connecting');
+    try {
+      const res = await fetch(REST + '/', { headers: HEADERS });
+      if (!res.ok) throw new Error('OpenAPI root fetch failed: ' + res.status);
+      const spec = await res.json();
+      const defs = spec.definitions || spec.components?.schemas || {};
+      schemaTables = {};
+      Object.entries(defs).forEach(([tableName, def]) => {
+        const props = def.properties || {};
+        const requiredList = def.required || [];
+        const columns = Object.entries(props).map(([colName, meta]) => ({
+          name: colName,
+          type: meta.type || 'string',
+          format: meta.format || '',
+          description: meta.description || '',
+          default: meta.default,
+          required: requiredList.includes(colName)
+        }));
+        let pk = columns.find(c => (c.description || '').includes('<pk/>'))?.name;
+        if (!pk) pk = columns.find(c => c.name === 'id')?.name || (columns[0] && columns[0].name);
+        schemaTables[tableName] = { columns, pk };
+      });
+
+      const select = document.getElementById('table-select');
+      const names = Object.keys(schemaTables);
+      if (names.length === 0) {
+        select.innerHTML = '<option value="">No tables visible to anon key</option>';
+        setBackendStatus('offline');
+        return;
+      }
+      select.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+      setBackendStatus('online');
+      currentTable = names[0];
+      select.value = currentTable;
+      loadTable(currentTable);
+    } catch (e) {
+      console.error(e);
+      setBackendStatus('offline');
+      const select = document.getElementById('table-select');
+      select.innerHTML = '<option value="">Failed to load schema</option>';
+    }
+  }
+
+  function onTableChange() {
+    const select = document.getElementById('table-select');
+    if (!select.value) return;
+    loadTable(select.value);
+  }
+
+  function loadTable(tableName) {
+    currentTable = tableName;
+    currentColumns = schemaTables[tableName].columns;
+    currentPk = schemaTables[tableName].pk;
+    offset = 0;
+    loadedRows = [];
+    totalRowCount = null;
+    document.getElementById('metric-table-name').innerText = tableName;
+    document.getElementById('metric-table-sub').innerText = currentPk ? ('PK: ' + currentPk) : 'No PK detected';
+    document.getElementById('metric-columns').innerText = currentColumns.length;
+    buildTableHead();
+    refreshRows(true);
+  }
+
+  function buildTableHead() {
+    const head = document.getElementById('table-head-row');
+    head.innerHTML = currentColumns.map(c =>
+      `<th class="py-2.5 px-3 whitespace-nowrap">${c.name}${c.name === currentPk ? ' <span class="text-sky-400">(pk)</span>' : ''}</th>`
+    ).join('') + '<th class="py-2.5 px-3 text-right">Actions</th>';
+  }
+
+  function setBackendStatus(state) {
+    const dot = document.getElementById('backend-status-dot');
+    const text = document.getElementById('backend-status-text');
+    if (state === 'online') {
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot';
+      text.innerText = 'Supabase Connected';
+    } else if (state === 'connecting') {
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400 pulse-dot';
+      text.innerText = 'Connecting...';
+    } else {
+      dot.className = 'w-2 h-2 rounded-full bg-slate-500 pulse-dot';
+      text.innerText = 'Offline (---)';
+    }
+  }
+
+  // ---------- ROW FETCHING ----------
+  async function refreshRows(reset) {
+    if (!currentTable) return;
+    if (reset) { offset = 0; loadedRows = []; }
+    const syncIcon = document.getElementById('sync-icon');
+    syncIcon.classList.add('animate-spin');
+    try {
+      const url = `${REST}/${encodeURIComponent(currentTable)}?select=*&order=${currentPk || ''}&limit=${PAGE_SIZE}&offset=${offset}`;
+      const res = await fetch(url, {
+        headers: { ...HEADERS, Prefer: 'count=exact' }
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`Fetch failed (${res.status}): ${errBody}`);
+      }
+      const rows = await res.json();
+      const range = res.headers.get('content-range'); // e.g. "0-99/431"
+      if (range && range.includes('/')) {
+        const total = range.split('/')[1];
+        totalRowCount = total === '*' ? null : parseInt(total, 10);
+      }
+      if (reset) loadedRows = rows; else loadedRows = loadedRows.concat(rows);
+      offset = loadedRows.length;
+      renderRows();
+      const moreWrap = document.getElementById('load-more-wrap');
+      if (totalRowCount !== null && loadedRows.length < totalRowCount) {
+        moreWrap.classList.remove('hidden');
+      } else {
+        moreWrap.classList.add('hidden');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Could not load data: ' + e.message + '\n\nThis usually means Row Level Security is blocking anonymous SELECT on this table.');
+    } finally {
+      syncIcon.classList.remove('animate-spin');
+    }
+  }
+
+  function loadMore() { refreshRows(false); }
+
+  function applyFilters() { renderRows(); }
+
+  function renderRows() {
+    const tbody = document.getElementById('data-rows');
+    const emptyState = document.getElementById('table-empty-state');
+    const logBadge = document.getElementById('log-count-tag');
+    const q = document.getElementById('search-input').value.toLowerCase().trim();
+
+    const filtered = q
+      ? loadedRows.filter(row => JSON.stringify(row).toLowerCase().includes(q))
+      : loadedRows;
+
+    document.getElementById('metric-total-rows').innerText = totalRowCount !== null ? totalRowCount.toLocaleString() : loadedRows.length.toLocaleString();
+    document.getElementById('metric-rows-sub').innerText = totalRowCount !== null ? 'in table' : 'count unknown';
+    document.getElementById('metric-loaded-rows').innerText = loadedRows.length.toLocaleString();
+    logBadge.innerText = `${filtered.length} Record${filtered.length === 1 ? '' : 's'}`;
+
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+      emptyState.classList.remove('hidden');
+      return;
+    }
+    emptyState.classList.add('hidden');
+
+    filtered.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-white/[0.03] active:bg-white/[0.06] transition border-b border-white/[0.04] text-[11px]';
+      const cells = currentColumns.map(c => {
+        let val = row[c.name];
+        if (val === null || val === undefined) val = '';
+        if (typeof val === 'object') val = JSON.stringify(val);
+        val = String(val);
+        if (val.length > 40) val = val.slice(0, 40) + '…';
+        return `<td class="py-2.5 px-3 whitespace-nowrap text-slate-300">${escapeHtml(val)}</td>`;
+      }).join('');
+      tr.innerHTML = cells + `
+        <td class="py-2.5 px-3 text-right whitespace-nowrap">
+          <button class="px-2 py-1 text-[10px] bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg border border-white/10 mr-1" onclick='openEditRow(${JSON.stringify(JSON.stringify(row))})'>Edit</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  // ---------- EDITOR MODAL ----------
+  function fieldInputType(col) {
+    const fmt = (col.format || '').toLowerCase();
+    const typ = (col.type || '').toLowerCase();
+    if (typ === 'boolean') return 'boolean';
+    if (fmt.includes('timestamp')) return 'datetime-local';
+    if (fmt === 'date') return 'date';
+    if (fmt.includes('json')) return 'json';
+    if (typ === 'integer' || typ === 'number' || ['int2','int4','int8','float4','float8','numeric'].includes(fmt)) return 'number';
+    return 'text';
+  }
+
+  function isAutoColumn(col) {
+    const d = (col.default || '').toString().toLowerCase();
+    return d.includes('nextval') || d.includes('gen_random_uuid') || d.includes('uuid_generate') || col.name === currentPk && d !== '';
+  }
+
+  function openAddRow() {
+    if (!currentTable) return;
+    editorMode = 'add';
+    editingRowKey = null;
+    document.getElementById('editor-title').innerText = `Add Row — ${currentTable}`;
+    document.getElementById('editor-delete-btn').classList.add('hidden');
+    document.getElementById('editor-error').classList.add('hidden');
+    renderEditorFields({});
+    showEditorModal();
+  }
+
+  function openEditRow(rowJson) {
+    const row = JSON.parse(rowJson);
+    editorMode = 'edit';
+    editingRowKey = row[currentPk];
+    document.getElementById('editor-title').innerText = `Edit Row — ${currentTable}`;
+    document.getElementById('editor-delete-btn').classList.remove('hidden');
+    document.getElementById('editor-error').classList.add('hidden');
+    renderEditorFields(row);
+    showEditorModal();
+  }
+
+  function renderEditorFields(row) {
+    const wrap = document.getElementById('editor-fields');
+    wrap.innerHTML = currentColumns.map(col => {
+      const type = fieldInputType(col);
+      const auto = isAutoColumn(col);
+      const readonly = editorMode === 'edit' && col.name === currentPk;
+      let raw = row[col.name];
+      if (raw === undefined || raw === null) raw = '';
+      let inputHtml;
+      const id = 'f_' + col.name;
+      if (type === 'boolean') {
+        const checked = raw === true || raw === 'true' ? 'checked' : '';
+        inputHtml = `<select id="${id}" class="field-input" ${readonly ? 'disabled' : ''}>
+          <option value="">-- null --</option>
+          <option value="true" ${raw === true ? 'selected' : ''}>true</option>
+          <option value="false" ${raw === false ? 'selected' : ''}>false</option>
+        </select>`;
+      } else if (type === 'json') {
+        const jsonVal = typeof raw === 'object' && raw !== null ? JSON.stringify(raw, null, 2) : raw;
+        inputHtml = `<textarea id="${id}" class="field-input" rows="3" ${readonly ? 'readonly' : ''}>${escapeHtml(String(jsonVal))}</textarea>`;
+      } else if (type === 'datetime-local') {
+        let v = raw ? String(raw).slice(0, 16) : '';
+        inputHtml = `<input id="${id}" type="datetime-local" class="field-input" value="${v}" ${readonly ? 'readonly' : ''}/>`;
+      } else if (type === 'date') {
+        inputHtml = `<input id="${id}" type="date" class="field-input" value="${escapeHtml(String(raw))}" ${readonly ? 'readonly' : ''}/>`;
+      } else if (type === 'number') {
+        inputHtml = `<input id="${id}" type="number" step="any" class="field-input" value="${escapeHtml(String(raw))}" ${readonly ? 'readonly' : ''}/>`;
+      } else {
+        inputHtml = `<input id="${id}" type="text" class="field-input" value="${escapeHtml(String(raw))}" ${readonly ? 'readonly' : ''} placeholder="${auto && editorMode === 'add' ? 'auto-generated' : ''}"/>`;
+      }
+      return `<div class="mb-3">
+        <label class="field-label block mb-1">${col.name}${col.required ? ' *' : ''}${col.name === currentPk ? ' (pk)' : ''}</label>
+        ${inputHtml}
+      </div>`;
+    }).join('');
+  }
+
+  function showEditorModal() {
+    const modal = document.getElementById('editor-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  function closeEditor() {
+    const modal = document.getElementById('editor-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  function collectFieldValues() {
+    const payload = {};
+    for (const col of currentColumns) {
+      if (editorMode === 'add' && isAutoColumn(col) ) {
+        const el = document.getElementById('f_' + col.name);
+        if (el && el.value === '') continue; // let DB default handle it
+      }
+      if (editorMode === 'edit' && col.name === currentPk) continue; // never send pk on update
+      const type = fieldInputType(col);
+      const el = document.getElementById('f_' + col.name);
+      if (!el) continue;
+      const raw = el.value;
+      if (raw === '') { payload[col.name] = null; continue; }
+      if (type === 'boolean') payload[col.name] = raw === '' ? null : raw === 'true';
+      else if (type === 'number') payload[col.name] = Number(raw);
+      else if (type === 'json') {
+        try { payload[col.name] = JSON.parse(raw); }
+        catch (e) { throw new Error(`Column "${col.name}" is not valid JSON`); }
+      } else if (type === 'datetime-local') payload[col.name] = raw ? new Date(raw).toISOString() : null;
+      else payload[col.name] = raw;
+    }
+    return payload;
+  }
+
+  async function saveCurrentRow() {
+    const errEl = document.getElementById('editor-error');
+    errEl.classList.add('hidden');
+    let payload;
+    try {
+      payload = collectFieldValues();
+    } catch (e) {
+      errEl.innerText = e.message;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    try {
+      let res;
+      if (editorMode === 'add') {
+        res = await fetch(`${REST}/${encodeURIComponent(currentTable)}`, {
+          method: 'POST',
+          headers: { ...HEADERS, Prefer: 'return=representation' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        const pkVal = editingRowKey;
+        res = await fetch(`${REST}/${encodeURIComponent(currentTable)}?${currentPk}=eq.${encodeURIComponent(pkVal)}`, {
+          method: 'PATCH',
+          headers: { ...HEADERS, Prefer: 'return=representation' },
+          body: JSON.stringify(payload)
+        });
+      }
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`${res.status}: ${body}`);
+      }
+      closeEditor();
+      refreshRows(true);
+    } catch (e) {
+      errEl.innerText = e.message;
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  async function deleteCurrentRow() {
+    if (editorMode !== 'edit' || editingRowKey === null) return;
+    if (!confirm(`Delete this row from "${currentTable}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${REST}/${encodeURIComponent(currentTable)}?${currentPk}=eq.${encodeURIComponent(editingRowKey)}`, {
+        method: 'DELETE',
+        headers: HEADERS
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`${res.status}: ${body}`);
+      }
+      closeEditor();
+      refreshRows(true);
+    } catch (e) {
+      const errEl = document.getElementById('editor-error');
+      errEl.innerText = e.message;
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // ---------- INIT ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    let hasSession = false;
+    try { hasSession = sessionStorage.getItem('dobariya_data_session') === '1'; } catch (e) {}
+    if (hasSession) {
+      document.getElementById('auth-modal').classList.add('hidden');
+      bootstrapSchema();
+    } else {
+      document.getElementById('passcode-input')?.focus();
+    }
+  });
+</script>
+</body></html>
