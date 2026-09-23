@@ -1,677 +1,372 @@
 <!DOCTYPE html>
-
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-<title>Dobariya Admin Matrix</title>
-<!-- Tailwind CSS v3 with forms and container queries -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
-<script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            obsidian: '#090d16',
-            surface: 'rgba(16, 22, 38, 0.72)',
-            softCyan: '#38bdf8',
-            softMint: '#34d399',
-            softRose: '#fb7185',
-            softLavender: '#818cf8',
-            softSlate: '#94a3b8'
-          },
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'SFMono-Regular', 'Menlo', 'monospace']
-          }
-        }
-      }
-    }
-  </script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bot Verification Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    /* Velvet ambient glow background */
-    body {
-      background-color: #080b13;
-      background-image: 
-        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 25%, rgba(129, 140, 248, 0.09) 0%, transparent 45%),
-        radial-gradient(circle at 50% 75%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 90% 90%, rgba(251, 113, 133, 0.05) 0%, transparent 40%);
-      background-attachment: fixed;
-    }
+:root{
+  --ink:#12161f; --ink2:#181d29; --paper:#e9e4d8; --paper-dim:#8d8a80;
+  --line:rgba(233,228,216,0.14); --line-strong:rgba(233,228,216,0.28);
+  --brass:#c9a227; --brass-dim:rgba(201,162,39,0.16);
+  --teal:#5fb3a3; --teal-dim:rgba(95,179,163,0.14);
+  --rose:#c96a5a; --rose-dim:rgba(201,106,90,0.16);
+  --font-d:'Space Grotesk',sans-serif; --font-m:'IBM Plex Mono',monospace;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:light){ :root:not([data-theme="dark"]){ } }
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--ink);color:var(--paper);font-family:var(--font-m);min-height:100%;line-height:1.5}
+::selection{background:var(--brass);color:var(--ink)}
 
-    /* Feather-soft glass cards */
-    .glass-card {
-      background: rgba(15, 22, 39, 0.72);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border: 1px solid rgba(255, 255, 255, 0.075);
-      border-radius: 20px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+header{position:sticky;top:0;padding-top:env(safe-area-inset-top,0px);z-index:50;background:var(--ink);border-bottom:1px solid var(--line-strong)}
+.hdr-in{max-width:1280px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand h1{font-family:var(--font-d);font-weight:700;font-size:19px;letter-spacing:-0.01em}
+.brand span{font-size:11px;color:var(--paper-dim)}
+.status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--paper-dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--paper-dim)}
+.dot.on{background:var(--teal);box-shadow:0 0 0 3px var(--teal-dim)}
+.dot.err{background:var(--rose);box-shadow:0 0 0 3px var(--rose-dim)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:var(--font-m);font-size:11.5px;cursor:pointer;border-radius:3px;border:1px solid var(--line-strong);background:transparent;color:var(--paper);padding:8px 13px;transition:.15s}
+button:hover{border-color:var(--brass);color:var(--brass)}
+button.pri{background:var(--brass);border-color:var(--brass);color:var(--ink);font-weight:600}
+button.pri:hover{opacity:.85;color:var(--ink)}
+button.danger:hover{border-color:var(--rose);color:var(--rose)}
 
-    .glass-card:hover {
-      border-color: rgba(255, 255, 255, 0.12);
-    }
+main{max-width:1280px;margin:0 auto;padding:28px 24px 60px}
 
-    /* Soft pill touches */
-    .glass-pill {
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
+.ledger{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line-strong);margin-bottom:32px}
+.ledger div{padding:18px 20px;border-right:1px solid var(--line)}
+.ledger div:last-child{border-right:none}
+.ledger label{display:block;font-size:10.5px;color:var(--paper-dim);margin-bottom:8px}
+.ledger .v{font-family:var(--font-d);font-size:26px;font-weight:700}
+.ledger .v.rose{color:var(--rose)} .ledger .v.teal{color:var(--teal)}
 
-    /* Custom smooth scrollbar */
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
-    }
+h2{font-family:var(--font-d);font-size:15px;font-weight:600;margin-bottom:2px}
+.sub{font-size:11px;color:var(--paper-dim);margin-bottom:14px}
 
-    /* Pulsing gentle ring */
-    @keyframes gentlePulse {
-      0%, 100% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.15); }
-    }
-    .pulse-dot {
-      animation: gentlePulse 2.4s infinite ease-in-out;
-    }
-  </style>
+.clusters{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;margin-bottom:36px}
+.clusters::-webkit-scrollbar{height:5px} .clusters::-webkit-scrollbar-thumb{background:var(--line-strong)}
+.ticket{flex:0 0 210px;border:1px solid var(--line-strong);padding:15px;background:var(--ink2);position:relative}
+.ticket::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--brass)}
+.ticket .name{font-family:var(--font-d);font-weight:600;font-size:13px;margin-bottom:10px;word-break:break-word}
+.ticket .row{display:flex;justify-content:space-between;font-size:11px;color:var(--paper-dim);margin-bottom:4px}
+.ticket .row b{color:var(--paper);font-weight:600}
+.ticket button{width:100%;margin-top:10px;font-size:10.5px;padding:6px}
+.clusters-empty{color:var(--paper-dim);font-size:12px;padding:16px 0}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:14px}
+.tb-left{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text],select{font-family:var(--font-m);font-size:12px;background:var(--ink2);border:1px solid var(--line-strong);color:var(--paper);padding:8px 12px;border-radius:3px;outline:none}
+input[type=text]{min-width:260px}
+input:focus,select:focus{border-color:var(--brass)}
+.count{font-size:11px;color:var(--paper-dim)}
+
+.tbl-wrap{border:1px solid var(--line-strong);overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th{text-align:left;font-size:10.5px;font-weight:600;color:var(--paper-dim);padding:11px 14px;border-bottom:1px solid var(--line-strong);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:middle}
+tr:hover td{background:rgba(233,228,216,0.03)}
+.pill{display:inline-block;font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:2px}
+.pill.pass{background:var(--teal-dim);color:var(--teal)}
+.pill.block{background:var(--rose-dim);color:var(--rose)}
+.mut{color:var(--paper-dim)}
+.rowbtns{display:flex;gap:6px;justify-content:flex-end}
+.rowbtns button{padding:5px 9px;font-size:10.5px}
+.empty{text-align:center;padding:60px 20px;color:var(--paper-dim);font-size:12.5px}
+.empty .big{font-family:var(--font-d);font-size:14px;color:var(--paper);margin-bottom:6px}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+.overlay.on{display:flex}
+.modal{width:100%;max-width:520px;background:var(--ink2);border:1px solid var(--brass);max-height:85vh;display:flex;flex-direction:column}
+.modal h3{font-family:var(--font-d);font-size:14px;padding:16px 20px;border-bottom:1px solid var(--line-strong);display:flex;justify-content:space-between;align-items:center}
+.modal h3 .x{cursor:pointer;color:var(--paper-dim);font-size:18px}
+.modal .body{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.field label{display:block;font-size:10px;color:var(--paper-dim);margin-bottom:6px}
+.field .val{background:rgba(0,0,0,0.3);border:1px solid var(--line);padding:9px 12px;font-size:11.5px;word-break:break-all}
+.field input{width:100%}
+.modal .foot{padding:14px 20px;border-top:1px solid var(--line-strong);display:flex;justify-content:flex-end;gap:8px}
+
+@media(max-width:760px){
+  .ledger{grid-template-columns:repeat(2,1fr)}
+  .ledger div:nth-child(2n){border-right:none}
+  .ledger div{border-bottom:1px solid var(--line)}
+}
+</style>
 </head>
-<body class="text-slate-100 font-sans min-h-screen pb-16 antialiased selection:bg-sky-500/30 selection:text-white">
-<!-- BEGIN: Passcode Modal Overlay -->
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300" id="auth-modal">
-<div class="glass-card w-full max-w-xs p-6 flex flex-col items-center text-center shadow-2xl border border-white/10">
-<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-sky-500/20 border border-sky-400/30 flex items-center justify-center mb-4 text-sky-400 shadow-lg shadow-sky-500/10">
-<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
-</svg>
-</div>
-<h3 class="text-base font-bold text-white tracking-tight">Admin Passcode</h3>
-<p class="text-xs text-slate-400 mt-1 mb-4">Enter system PIN to unlock Dobariya Matrix</p>
-<div class="w-full relative mb-3">
-<input class="w-full text-center tracking-[0.25em] py-2.5 px-4 bg-slate-900/80 border border-slate-700/70 rounded-xl text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition" id="passcode-input" maxlength="12" placeholder="Enter PIN" type="password"/>
-<p class="hidden text-[11px] text-rose-400 mt-1.5 font-medium" id="passcode-error">Incorrect key. Default: jenil2026</p>
-</div>
-<div class="flex w-full gap-2 mt-1">
-<button class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] text-white text-xs font-semibold rounded-xl shadow-lg shadow-sky-500/20 transition duration-150" onclick="checkPasscode()">
-        Unlock Matrix
-      </button>
-</div>
-<button class="text-[11px] text-slate-500 hover:text-slate-300 mt-3 transition underline underline-offset-4" onclick="quickDemoBypass()">
-      Instant Bypass (jenil2026)
-    </button>
-</div>
-</div>
-<!-- END: Passcode Modal Overlay -->
-<!-- BEGIN: Inspector Modal -->
-<div class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur-lg" id="inspector-modal" onclick="if(event.target===this) closeInspector()">
-<div class="glass-card w-full max-w-md p-5 flex flex-col max-h-[85vh]">
-<div class="flex items-center justify-between pb-3 border-b border-white/10">
-<div class="flex items-center gap-2">
-<div class="w-2 h-2 rounded-full bg-sky-400"></div>
-<h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Payload Inspector</h3>
-</div>
-<button class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" onclick="closeInspector()">
-<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-</button>
-</div>
-<div class="my-3 overflow-y-auto max-h-72 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 font-mono text-[11px] text-sky-300/90 whitespace-pre-wrap leading-relaxed select-all" id="json-viewer-content">
-      { "status": "No payload selected" }
+<body>
+
+<header>
+  <div class="hdr-in">
+    <div class="brand">
+      <h1>Bot Verification Register</h1>
+      <span>device telemetry &amp; fraud clearance</span>
     </div>
-<div class="flex items-center justify-between pt-2">
-<span class="text-[11px] text-emerald-400 opacity-0 transition-opacity" id="copied-toast">✓ Copied to clipboard</span>
-<div class="flex gap-2">
-<button class="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/15 text-slate-200 font-medium rounded-xl border border-white/10 active:scale-95 transition" onclick="copyCurrentJson()">
-          Copy JSON
-        </button>
-<button class="px-3 py-1.5 text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 font-medium rounded-xl active:scale-95 transition" onclick="closeInspector()">
-          Done
-        </button>
-</div>
-</div>
-</div>
-</div>
-<!-- END: Inspector Modal -->
-<!-- BEGIN: MainContainer -->
-<div class="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto px-4 pt-3 flex flex-col gap-3.5">
-<!-- BEGIN: HeaderSection -->
-<header class="flex flex-col gap-3 pt-1" data-purpose="admin-header">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-3">
-<!-- Soft JD Avatar -->
-<div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/90 via-sky-500/80 to-teal-400/70 p-[1px] shadow-lg shadow-sky-500/15">
-<div class="w-full h-full bg-[#0d1322] rounded-[15px] flex items-center justify-center font-bold text-sm text-sky-200 tracking-wider">
-            JD
-          </div>
-</div>
-<div class="flex flex-col">
-<div class="flex items-center gap-2">
-<h1 class="text-lg font-extrabold tracking-tight text-white">Dobariya</h1>
-<span class="px-2 py-0.5 text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-400/20 rounded-full tracking-wide">
-              Admin Matrix
-            </span>
-</div>
-<div class="flex items-center gap-1.5 mt-0.5">
-<span class="w-2 h-2 rounded-full bg-slate-500 pulse-dot" id="backend-status-dot"></span>
-<span class="text-[11px] text-slate-400 font-medium tracking-tight" id="backend-status-text">Offline (---)</span>
-</div>
-</div>
-</div>
-<!-- Header Mini Control -->
-<div class="flex items-center gap-1.5">
-<button class="px-2.5 py-1.5 text-[11px] font-medium text-rose-300/80 hover:text-rose-200 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition active:scale-95" onclick="handleLogout()">
-          Lock
-        </button>
-</div>
-</div>
-<!-- Soft Action Bar -->
-<div class="flex items-center justify-between gap-2 p-1.5 rounded-2xl glass-pill">
-<!-- Live Endpoint Status Badge -->
-<div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/50 border border-white/5 text-[11px] font-mono text-slate-400 transition" id="endpoint-badge">
-<span class="w-1.5 h-1.5 rounded-full bg-amber-400 pulse-dot" id="endpoint-dot"></span>
-<span id="endpoint-label">/api/admin (---)</span>
-</div>
-<!-- Right Controls: Sync & State Toggle -->
-<div class="flex items-center gap-1.5">
-<!-- Sync Trigger Button -->
-<button class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 text-sky-300 border border-sky-400/30 rounded-xl text-xs font-semibold active:scale-95 transition shadow-sm" id="btn-sync" onclick="fetchLiveTelemetry(true)">
-<svg class="w-3.5 h-3.5" fill="none" id="sync-icon" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-<span>Sync Data</span>
-</button>
-<!-- Unfetched Simulator Toggle (Allows switching back to strict '---' state) -->
-<button class="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-slate-200 transition active:scale-95" onclick="toggleUnfetchedState()" title="Simulate Disconnect / --- Fallback">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-12.728-12.728m12.728 12.728L1 21M8.464 15.536a5 5 0 01-7.072-7.072" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</button>
-</div>
-</div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusText">connecting…</span></div>
+    <div class="actions">
+      <button onclick="openKeyModal()">connection</button>
+      <button onclick="loadData(true)">sync</button>
+      <button onclick="exportCSV()">export csv</button>
+      <button class="danger" onclick="purgeAll()">purge all</button>
+    </div>
+  </div>
 </header>
-<!-- END: HeaderSection -->
-<!-- BEGIN: AnalyticsCardsGrid -->
-<!-- Strict '---' Fallback 2x2 Grid -->
-<section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" data-purpose="metrics-grid">
-<!-- Card 1: Total Users -->
-<div class="glass-card p-3.5 flex flex-col justify-between h-32 relative overflow-hidden group">
-<div class="flex items-center justify-between">
-<span class="text-[11px] font-semibold tracking-wider text-sky-300 uppercase">Total Users</span>
-<div class="w-7 h-7 rounded-xl bg-sky-500/15 border border-sky-400/25 flex items-center justify-center text-sky-400">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
+
+<main>
+  <div class="ledger">
+    <div><label>total records</label><div class="v" id="kTotal">—</div></div>
+    <div><label>passed clean</label><div class="v teal" id="kPassed">—</div></div>
+    <div><label>clearance rate</label><div class="v" id="kRate">—</div></div>
+    <div><label>connected bots</label><div class="v" id="kBots">—</div></div>
+    <div><label>blocked / clone / vpn</label><div class="v rose" id="kBlocked">—</div></div>
+  </div>
+
+  <h2>Bots</h2>
+  <p class="sub">grouped by assigned bot — delete a single bot's records without touching the rest</p>
+  <div class="clusters" id="clusters"><div class="clusters-empty">loading…</div></div>
+
+  <h2>Records</h2>
+  <p class="sub">every verification row, searchable and filterable</p>
+  <div class="toolbar">
+    <div class="tb-left">
+      <input type="text" id="search" placeholder="search user id, bot, ip, fingerprint…" oninput="filterRows()">
+      <select id="botFilter" onchange="filterRows()"><option value="ALL">all bots</option></select>
+      <select id="statusFilter" onchange="filterRows()">
+        <option value="ALL">all statuses</option>
+        <option value="PASSED">passed only</option>
+        <option value="BLOCKED">blocked only</option>
+      </select>
+    </div>
+    <span class="count" id="rowCount">— records</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>id</th><th>telegram user</th><th>bot</th><th>status</th><th>fingerprint</th><th>ip</th><th>platform</th><th>logged</th><th></th>
+      </tr></thead>
+      <tbody id="tbody"><tr><td colspan="9" class="empty"><div class="big">loading register…</div></td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<div class="overlay" id="inspectOv">
+  <div class="modal">
+    <h3>record detail <span class="x" onclick="closeInspect()">&times;</span></h3>
+    <div class="body" id="inspectBody"></div>
+    <div class="foot"><button onclick="copyInspect()">copy json</button><button class="pri" onclick="closeInspect()">close</button></div>
+  </div>
 </div>
+
+<div class="overlay" id="keyOv">
+  <div class="modal">
+    <h3>connection <span class="x" onclick="closeKeyModal()">&times;</span></h3>
+    <div class="body">
+      <p class="sub" style="margin:0">stored locally in this browser only</p>
+      <div class="field"><label>supabase project url</label><input type="text" id="inUrl"></div>
+      <div class="field"><label>supabase anon key</label><input type="password" id="inKey"></div>
+    </div>
+    <div class="foot"><button onclick="closeKeyModal()">cancel</button><button class="pri" onclick="saveKey()">save &amp; sync</button></div>
+  </div>
 </div>
-<div class="my-auto">
-<span class="text-3xl font-extrabold text-white tracking-tight font-mono transition-all duration-300" id="metric-total-users">---</span>
-</div>
-<div class="flex items-center gap-1.5 text-[10px] text-slate-400">
-<span class="w-1.5 h-1.5 rounded-full bg-sky-400/70"></span>
-<span id="label-user-state">Unfetched state</span>
-</div>
-</div>
-<!-- Card 2: Connected Bots -->
-<div class="glass-card p-3.5 flex flex-col justify-between h-32 relative overflow-hidden group">
-<div class="flex items-center justify-between">
-<span class="text-[11px] font-semibold tracking-wider text-indigo-300 uppercase">Active Bots</span>
-<div class="w-7 h-7 rounded-xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-300">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</div>
-</div>
-<div class="my-auto">
-<span class="text-3xl font-extrabold text-white tracking-tight font-mono transition-all duration-300" id="metric-connected-bots">---</span>
-</div>
-<div class="flex items-center gap-1.5 text-[10px] text-slate-400">
-<span class="w-1.5 h-1.5 rounded-full bg-indigo-400/70"></span>
-<span id="label-bot-state">Awaiting feed</span>
-</div>
-</div>
-<!-- Card 3: Verified (Pass) -->
-<div class="glass-card p-3.5 flex flex-col justify-between h-32 relative overflow-hidden group border-emerald-500/20">
-<div class="flex items-center justify-between">
-<span class="text-[11px] font-semibold tracking-wider text-emerald-300 uppercase">Verified Pass</span>
-<div class="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M4.5 12.75l6 6 9-13.5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
-</svg>
-</div>
-</div>
-<div class="my-auto">
-<span class="text-3xl font-extrabold text-emerald-400 tracking-tight font-mono transition-all duration-300" id="metric-verified-pass">---</span>
-</div>
-<div class="flex items-center gap-1.5 text-[10px] text-emerald-400/80">
-<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-<span id="label-pass-state">Clean signatures</span>
-</div>
-</div>
-<!-- Card 4: Blocked / Flagged -->
-<div class="glass-card p-3.5 flex flex-col justify-between h-32 relative overflow-hidden group border-rose-500/20">
-<div class="flex items-center justify-between">
-<span class="text-[11px] font-semibold tracking-wider text-rose-300 uppercase">Flagged / Block</span>
-<div class="w-7 h-7 rounded-xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center text-rose-400">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</div>
-</div>
-<div class="my-auto">
-<span class="text-3xl font-extrabold text-rose-400 tracking-tight font-mono transition-all duration-300" id="metric-blocked">---</span>
-</div>
-<div class="flex items-center gap-1.5 text-[10px] text-rose-400/80">
-<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-<span id="label-block-state">VPN &amp; Clones</span>
-</div>
-</div>
-</section>
-<!-- END: AnalyticsCardsGrid -->
-<!-- BEGIN: SearchAndFiltersSection -->
-<section class="glass-card p-3 flex flex-col gap-2.5" data-purpose="filtering-controls">
-<!-- Search Bar -->
-<div class="relative">
-<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-</svg>
-</div>
-<input class="w-full pl-9 pr-3.5 py-2 bg-[#0b101c]/80 border border-white/10 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition" id="search-input" oninput="applyFilters()" placeholder="Filter by User, Bot, IP, or HW ID" type="text"/>
-</div>
-<!-- Dropdown + Soft Status Pills Row -->
-<div class="flex items-center gap-2">
-<!-- Bot Select -->
-<div class="relative flex-1">
-<select class="w-full appearance-none bg-[#0b101c]/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 font-medium focus:outline-none focus:border-sky-400 transition cursor-pointer pr-8" id="bot-filter-select" onchange="applyFilters()">
-<option value="ALL">All Bots</option>
-<option value="VerificationTest01Bot">VerificationTest01Bot</option>
-<option value="Snkwwowjwnbot">Snkwwowjwnbot</option>
-<option value="CustomAuthBot">CustomAuthBot</option>
-</select>
-<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-</div>
-</div>
-<!-- Quick Filter Pills: All, Pass, Blocked -->
-<div class="flex items-center gap-1 bg-[#0b101c]/60 p-1 rounded-xl border border-white/5">
-<button class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/30 transition" id="pill-all" onclick="setStatusFilter('ALL')">
-          All
-        </button>
-<button class="px-2.5 py-1 text-[11px] font-medium rounded-lg text-slate-400 hover:text-slate-200 transition" id="pill-pass" onclick="setStatusFilter('PASS')">
-          Pass
-        </button>
-<button class="px-2.5 py-1 text-[11px] font-medium rounded-lg text-slate-400 hover:text-slate-200 transition" id="pill-blocked" onclick="setStatusFilter('BLOCKED')">
-          Flag
-        </button>
-</div>
-</div>
-</section>
-<!-- END: SearchAndFiltersSection -->
-<!-- BEGIN: TelemetryTableSection -->
-<section class="glass-card overflow-hidden" data-purpose="telemetry-logs">
-<!-- Header with strictly --- Fallback for badge -->
-<div class="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-<div class="flex items-center gap-2">
-<span class="text-xs font-bold text-slate-200 tracking-wider uppercase">Active Telemetry</span>
-<span class="text-[10px] text-slate-400">Live stream</span>
-</div>
-<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-white/5 text-sky-300 border border-white/10" id="log-count-tag">
-        --- Records
-      </span>
-</div>
-<!-- Table or Calm Empty State -->
-<div class="overflow-x-auto min-h-[220px]">
-<table class="w-full text-left border-collapse min-w-[500px]">
-<thead>
-<tr class="text-[10px] uppercase font-mono text-slate-400 border-b border-white/10 bg-[#070b14]/70">
-<th class="py-2.5 px-3.5">User</th>
-<th class="py-2.5 px-3">Bot Handle</th>
-<th class="py-2.5 px-3">Hardware / IP</th>
-<th class="py-2.5 px-3">Verdict</th>
-<th class="py-2.5 px-3 text-right">Time</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-white/[0.05] font-mono text-xs text-slate-300" id="telemetry-rows">
-<!-- Dynamic JS will render records or the strictly --- calm empty state -->
-</tbody>
-</table>
-<!-- Empty State Fallback -->
-<div class="flex flex-col items-center justify-center p-8 text-center" id="table-empty-state">
-<div class="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 mb-2.5">
-<svg class="w-5 h-5 text-sky-400/80 animate-pulse" fill="none" stroke="currentColor" viewbox="0 0 24 24">
-<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
-</svg>
-</div>
-<p class="text-xs font-semibold text-slate-300">Waiting for live telemetry stream...</p>
-<p class="text-[11px] text-slate-500 mt-0.5">All metrics currently show <span class="font-mono text-sky-400">---</span></p>
-<button class="mt-3.5 px-3.5 py-1.5 text-[11px] font-semibold text-sky-300 bg-sky-500/15 border border-sky-400/30 rounded-xl hover:bg-sky-500/25 active:scale-95 transition" onclick="fetchLiveTelemetry(true)">
-          Fetch Stream Now
-        </button>
-</div>
-</div>
-</section>
-<!-- END: TelemetryTableSection -->
-</div>
-<!-- END: MainContainer -->
-<!-- BEGIN: LogicAndStateHandling -->
+
 <script>
-  // PASSCODE AUTH SYSTEM
-  const CORRECT_PIN = 'jenil2026';
-  let isAuthenticated = false;
+const DEF_URL='https://neeppziqbuwxhmhpifda.supabase.co';
+const DEF_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lZXBwemlxYnV3eGhtaHBpZmRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzM5NjMsImV4cCI6MjA1NjgwOTk2M30.7DkY81N6l1T7c1lT-l8TqN4J-J7c1lT-l8TqN4J-J7c';
+let rows=[], sb=null, inspectRec=null;
 
-  function checkPasscode() {
-    const input = document.getElementById('passcode-input').value;
-    const err = document.getElementById('passcode-error');
-    if (input === CORRECT_PIN) {
-      document.getElementById('auth-modal').classList.add('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        document.getElementById('auth-modal').classList.add('hidden');
-      }, 300);
-      isAuthenticated = true;
-      try { sessionStorage.setItem('dobariya_session', '1'); } catch (e) {}
-      // Fetch live data once authenticated
-      fetchLiveTelemetry(false);
-    } else {
-      err.classList.remove('hidden');
-      const box = document.getElementById('passcode-input');
-      box.classList.add('border-rose-500');
-      setTimeout(() => box.classList.remove('border-rose-500'), 1000);
-    }
+function client(){
+  const url=localStorage.getItem('SP_URL')||DEF_URL, key=localStorage.getItem('SP_KEY')||DEF_KEY;
+  if(!sb) sb=supabase.createClient(url,key);
+  return sb;
+}
+function setStatus(state,text){
+  document.getElementById('dot').className='dot'+(state==='on'?' on':state==='err'?' err':'');
+  document.getElementById('statusText').textContent=text;
+}
+function isBlocked(r){
+  const s=((r.status||'')+(r.bot_hash||'')).toUpperCase();
+  return /CLONE|FAIL|VPN|BLOCK/.test(s);
+}
+async function loadData(notify){
+  setStatus('','syncing…');
+  let fetched=null, lastErr=null;
+
+  // Attempt 1: direct Supabase client query
+  try{
+    const {data,error}=await client().from('bot_device_verifications').select('*').order('id',{ascending:false});
+    if(!error && Array.isArray(data)) fetched=data;
+    else lastErr=error;
+  }catch(e){ lastErr=e; }
+
+  // Attempt 2: backend /api/admin fallback (if your deployment has one)
+  if(!fetched){
+    try{
+      const res=await fetch('/api/admin',{cache:'no-store'});
+      if(res.ok){
+        const json=await res.json();
+        if(Array.isArray(json)) fetched=json;
+      }
+    }catch(e){ if(!lastErr) lastErr=e; }
   }
 
-  function quickDemoBypass() {
-    document.getElementById('passcode-input').value = CORRECT_PIN;
-    checkPasscode();
+  if(!fetched){
+    setStatus('err','connection error');
+    const msg=(lastErr&&lastErr.message)||'Unable to fetch data from Supabase or /api/admin.';
+    document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="empty"><div class="big">could not reach supabase</div>'+msg+'<br><br><button class="pri" onclick="openKeyModal()">check connection</button></td></tr>';
+    return;
   }
 
-  function handleLogout() {
-    isAuthenticated = false;
-    activeTelemetryData = null;
-    try { sessionStorage.removeItem('dobariya_session'); } catch (e) {}
-    document.getElementById('passcode-input').value = '';
-    document.getElementById('passcode-error').classList.add('hidden');
-    renderMetricsAndTable();
-    const modal = document.getElementById('auth-modal');
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-      modal.classList.remove('opacity-0', 'pointer-events-none');
-      document.getElementById('passcode-input')?.focus();
-    }, 10);
-  }
-
-  // Allow enter key in passcode input
-  document.getElementById('passcode-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') checkPasscode();
+  rows=fetched;
+  renderKpis(); renderClusters(); fillBotFilter(); filterRows();
+  setStatus('on', rows.length+' records live');
+  if(notify) setStatus('on', 'synced '+rows.length+' records');
+}
+function renderKpis(){
+  const total=rows.length;
+  const blocked=rows.filter(isBlocked).length;
+  const passed=total-blocked;
+  const bots=new Set(rows.map(r=>(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean));
+  document.getElementById('kTotal').textContent=total;
+  document.getElementById('kPassed').textContent=passed;
+  document.getElementById('kRate').textContent=total?((passed/total*100).toFixed(1)+'%'):'—';
+  document.getElementById('kBots').textContent=bots.size;
+  document.getElementById('kBlocked').textContent=blocked;
+}
+function renderClusters(){
+  const el=document.getElementById('clusters');
+  const map={};
+  rows.forEach(r=>{
+    const b=(r.bot_username||'unknown').replace(/^@/,'').trim()||'unknown';
+    (map[b]=map[b]||[]).push(r);
   });
-
-  // Escape closes the inspector modal
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeInspector();
+  const bots=Object.keys(map);
+  if(!bots.length){el.innerHTML='<div class="clusters-empty">no bots yet</div>';return;}
+  el.innerHTML=bots.map(b=>{
+    const list=map[b], blocked=list.filter(isBlocked).length;
+    return `<div class="ticket"><div class="name">@${b}</div>
+      <div class="row"><span>records</span><b>${list.length}</b></div>
+      <div class="row"><span>blocked</span><b>${blocked}</b></div>
+      <button class="danger" onclick="deleteBot('${b.replace(/'/g,"\\'")}')">delete bot data</button></div>`;
+  }).join('');
+}
+function fillBotFilter(){
+  const sel=document.getElementById('botFilter');
+  const cur=sel.value;
+  const bots=[...new Set(rows.map(r=>(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean))].sort();
+  sel.innerHTML='<option value="ALL">all bots</option>'+bots.map(b=>`<option value="${b}">@${b}</option>`).join('');
+  if(bots.includes(cur)) sel.value=cur;
+}
+function filterRows(){
+  const q=document.getElementById('search').value.toLowerCase().trim();
+  const bf=document.getElementById('botFilter').value;
+  const sf=document.getElementById('statusFilter').value;
+  let out=rows.filter(r=>{
+    if(bf!=='ALL' && (r.bot_username||'').replace(/^@/,'').trim()!==bf) return false;
+    const blocked=isBlocked(r);
+    if(sf==='PASSED'&&blocked) return false;
+    if(sf==='BLOCKED'&&!blocked) return false;
+    if(q){
+      const hay=[r.user_id,r.bot_username,r.ip_address,r.device_id].join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
   });
+  document.getElementById('rowCount').textContent=out.length+' records';
+  const tb=document.getElementById('tbody');
+  if(!out.length){tb.innerHTML='<tr><td colspan="9" class="empty"><div class="big">no matching records</div></td></tr>';return;}
+  tb.innerHTML=out.map(r=>{
+    const blocked=isBlocked(r);
+    return `<tr>
+      <td class="mut">#${r.id}</td>
+      <td>${r.user_id||'—'}</td>
+      <td>@${(r.bot_username||'').replace(/^@/,'')||'—'}</td>
+      <td><span class="pill ${blocked?'block':'pass'}">${blocked?'blocked':'passed'}</span></td>
+      <td class="mut">${(r.device_id||'—').slice(0,16)}</td>
+      <td class="mut">${r.ip_address||'—'}</td>
+      <td class="mut">${r.platform||'—'}</td>
+      <td class="mut">${(r.created_at||r.last_seen_at||'—').toString().slice(0,16).replace('T',' ')}</td>
+      <td><div class="rowbtns"><button onclick="inspect(${r.id})">view</button><button class="danger" onclick="deleteRow(${r.id})">del</button></div></td>
+    </tr>`;
+  }).join('');
+}
+function inspect(id){
+  const r=rows.find(x=>x.id===id); if(!r) return;
+  inspectRec=r;
+  document.getElementById('inspectBody').innerHTML=[
+    ['row id','#'+r.id],['telegram user id',r.user_id||'—'],['bot',r.bot_username||'—'],
+    ['status',r.status||r.bot_hash||'PASSED'],['device fingerprint',r.device_id||'—'],
+    ['ip address',r.ip_address||'—'],['platform',(r.platform||'—')+' · '+(r.screen_resolution||'—')],
+    ['user agent',r.user_agent||'—'],['logged at',r.created_at||r.last_seen_at||'—']
+  ].map(([l,v])=>`<div class="field"><label>${l}</label><div class="val">${v}</div></div>`).join('');
+  document.getElementById('inspectOv').classList.add('on');
+}
+function closeInspect(){document.getElementById('inspectOv').classList.remove('on');}
+function copyInspect(){if(inspectRec) navigator.clipboard.writeText(JSON.stringify(inspectRec,null,2));}
 
-  // DATASET & STRICT '---' STATE ENGINE
-  // Initially null/unfetched so the screen respects strict '---' logic
-  let activeTelemetryData = null; 
-  let currentStatusFilter = 'ALL';
-  let selectedInspectorItem = null;
-
-  // Real data payload from Dobariya matrix
-  const realDatabaseRecords = [
-    { id: "usr_9011", bot: "VerificationTest01Bot", hw: "hw_35129", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "12:21:48" },
-    { id: "usr_9012", bot: "VerificationTest01Bot", hw: "hw_35129", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "12:21:06" },
-    { id: "usr_9013", bot: "Snkwwowjwnbot", hw: "hw_35129", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "12:19:17" },
-    { id: "usr_9014", bot: "Snkwwowjwnbot", hw: "e863b228", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "12:16:07" },
-    { id: "usr_9015", bot: "Snkwwowjwnbot", hw: "e863b228", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "09:37:38" },
-    { id: "usr_9016", bot: "Snkwwowjwnbot", hw: "2806d821", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "09:36:15" },
-    { id: "usr_9017", bot: "VerificationTest01Bot", hw: "2806d821", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "09:17:26" },
-    { id: "usr_9018", bot: "CustomAuthBot", hw: "4f71a990", ip: "192.168.1.44", os: "Linux", arch: "aarch64", status: "failed", sig: "VPN Proxy Detected", vpn: true, isClone: false, time: "09:15:10" },
-    { id: "usr_9019", bot: "VerificationTest01Bot", hw: "9912bc32", ip: "10.0.0.12", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "08:55:04" },
-    { id: "usr_9020", bot: "Snkwwowjwnbot", hw: "9912bc32", ip: "10.0.0.12", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "08:52:12" },
-    { id: "usr_9021", bot: "VerificationTest01Bot", hw: "clone_8819", ip: "185.220.10.5", os: "Linux", arch: "x86_64", status: "failed", sig: "Clone spoof attempt", vpn: false, isClone: true, time: "08:44:00" },
-    { id: "usr_9022", bot: "CustomAuthBot", hw: "77a810ff", ip: "10.0.0.35", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "08:30:19" },
-    { id: "usr_9023", bot: "Snkwwowjwnbot", hw: "bb294411", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "08:12:45" },
-    { id: "usr_9024", bot: "VerificationTest01Bot", hw: "bb294411", ip: "10.0.0.1", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "07:59:11" },
-    { id: "usr_9025", bot: "Snkwwowjwnbot", hw: "cc1109a2", ip: "10.0.0.9", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "07:44:22" },
-    { id: "usr_9026", bot: "VerificationTest01Bot", hw: "1198fd44", ip: "10.0.0.4", os: "Linux", arch: "aarch64", status: "success", sig: "Verified signature", vpn: false, isClone: false, time: "07:20:05" }
-  ];
-
-  function isItemPassed(item) {
-    return item.status === 'success' && !item.vpn && !item.isClone;
-  }
-
-  /**
-   * Strictly enforces '---' fallback if data is unfetched / null / empty
-   */
-  function renderMetricsAndTable() {
-    const totalUsersEl = document.getElementById('metric-total-users');
-    const connectedBotsEl = document.getElementById('metric-connected-bots');
-    const verifiedPassEl = document.getElementById('metric-verified-pass');
-    const blockedEl = document.getElementById('metric-blocked');
-    const logBadgeEl = document.getElementById('log-count-tag');
-    const tbody = document.getElementById('telemetry-rows');
-    const emptyState = document.getElementById('table-empty-state');
-    const backendStatusDot = document.getElementById('backend-status-dot');
-    const backendStatusText = document.getElementById('backend-status-text');
-    const endpointDot = document.getElementById('endpoint-dot');
-    const endpointLabel = document.getElementById('endpoint-label');
-
-    // STRICT '---' UNFETCHED STATE
-    if (!activeTelemetryData || activeTelemetryData.length === 0) {
-      totalUsersEl.innerText = '---';
-      connectedBotsEl.innerText = '---';
-      verifiedPassEl.innerText = '---';
-      blockedEl.innerText = '---';
-      logBadgeEl.innerText = '--- Records';
-
-      backendStatusDot.className = 'w-2 h-2 rounded-full bg-slate-500 pulse-dot';
-      backendStatusText.innerText = 'Offline (---)';
-      endpointDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
-      endpointLabel.innerText = '/api/admin (---)';
-
-      document.getElementById('label-user-state').innerText = 'Unfetched state';
-      document.getElementById('label-bot-state').innerText = 'Awaiting feed';
-      document.getElementById('label-pass-state').innerText = 'Clean signatures';
-      document.getElementById('label-block-state').innerText = 'VPN & Clones';
-
-      tbody.innerHTML = '';
-      emptyState.classList.remove('hidden');
-      return;
-    }
-
-    // REAL DATA POPULATION
-    emptyState.classList.add('hidden');
-    backendStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-dot';
-    backendStatusText.innerText = 'Serverless Backend Active';
-    endpointDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
-    endpointLabel.innerText = '/api/admin Online';
-
-    // Filter items based on user query + dropdown + pill
-    const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
-    const botSelection = document.getElementById('bot-filter-select').value;
-
-    const filtered = activeTelemetryData.filter(item => {
-      const matchSearch = 
-        item.id.toLowerCase().includes(searchQuery) ||
-        item.hw.toLowerCase().includes(searchQuery) ||
-        item.ip.toLowerCase().includes(searchQuery) ||
-        item.bot.toLowerCase().includes(searchQuery) ||
-        item.sig.toLowerCase().includes(searchQuery);
-
-      const matchBot = (botSelection === 'ALL') || (item.bot === botSelection);
-
-      const passed = isItemPassed(item);
-      let matchStatus = true;
-      if (currentStatusFilter === 'PASS') matchStatus = passed;
-      if (currentStatusFilter === 'BLOCKED') matchStatus = !passed;
-
-      return matchSearch && matchBot && matchStatus;
-    });
-
-    // KPI computation on total dataset
-    const totalCount = activeTelemetryData.length;
-    const uniqueBotsCount = new Set(activeTelemetryData.map(d => d.bot)).size;
-    const totalPass = activeTelemetryData.filter(isItemPassed).length;
-    const totalBlocked = totalCount - totalPass;
-
-    totalUsersEl.innerText = totalCount.toLocaleString();
-    connectedBotsEl.innerText = uniqueBotsCount.toLocaleString();
-    verifiedPassEl.innerText = totalPass.toLocaleString();
-    blockedEl.innerText = totalBlocked.toLocaleString();
-
-    document.getElementById('label-user-state').innerText = `${totalCount} identities logged`;
-    document.getElementById('label-bot-state').innerText = `${uniqueBotsCount} bot${uniqueBotsCount === 1 ? '' : 's'} streaming`;
-    document.getElementById('label-pass-state').innerText = `${totalPass} clean signature${totalPass === 1 ? '' : 's'}`;
-    document.getElementById('label-block-state').innerText = `${totalBlocked} flagged (VPN/clone)`;
-
-    logBadgeEl.innerText = `${filtered.length} Record${filtered.length === 1 ? '' : 's'}`;
-
-    // Render Table Rows
-    tbody.innerHTML = '';
-    if (filtered.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" class="py-8 text-center text-slate-500 font-sans text-xs">
-            No telemetry records match current filters.
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    filtered.forEach((row, index) => {
-      const passed = isItemPassed(row);
-      const tr = document.createElement('tr');
-      tr.className = "hover:bg-white/[0.03] active:bg-white/[0.06] transition border-b border-white/[0.04] text-[11px] cursor-pointer";
-      tr.onclick = () => openInspector(row);
-
-      tr.innerHTML = `
-        <td class="py-3 px-3.5 whitespace-nowrap">
-          <div class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full ${passed ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
-            <span class="font-semibold ${passed ? 'text-sky-300' : 'text-rose-300'}">${row.id}</span>
-          </div>
-        </td>
-        <td class="py-3 px-3 text-indigo-200/90 font-medium whitespace-nowrap">${row.bot}</td>
-        <td class="py-3 px-3 font-mono whitespace-nowrap text-slate-300">
-          <span class="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-slate-200">${row.hw}</span>
-          <span class="text-slate-500 text-[10px] ml-1">${row.ip}</span>
-        </td>
-        <td class="py-3 px-3 whitespace-nowrap">
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-            passed 
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-          }">
-            ${passed ? '✓' : '✕'} ${row.sig}
-          </span>
-        </td>
-        <td class="py-3 px-3 text-right text-slate-400 font-mono text-[10px] whitespace-nowrap">${row.time}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function setStatusFilter(status) {
-    currentStatusFilter = status;
-    const allBtn = document.getElementById('pill-all');
-    const passBtn = document.getElementById('pill-pass');
-    const blockedBtn = document.getElementById('pill-blocked');
-
-    [allBtn, passBtn, blockedBtn].forEach(b => {
-      b.className = "px-2.5 py-1 text-[11px] font-medium rounded-lg text-slate-400 hover:text-slate-200 transition";
-    });
-
-    if (status === 'ALL') {
-      allBtn.className = "px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/30 transition";
-    } else if (status === 'PASS') {
-      passBtn.className = "px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 transition";
-    } else if (status === 'BLOCKED') {
-      blockedBtn.className = "px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-rose-500/20 text-rose-300 border border-rose-400/30 transition";
-    }
-
-    renderMetricsAndTable();
-  }
-
-  function applyFilters() {
-    renderMetricsAndTable();
-  }
-
-  /**
-   * Action to fetch real telemetry live stream
-   */
-  function fetchLiveTelemetry(showSpin) {
-    const syncIcon = document.getElementById('sync-icon');
-    const backendStatusText = document.getElementById('backend-status-text');
-    const endpointLabel = document.getElementById('endpoint-label');
-
-    if (showSpin) syncIcon.classList.add('animate-spin');
-    backendStatusText.innerText = 'Syncing...';
-    endpointLabel.innerText = '/api/admin Connecting...';
-
-    setTimeout(() => {
-      activeTelemetryData = [...realDatabaseRecords];
-      if (showSpin) syncIcon.classList.remove('animate-spin');
-      renderMetricsAndTable();
-    }, 450);
-  }
-
-  /**
-   * Toggles back to strictly '---' unfetched state
-   */
-  function toggleUnfetchedState() {
-    activeTelemetryData = null;
-    renderMetricsAndTable();
-  }
-
-  // INSPECTOR MODAL LOGIC
-  function openInspector(item) {
-    selectedInspectorItem = item;
-    const viewer = document.getElementById('json-viewer-content');
-    viewer.textContent = JSON.stringify(item, null, 2);
-    const modal = document.getElementById('inspector-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  function closeInspector() {
-    const modal = document.getElementById('inspector-modal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-
-  function copyCurrentJson() {
-    if (!selectedInspectorItem) return;
-    navigator.clipboard.writeText(JSON.stringify(selectedInspectorItem, null, 2));
-    const toast = document.getElementById('copied-toast');
-    toast.classList.remove('opacity-0');
-    setTimeout(() => toast.classList.add('opacity-0'), 1800);
-  }
-
-  // Initial load - Starts in strictly --- fallback state until fetched or PIN unlocked
-  document.addEventListener('DOMContentLoaded', () => {
-    let hasSession = false;
-    try { hasSession = sessionStorage.getItem('dobariya_session') === '1'; } catch (e) {}
-
-    if (hasSession) {
-      isAuthenticated = true;
-      document.getElementById('auth-modal').classList.add('hidden');
-      fetchLiveTelemetry(false);
-    } else {
-      renderMetricsAndTable();
-      document.getElementById('passcode-input')?.focus();
-    }
-  });
+async function deleteRow(id){
+  if(!confirm('Delete record #'+id+'?')) return;
+  try{
+    const {error}=await client().from('bot_device_verifications').delete().eq('id',id);
+    if(error) throw error;
+    rows=rows.filter(r=>r.id!==id);
+    renderKpis(); renderClusters(); fillBotFilter(); filterRows();
+  }catch(e){alert('Delete failed: '+e.message);}
+}
+async function deleteBot(bot){
+  const list=rows.filter(r=>(r.bot_username||'').replace(/^@/,'').trim()===bot);
+  if(!confirm(`Delete all ${list.length} records for @${bot}?`)) return;
+  try{
+    const c=client();
+    const [r1,r2]=await Promise.all([
+      c.from('bot_device_verifications').delete().eq('bot_username',bot),
+      c.from('bot_device_verifications').delete().eq('bot_username','@'+bot)
+    ]);
+    if(r1.error && r2.error) throw (r1.error||r2.error);
+    rows=rows.filter(r=>(r.bot_username||'').replace(/^@/,'').trim()!==bot);
+    renderKpis(); renderClusters(); fillBotFilter(); filterRows();
+  }catch(e){alert('Bot purge failed: '+e.message);}
+}
+async function purgeAll(){
+  if(!rows.length){alert('Register is already empty.');return;}
+  const p=prompt(`This deletes ALL ${rows.length} records. Type PURGE to confirm:`);
+  if(p!=='PURGE') return;
+  try{
+    const {error}=await client().from('bot_device_verifications').delete().gt('id',0);
+    if(error) throw error;
+    rows=[]; renderKpis(); renderClusters(); fillBotFilter(); filterRows();
+  }catch(e){alert('Purge failed: '+e.message);}
+}
+function exportCSV(){
+  if(!rows.length){alert('No data to export.');return;}
+  const head=['id','user_id','bot_username','status','device_id','ip_address','platform','logged_at'];
+  const body=rows.map(r=>[r.id,r.user_id||'',r.bot_username||'',r.status||r.bot_hash||'PASSED',r.device_id||'',r.ip_address||'',r.platform||'',r.created_at||r.last_seen_at||'']);
+  const csv=[head,...body].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='bot_verifications_'+Date.now()+'.csv';
+  a.click();
+}
+function openKeyModal(){
+  document.getElementById('inUrl').value=localStorage.getItem('SP_URL')||DEF_URL;
+  document.getElementById('inKey').value=localStorage.getItem('SP_KEY')||DEF_KEY;
+  document.getElementById('keyOv').classList.add('on');
+}
+function closeKeyModal(){document.getElementById('keyOv').classList.remove('on');}
+function saveKey(){
+  const u=document.getElementById('inUrl').value.trim(), k=document.getElementById('inKey').value.trim();
+  if(!u||!k){alert('Both fields are required.');return;}
+  localStorage.setItem('SP_URL',u); localStorage.setItem('SP_KEY',k); sb=null;
+  closeKeyModal(); loadData(true);
+}
+loadData(false);
+setInterval(()=>loadData(false),15000);
 </script>
-<!-- END: LogicAndStateHandling -->
-</body></html>
+</body>
+</html>
