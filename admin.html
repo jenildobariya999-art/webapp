@@ -15,6 +15,7 @@
   --ink:#0a0d14; --ink-dim:#6b7280;
   --text-d:#f5f7fb; --dim-d:#8a93a8; --line-d:rgba(255,255,255,0.1);
   --blue:#2f6feb; --blue-dk:#173d94; --blue-soft:#e7efff; --blue-glow:rgba(47,111,235,0.4);
+  --green:#22c55e; --green-soft:#e6f9ee; --red:#ef4444; --red-soft:#fdecec;
   --r-lg:26px; --r-md:18px; --r-sm:12px; --r-pill:999px;
   --fd:'Manrope',sans-serif; --fm:'IBM Plex Mono',monospace;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
@@ -70,7 +71,10 @@ main{max-width:1320px;margin:0 auto;padding:34px 26px 70px}
 .bitem{background:var(--off);border-radius:var(--r-md);padding:18px;border:1px solid var(--line-w)}
 .bitem label{display:block;font-size:10px;color:var(--ink-dim);margin-bottom:9px;font-weight:600}
 .bitem .v{font-family:var(--fd);font-size:25px;font-weight:800;color:var(--ink)}
+.bitem .v.blue{color:var(--blue)}
 .bitem .v.hi{color:var(--blue)}
+.bitem .v.green{color:var(--green)}
+.bitem .v.red{color:var(--red)}
 .bi-a{grid-area:a} .bi-b{grid-area:b} .bi-c{grid-area:c} .bi-d{grid-area:d}
 
 /* Sections */
@@ -104,8 +108,8 @@ td{padding:12px 18px;border-bottom:1px solid var(--line-w);font-size:12px;vertic
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(10,13,20,0.03)}
 .pill{display:inline-block;font-size:9.5px;font-weight:800;padding:4px 12px;border-radius:var(--r-pill)}
-.pill.pass{background:var(--blue-soft);color:var(--blue)}
-.pill.block{background:var(--ink);color:#fff}
+.pill.pass{background:var(--green-soft);color:var(--green)}
+.pill.block{background:var(--red-soft);color:var(--red)}
 .mut{color:var(--ink-dim)}
 .rowbtns{display:flex;gap:6px;justify-content:flex-end}
 .rowbtns button{padding:5px 12px;font-size:10.5px}
@@ -184,10 +188,10 @@ tr:hover td{background:rgba(10,13,20,0.03)}
 
     <div class="bento">
       <div class="bhero"><label>clearance rate</label><div class="v" id="kRate">—</div><div class="sub" id="kRateSub">— of — records passed</div></div>
-      <div class="bitem bi-a"><label>total records</label><div class="v" id="kTotal">—</div></div>
+      <div class="bitem bi-a"><label>total records</label><div class="v blue" id="kTotal">—</div></div>
       <div class="bitem bi-b"><label>connected bots</label><div class="v" id="kBots">—</div></div>
-      <div class="bitem bi-c"><label>passed clean</label><div class="v hi" id="kPassed">—</div></div>
-      <div class="bitem bi-d"><label>blocked / flagged</label><div class="v" id="kBlocked">—</div></div>
+      <div class="bitem bi-c"><label>passed clean</label><div class="v green" id="kPassed">—</div></div>
+      <div class="bitem bi-d"><label>blocked / flagged</label><div class="v red" id="kBlocked">—</div></div>
     </div>
 
     <div class="section" id="botsSec">
@@ -296,7 +300,7 @@ function setStatus(state,text){
   document.getElementById('statusText').textContent=text;
 }
 function isBlocked(r){
-  const s=((r.status||'')+(r.bot_hash||'')).toUpperCase();
+  const s=(String(r.status||'')+String(r.bot_hash||'')).toUpperCase();
   return /CLONE|FAIL|VPN|BLOCK/.test(s);
 }
 async function loadData(notify){
@@ -323,14 +327,17 @@ async function loadData(notify){
     return;
   }
   rows=fetched;
-  renderKpis(); renderClusters(); fillBotFilter(); filterRows();
+  try{ renderKpis(); }catch(e){ console.error('renderKpis failed:',e); }
+  try{ renderClusters(); }catch(e){ console.error('renderClusters failed:',e); document.getElementById('clusters').innerHTML='<div class="clusters-empty">could not render bots: '+(e.message||e)+'</div>'; }
+  try{ fillBotFilter(); }catch(e){ console.error('fillBotFilter failed:',e); }
+  try{ filterRows(); }catch(e){ console.error('filterRows failed:',e); document.getElementById('tbody').innerHTML='<tr><td colspan="9" class="empty"><div class="big">could not render records</div>'+(e.message||e)+'</td></tr>'; }
   setStatus('on', notify ? ('synced '+rows.length+' records') : (rows.length+' records live'));
 }
 function renderKpis(){
   const total=rows.length;
   const blocked=rows.filter(isBlocked).length;
   const passed=total-blocked;
-  const bots=new Set(rows.map(r=>(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean));
+  const bots=new Set(rows.map(r=>String(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean));
   document.getElementById('kTotal').textContent=total;
   document.getElementById('kPassed').textContent=passed;
   document.getElementById('kRate').textContent=total?((passed/total*100).toFixed(1)+'%'):'—';
@@ -342,7 +349,7 @@ function renderClusters(){
   const el=document.getElementById('clusters');
   const map={};
   rows.forEach(r=>{
-    const b=(r.bot_username||'unknown').replace(/^@/,'').trim()||'unknown';
+    const b=String(r.bot_username||'unknown').replace(/^@/,'').trim()||'unknown';
     (map[b]=map[b]||[]).push(r);
   });
   const bots=Object.keys(map);
@@ -351,14 +358,14 @@ function renderClusters(){
     const list=map[b], blocked=list.filter(isBlocked).length;
     return `<div class="ticket"><div class="name"><span class="bd"></span>@${b}</div>
       <div class="row"><span>records</span><b>${list.length}</b></div>
-      <div class="row"><span>blocked</span><b>${blocked}</b></div>
+      <div class="row"><span>blocked</span><b style="color:${blocked>0?'var(--red)':'var(--ink)'}">${blocked}</b></div>
       <button class="b-outline" onclick="deleteBot('${b.replace(/'/g,"\\'")}')">delete bot data</button></div>`;
   }).join('');
 }
 function fillBotFilter(){
   const sel=document.getElementById('botFilter');
   const cur=sel.value;
-  const bots=[...new Set(rows.map(r=>(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean))].sort();
+  const bots=[...new Set(rows.map(r=>String(r.bot_username||'').replace(/^@/,'').trim()).filter(Boolean))].sort();
   sel.innerHTML='<option value="ALL">all bots</option>'+bots.map(b=>`<option value="${b}">@${b}</option>`).join('');
   if(bots.includes(cur)) sel.value=cur;
 }
@@ -367,7 +374,7 @@ function filterRows(){
   const bf=document.getElementById('botFilter').value;
   const sf=document.getElementById('statusFilter').value;
   let out=rows.filter(r=>{
-    if(bf!=='ALL' && (r.bot_username||'').replace(/^@/,'').trim()!==bf) return false;
+    if(bf!=='ALL' && String(r.bot_username||'').replace(/^@/,'').trim()!==bf) return false;
     const blocked=isBlocked(r);
     if(sf==='PASSED'&&blocked) return false;
     if(sf==='BLOCKED'&&!blocked) return false;
@@ -385,9 +392,9 @@ function filterRows(){
     return `<tr>
       <td class="mut">#${r.id}</td>
       <td>${r.user_id||'—'}</td>
-      <td>@${(r.bot_username||'').replace(/^@/,'')||'—'}</td>
+      <td>@${String(r.bot_username||'').replace(/^@/,'')||'—'}</td>
       <td><span class="pill ${blocked?'block':'pass'}">${blocked?'blocked':'passed'}</span></td>
-      <td class="mut">${(r.device_id||'—').slice(0,16)}</td>
+      <td class="mut">${String(r.device_id||'—').slice(0,16)}</td>
       <td class="mut">${r.ip_address||'—'}</td>
       <td class="mut">${r.platform||'—'}</td>
       <td class="mut">${(r.created_at||r.last_seen_at||'—').toString().slice(0,16).replace('T',' ')}</td>
