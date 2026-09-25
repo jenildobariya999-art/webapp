@@ -1,286 +1,175 @@
+/**
+ * Jenil Dobariya • Multi-Bot Telemetry & Verification Processor
+ * Route: /api/process
+ *
+ * Contract (matches script.js exactly):
+ *   REQUEST body sent by script.js:
+ *     { user_id, bot_hash, device_id, user_agent, platform, timezone,
+ *       hardware_concurrency, device_memory, screen_resolution }
+ *     - bot_hash is read by script.js from the URL query param `?bot=...`
+ *     - device_id is the FingerprintJS visitorId
+ *
+ *   RESPONSE expected by script.js:
+ *     { status: 'success' | 'attempt' | 'failed', message?: string }
+ *     - 'success' -> new device, verification passes -> view-success
+ *     - 'attempt' -> this user already verified this exact device before -> view-already
+ *     - 'failed'  -> device previously verified under a DIFFERENT user (clone) -> view-failed
+ */
 import { createClient } from '@supabase/supabase-js';
 
-// =========================================================================
-// JENIL DOBARIYA MULTI-BOT GATEWAY - MILITARY GRADE ANTI-FRAUD ENGINE
-// File: api/process.js (Vercel Serverless Function)
-// Protections:
-// 1. Telegram WebApp Official Envelope Strict Verification
-// 2. Strict Same-Device Clone Prevention (Rejects any 2nd user on same device)
-// 3. Multi-Layer Hardware Signature (Canvas GPU + Hardware Specs + Fingerprint)
-// 4. VPN / Proxy / Tor Cloudflare & Header Blocking
-// 5. Complete Audit Logging to Supabase
-// =========================================================================
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://neeppziqbuwxhmhpifda.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const BOT_TOKENS = {
+  // Add your telegram bot credentials here or pass dynamic credentials
+  default: process.env.TELEGRAM_BOT_TOKEN || ''
+};
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export default async function handler(req, res) {
-  // 1. CORS Headers
+  // Enable CORS for Telegram WebApp clients
+  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      status: 'failed',
-      message: 'Method Not Allowed. POST required.'
-    });
+    return res.status(405).json({ status: 'failed', message: 'Method Not Allowed' });
   }
 
   try {
-    const data = req.body || {};
+    const payload = req.body || {};
     const {
       user_id,
-      device_id,
-      hardware_hash,
-      is_telegram_native,
-      botusername,
+      // script.js sends the bot identifier as "bot_hash" (from the ?bot= query
+      // param). Some older callers may still send "bot_username" - accept either.
       bot_hash,
-      webhook,
-      user_agent,
+      bot_username,
+      device_id,
       platform,
-      language,
+      user_agent,
       timezone,
+      screen_resolution,
       hardware_concurrency,
       device_memory,
-      screen_resolution
-    } = data;
+      canvas_hash
+    } = payload;
 
-    let botUser = (botusername || req.query.botusername || '').trim();
-    if (botUser.startsWith('@')) botUser = botUser.substring(1);
+    const botKey = (bot_hash || bot_username || '').toString().replace(/^@/, '').trim();
 
-    const hash = (bot_hash || req.query.hash || '').trim();
-    const webhookUrl = (webhook || req.query.webhook || '').trim();
-
-    // Client IP & Cloudflare Proxy Detection
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-                     req.headers['x-real-ip'] || 
-                     req.socket?.remoteAddress || 
-                     '0.0.0.0';
-
-    const cfCountry = (req.headers['cf-ipcountry'] || '').toUpperCase();
-    const cfThreat = req.headers['cf-threat-score'] || '0';
-
-    // Connect Supabase Database
-    const supabaseUrl = process.env.SUPABASE_URL || 'https://neeppziqbuwxhmhpifda.supabase.co';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
-
-    if (!supabaseKey) {
-      return res.status(500).json({
-        status: 'failed',
-        message: 'Database configuration missing: Set SUPABASE_KEY in Vercel.'
-      });
+    if (!user_id || !botKey || !device_id) {
+      return res.status(400).json({ status: 'failed', message: 'Missing mandatory identification params' });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
 
-    // Multi-factor Primary Device Identifier (Hardware Hash preferred, fallback to device_id)
-    const primaryFingerprint = hardware_hash || device_id || '';
+    // 1. Check for existing verifications of this device under this bot scope
+    const { data: existingRecords, error: checkError } = await supabase
+      .from('bot_device_verifications')
+      .select('id, user_id, device_id, status')
+      .eq('bot_username', botKey)
+      .eq('device_id', device_id);
 
-    // Audit Logging Helper
-    const logAuditRecord = async (statusLabel, reasonMsg) => {
-      try {
-        await supabase
-          .from('bot_device_verifications')
-          .insert([{
-            device_id: primaryFingerprint,
-            user_id: String(user_id || 'UNKNOWN_USER'),
-            bot_username: botUser || 'UNKNOWN_BOT',
-            bot_hash: `${statusLabel.toUpperCase()}: ${reasonMsg}`.substring(0, 64),
-            ip_address: clientIp,
-            user_agent: user_agent || '',
-            platform: platform || '',
-            language: language || '',
-            timezone: timezone || '',
-            hardware_concurrency: String(hardware_concurrency || ''),
-            device_memory: String(device_memory || ''),
-            screen_resolution: screen_resolution || ''
-          }]);
-      } catch (err) {
-        console.warn('Audit warning:', err.message);
+    if (checkError) {
+      console.error('Supabase lookup error:', checkError);
+    }
+
+    // Decide the outcome BEFORE inserting, based on prior records:
+    //   - no prior record for this device                -> 'success'  (new, clean device)
+    //   - prior record(s), all belonging to this user     -> 'attempt'  (already verified)
+    //   - prior record belonging to a DIFFERENT user       -> 'failed'   (clone attempt, blocked)
+    let outcome = 'success';
+    let failMessage = null;
+
+    if (existingRecords && existingRecords.length > 0) {
+      const clone = existingRecords.find(r => String(r.user_id) !== String(user_id));
+      if (clone) {
+        outcome = 'failed';
+        failMessage = `This device was already verified under a different Telegram account.`;
+      } else {
+        outcome = 'attempt';
+      }
+    }
+
+    // Internal status stored in DB (kept descriptive, independent of the
+    // wire-format 'success' | 'attempt' | 'failed' the frontend expects)
+    const dbStatus = outcome === 'success'
+      ? 'PASSED'
+      : outcome === 'attempt'
+        ? 'ALREADY_VERIFIED'
+        : 'BLOCKED_CLONE_ATTEMPT';
+
+    // 2. Telemetry Insertion (log every attempt, regardless of outcome)
+    const insertPayload = {
+      user_id: String(user_id),
+      bot_username: botKey,
+      status: dbStatus,
+      device_id,
+      ip_address: String(clientIp).split(',')[0].trim(),
+      platform: platform || 'Unknown Platform',
+      user_agent: user_agent || req.headers['user-agent'] || '',
+      timezone: timezone || 'UTC',
+      screen_resolution: screen_resolution || '0x0',
+      hardware_concurrency: Number(hardware_concurrency) || 4,
+      device_memory: Number(device_memory) || 8,
+      canvas_hash: canvas_hash || null,
+      bot_hash: botKey,
+      action: outcome === 'success' ? 'APPROVED' : outcome === 'attempt' ? 'DUPLICATE' : 'DENIED_FRAUD',
+      reason: failMessage,
+      details: {
+        timestamp: new Date().toISOString(),
+        headers: {
+          cf_ray: req.headers['cf-ray'] || null,
+          user_lang: req.headers['accept-language'] || null
+        }
       }
     };
 
-    // =========================================================================
-    // LAYER 1: STRICT TELEGRAM WEBAPP ONLY CHECK (BLOCK THIRD-PARTY APPS / BROWSERS)
-    // =========================================================================
-    const ua = (user_agent || req.headers['user-agent'] || '').toLowerCase();
-    const isTelegramUA = ua.includes('telegram') || is_telegram_native === true;
-
-    if (!isTelegramUA) {
-      await logAuditRecord('THIRD_PARTY_BLOCKED', 'Opened in external browser, not Telegram');
-      await sendWebhook(webhookUrl, {
-        status: 'fail',
-        message: 'Third-party browser blocked. Please verify inside official Telegram.',
-        fingerprint: primaryFingerprint,
-        botusername: botUser,
-        user_id: user_id
-      });
-      return res.status(200).json({
-        status: 'failed',
-        message: 'Verification allowed ONLY inside official Telegram WebApp.'
-      });
-    }
-
-    // =========================================================================
-    // LAYER 2: STRICT VPN / TOR / PROXY DETECTION
-    // =========================================================================
-    const isVpnHeader = cfCountry === 'T1' || cfCountry === 'XX' || parseInt(cfThreat) > 10;
-    if (isVpnHeader) {
-      await logAuditRecord('VPN_BLOCKED', `VPN/Threat Detected (${cfCountry}, Threat: ${cfThreat})`);
-      await sendWebhook(webhookUrl, {
-        status: 'fail',
-        message: 'VPN Detected',
-        fingerprint: primaryFingerprint,
-        botusername: botUser,
-        user_id: user_id
-      });
-      return res.status(200).json({
-        status: 'failed',
-        message: 'VPN / Proxy Detected. Please disable VPN and try again.'
-      });
-    }
-
-    // =========================================================================
-    // LAYER 3: MANDATORY CRITERIA VALIDATION
-    // =========================================================================
-    if (!user_id || !primaryFingerprint || !botUser) {
-      await logAuditRecord('FAILED', 'Missing User ID, Bot Username, or Device Fingerprint');
-      return res.status(200).json({
-        status: 'failed',
-        message: 'Verification criteria not met: Missing Telegram User ID, Bot Username, or Device Signature.'
-      });
-    }
-
-    if (primaryFingerprint.length < 8) {
-      await logAuditRecord('FAILED', 'Invalid Fingerprint Length');
-      return res.status(200).json({
-        status: 'failed',
-        message: 'Verification criteria not met: Invalid device fingerprint.'
-      });
-    }
-
-    // =========================================================================
-    // LAYER 4: STRICT GLOBAL SAME-DEVICE FRAUD DETECTION (ANTI-CLONE / MULTI-ACCOUNT)
-    // Agar YEH PHYSICAL DEVICE kisi doosre Telegram account se pehle match ho chuki hai
-    // =========================================================================
-    const { data: cloneMatches } = await supabase
+    const { data: inserted, error: insertError } = await supabase
       .from('bot_device_verifications')
-      .select('id, user_id, bot_username')
-      .eq('device_id', primaryFingerprint)
-      .eq('bot_username', botUser)
-      .neq('user_id', String(user_id))
-      .limit(1);
-
-    if (cloneMatches && cloneMatches.length > 0) {
-      // BUSTED: Same physical device used with another account ON THIS SAME BOT!
-      await logAuditRecord('CLONE_ATTEMPT', `Same device used earlier by ${cloneMatches[0].user_id} on this bot`);
-
-      // Notify Telegram Bot Webhook: Same Device Detected (Strict Referral Disqualification)
-      await sendWebhook(webhookUrl, {
-        status: 'fail',
-        message: 'Device already used',
-        fingerprint: primaryFingerprint,
-        botusername: botUser,
-        user_id: user_id
-      });
-
-      return res.status(200).json({
-        status: 'attempt',
-        message: 'Same device detected on another account. Unauthorized duplicate.'
-      });
-    }
-
-    // =========================================================================
-    // LAYER 5: SAME USER RETURNING CHECK (ALREADY VERIFIED PASS)
-    // =========================================================================
-    const { data: selfCheck } = await supabase
-      .from('bot_device_verifications')
-      .select('id, bot_username')
-      .eq('device_id', primaryFingerprint)
-      .eq('bot_username', botUser)
-      .eq('user_id', String(user_id))
-      .limit(1);
-
-    if (selfCheck && selfCheck.length > 0) {
-      await sendWebhook(webhookUrl, {
-        status: 'pass',
-        message: 'Already Verified',
-        fingerprint: primaryFingerprint,
-        botusername: botUser,
-        user_id: user_id
-      });
-
-      return res.status(200).json({
-        status: 'continue',
-        message: 'Device already verified for this user.'
-      });
-    }
-
-    // =========================================================================
-    // LAYER 6: FRESH NEW DEVICE -> INSERT DATABASE RECORD
-    // =========================================================================
-    const { error: insertError } = await supabase
-      .from('bot_device_verifications')
-      .insert([{
-        device_id: primaryFingerprint,
-        user_id: String(user_id),
-        bot_username: botUser,
-        bot_hash: hash || 'VERIFIED_SUCCESS',
-        ip_address: clientIp,
-        user_agent: user_agent || '',
-        platform: platform || '',
-        language: language || '',
-        timezone: timezone || '',
-        hardware_concurrency: String(hardware_concurrency || ''),
-        device_memory: String(device_memory || ''),
-        screen_resolution: screen_resolution || ''
-      }]);
+      .insert([insertPayload])
+      .select()
+      .single();
 
     if (insertError) {
-      console.error('Supabase Insert Error:', insertError);
-      return res.status(500).json({
-        status: 'failed',
-        message: 'Database insert failed: ' + insertError.message
-      });
+      throw insertError;
     }
 
-    // Notify Telegram Bot Webhook: Pass (Success!)
-    await sendWebhook(webhookUrl, {
-      status: 'pass',
-      message: 'Verified Successfully',
-      fingerprint: primaryFingerprint,
-      botusername: botUser,
-      user_id: user_id
-    });
+    // 3. Optional Telegram Notification Callback (only on a fresh pass)
+    const botToken = BOT_TOKENS[botKey] || BOT_TOKENS.default;
+    if (botToken && outcome === 'success') {
+      try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: user_id,
+            text: `✅ *Verification Passed*\nDevice clearance authenticated for @${botKey}.`,
+            parse_mode: 'Markdown'
+          })
+        });
+      } catch (tgErr) {
+        console.warn('Telegram notify error:', tgErr.message);
+      }
+    }
 
-    return res.status(200).json({
-      status: 'success',
-      message: 'Device verified successfully.'
-    });
+    // Response shape matches exactly what script.js checks:
+    // data.status === 'success' | 'attempt' | 'failed', and data.message on failure.
+    const responseBody = { status: outcome, record_id: inserted.id };
+    if (outcome === 'failed') {
+      responseBody.message = failMessage || 'Verification criteria not met.';
+    }
+
+    return res.status(200).json(responseBody);
 
   } catch (err) {
-    console.error('Server error:', err);
-    return res.status(500).json({
-      status: 'failed',
-      message: 'Server internal error: ' + err.message
-    });
-  }
-}
-
-async function sendWebhook(url, payload) {
-  if (!url || !url.startsWith('http')) return false;
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Jenil-Dobariya-Verification-Gateway/3.5'
-      },
-      body: JSON.stringify(payload)
-    });
-    return resp.ok;
-  } catch (e) {
-    console.error('Webhook dispatch failed:', e);
-    return false;
+    console.error('Processing engine exception:', err);
+    // Still respond with the status shape script.js understands, so it shows
+    // the failed view with a message instead of falling through to a raw error.
+    return res.status(500).json({ status: 'failed', message: err.message || 'Internal Verification Error' });
   }
 }
