@@ -118,10 +118,10 @@ export default async function handler(req, res) {
       device_memory: Number(device_memory) || 8,
       canvas_hash: canvas_hash || null,
       bot_hash: botKey,
-      action: outcome === 'success' ? 'APPROVED' : outcome === 'attempt' ? 'DUPLICATE' : 'DENIED_FRAUD',
-      reason: failMessage,
       details: {
         timestamp: new Date().toISOString(),
+        action: outcome === 'success' ? 'APPROVED' : outcome === 'attempt' ? 'DUPLICATE' : 'DENIED_FRAUD',
+        reason: failMessage,
         headers: {
           cf_ray: req.headers['cf-ray'] || null,
           user_lang: req.headers['accept-language'] || null
