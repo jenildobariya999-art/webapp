@@ -11,12 +11,12 @@
  * It also plays a short tone based on the result (success / already /
  * failed), generated with the Web Audio API - no audio files needed.
  *
- * It also injects an animated bot-logo badge onto the user's avatar. The
- * bot is different every session (?bot=... in the URL), so this reads that
- * value dynamically - nothing is hardcoded. script.js overwrites
- * #avatarBox's innerHTML whenever it (re)draws the avatar, which would wipe
- * out a badge placed there directly in HTML, so a MutationObserver
- * re-inserts the badge every time that happens.
+ * It also injects a large, continuously-animated bot logo (dual
+ * counter-rotating rings, radar ping, breathing glow, moving shine) right
+ * below the header. The bot is different every session (?bot=... in the
+ * URL), so this reads that value dynamically - nothing is hardcoded. It's
+ * inserted as its own element, not inside anything script.js manages, so
+ * it only needs to be added once (no MutationObserver needed here).
  *
  * No other changes to script.js are required.
  */
@@ -26,44 +26,52 @@
   const webhookUrl = params.get('webhook');
   const botUsername = (params.get('bot') || '').replace(/^@/, '');
 
-  // ---- Bot logo badge ----
-  function buildBadge() {
-    const badge = document.createElement('div');
-    badge.className = 'bot-badge';
-    if (botUsername) {
-      const img = document.createElement('img');
-      img.src = 'https://t.me/i/userpic/160/' + encodeURIComponent(botUsername) + '.jpg';
-      img.alt = '';
-      img.onerror = function () {
-        badge.innerHTML = '<span class="bot-fallback">' + botUsername.charAt(0).toUpperCase() + '</span>';
-      };
-      badge.appendChild(img);
-    } else {
-      badge.innerHTML = '<span class="bot-fallback">B</span>';
-    }
-    return badge;
+  // ---- Bot logo hero ----
+  function buildHero() {
+    const bar = document.createElement('div');
+    bar.className = 'bot-hero-bar';
+
+    const photoInner = botUsername
+      ? '<img src="https://t.me/i/userpic/320/' + encodeURIComponent(botUsername) + '.jpg" alt="" ' +
+        'onerror="this.parentElement.innerHTML=\'<span class=&quot;bot-fallback&quot;>' +
+        botUsername.charAt(0).toUpperCase() + '</span>\'">'
+      : '<span class="bot-fallback">B</span>';
+
+    bar.innerHTML =
+      '<div class="bot-hero">' +
+        '<div class="bot-hero-ring r1"></div>' +
+        '<div class="bot-hero-ring r2"></div>' +
+        '<div class="bot-hero-photo">' + photoInner + '</div>' +
+      '</div>';
+
+    return bar;
   }
 
-  function ensureBadge() {
-    const avatarBox = document.getElementById('avatarBox');
-    if (!avatarBox || avatarBox.querySelector('.bot-badge')) return;
-    avatarBox.appendChild(buildBadge());
+  function injectHero() {
+    if (document.querySelector('.bot-hero-bar')) return;
+    const header = document.querySelector('.header');
+    if (!header || !header.parentElement) return;
+
+    const bar = buildHero();
+    const label = document.createElement('div');
+    label.className = 'bot-hero-label';
+    label.innerHTML = '<span class="dot" style="background:var(--blue);animation:pulse 2s ease-in-out infinite"></span>' +
+      (botUsername ? '@' + botUsername : 'Secure Bot');
+    bar.appendChild(label);
+
+    header.insertAdjacentElement('afterend', bar);
   }
 
-  function watchAvatar() {
-    const avatarBox = document.getElementById('avatarBox');
-    if (!avatarBox) {
-      // avatarBox may not exist yet at DOMContentLoaded time - retry briefly.
-      setTimeout(watchAvatar, 200);
+  function watchHeader() {
+    if (document.querySelector('.header')) {
+      injectHero();
       return;
     }
-    ensureBadge();
-    new MutationObserver(ensureBadge).observe(avatarBox, { childList: true });
+    setTimeout(watchHeader, 200);
   }
 
-  document.addEventListener('DOMContentLoaded', watchAvatar);
-  // Fallback in case DOMContentLoaded already fired before this script ran.
-  if (document.readyState !== 'loading') watchAvatar();
+  document.addEventListener('DOMContentLoaded', watchHeader);
+  if (document.readyState !== 'loading') watchHeader();
 
   // ---- Sound ----
   function playTone(freqs, durationMs) {

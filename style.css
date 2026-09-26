@@ -806,85 +806,127 @@ p.desc {
   transform: translateY(-50%);
 }
 
-/* ---------- Bot logo badge (overlaps the user avatar, bottom-right) ---------- */
-.avatar-container {
-  position: relative; /* anchor for .bot-badge */
+/* ---------- Bot logo hero: large, continuously animated ---------- */
+.bot-hero-bar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 2px;
+  flex-shrink: 0;
+  animation: viewEnter 0.6s var(--ease-out) both;
 }
 
-.bot-badge {
-  position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.08) 60%), #0a1128;
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45), 0 0 10px rgba(59, 130, 246, 0.5);
-  overflow: hidden;
-  animation: botBadgeIn 0.5s var(--ease-spring) 0.3s both, botBreathe 2.6s ease-in-out 0.8s infinite;
-}
-
-.bot-badge img {
+.bot-hero {
   position: relative;
-  z-index: 2;
+  width: 96px;
+  height: 96px;
+}
+
+.bot-hero-photo {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0a1128;
+  z-index: 3;
+  box-shadow: 0 0 0 2px rgba(6, 10, 23, 0.9), 0 0 24px rgba(59, 130, 246, 0.55);
+  animation: botBreathe 2.6s ease-in-out infinite;
+}
+
+.bot-hero-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
+  display: block;
 }
 
-.bot-badge .bot-fallback {
-  position: relative;
-  z-index: 2;
+.bot-hero-photo .bot-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 10px;
+  font-size: 26px;
   color: #7dbeff;
+  background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.08) 60%);
 }
 
-/* Rotating gradient ring - brighter and more "alive" than a flat dashed border */
-.bot-badge::before {
+/* Moving light glare across the photo - the "video playing" feel */
+.bot-hero-photo::after {
   content: '';
   position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 260deg, rgba(125, 190, 255, 0.9) 340deg, var(--blue) 360deg);
-  animation: spin 3.5s linear infinite;
-  z-index: 0;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 48%, transparent 62%);
+  background-size: 220% 220%;
+  animation: heroShine 3.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
-/* Mask keeps the ring a thin outline, not a filled disc */
-.bot-badge::after {
+/* Two counter-rotating rings, like .orbit but framing the whole hero */
+.bot-hero-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.bot-hero-ring.r1 {
+  border-color: var(--blue) var(--blue) transparent transparent;
+  animation: spin 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+}
+
+.bot-hero-ring.r2 {
+  inset: 6px;
+  border-color: transparent transparent var(--cyan) var(--cyan);
+  animation: spin 6s linear infinite reverse;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.7));
+}
+
+/* Outward radar ping, reusing the same keyframe as .loader for consistency */
+.bot-hero::before {
   content: '';
   position: absolute;
-  inset: 2px;
+  inset: 14px;
   border-radius: 50%;
-  background: #0a1128;
   z-index: 1;
+  animation: radarPing 2.4s ease-out infinite;
 }
 
-@keyframes botBadgeIn {
-  from {
-    transform: scale(0.4);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.bot-hero-label {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bot-hero-label .dot {
+  width: 5px;
+  height: 5px;
+}
+
+@keyframes heroShine {
+  0% { background-position: -120% -120%; }
+  50% { background-position: 120% 120%; }
+  100% { background-position: 120% 120%; }
 }
 
 @keyframes botBreathe {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45), 0 0 10px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(6, 10, 23, 0.9), 0 0 24px rgba(59, 130, 246, 0.55);
   }
   50% {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6), 0 0 18px rgba(59, 130, 246, 0.8);
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(6, 10, 23, 0.9), 0 0 36px rgba(59, 130, 246, 0.85);
   }
 }
 
