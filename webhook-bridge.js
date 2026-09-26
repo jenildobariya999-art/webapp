@@ -14,10 +14,14 @@
  * It also injects a small, animated bot logo badge merged onto the corner
  * of the user's avatar (soft rotating glow ring, breathing pulse, moving
  * shine, pulsing live-dot). The bot is different every session
- * (?bot=... in the URL), so this reads that value dynamically - nothing is
- * hardcoded. script.js periodically overwrites #avatarBox's innerHTML when
- * it (re)draws the avatar, which would wipe out a badge placed inside it -
- * a MutationObserver watches for that and re-inserts the badge every time.
+ * (?bot=... in the URL), so this reads that value dynamically. It shows a
+ * colored initial rather than fetching the bot's actual Telegram photo -
+ * that photo comes from an unofficial endpoint (t.me/i/userpic/...) whose
+ * caching is entirely outside our control and was showing stale/old
+ * photos unpredictably. An initial badge never goes stale. script.js
+ * periodically overwrites #avatarBox's innerHTML when it (re)draws the
+ * avatar, which would wipe out a badge placed inside it - a
+ * MutationObserver watches for that and re-inserts the badge every time.
  *
  * No other changes to script.js are required.
  */
@@ -31,17 +35,12 @@
   function buildLogo() {
     const el = document.createElement('div');
     el.className = 'bot-logo-inline';
-
-    const photoInner = botUsername
-      ? '<img src="https://t.me/i/userpic/160/' + encodeURIComponent(botUsername) + '.jpg" alt="" ' +
-        'onerror="this.parentElement.innerHTML=\'<span class=&quot;bot-fallback&quot;>' +
-        botUsername.charAt(0).toUpperCase() + '</span>\'">'
-      : '<span class="bot-fallback">B</span>';
+    const initial = botUsername ? botUsername.charAt(0).toUpperCase() : 'B';
 
     el.innerHTML =
       '<div class="ring r1"></div>' +
       '<div class="ring r2"></div>' +
-      '<div class="photo">' + photoInner + '</div>' +
+      '<div class="photo"><span class="bot-fallback">' + initial + '</span></div>' +
       '<div class="live-dot"></div>';
 
     return el;
