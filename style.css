@@ -152,12 +152,16 @@ body::before {
   color: #fff;
 }
 
-/* ---------- Bot logo: small, animated, sits beside the user avatar ---------- */
+/* ---------- Bot logo: small badge, merged onto the user avatar's corner ---------- */
+.avatar-container { position: relative; } /* anchor for the overlapping badge */
+
 .bot-logo-inline {
-  position: relative;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  z-index: 2;
   animation: botFloat 3.4s ease-in-out infinite;
 }
 
@@ -180,7 +184,7 @@ body::before {
 
 .bot-logo-inline .photo {
   position: absolute;
-  inset: 3px;
+  inset: 2px;
   border-radius: 50%;
   overflow: hidden;
   background: #0a1128;
@@ -192,7 +196,7 @@ body::before {
 
 .bot-logo-inline .photo .bot-fallback {
   width: 100%; height: 100%; display: grid; place-items: center;
-  font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #7dbeff;
+  font-family: var(--font-display); font-weight: 700; font-size: 9px; color: #7dbeff;
   background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.1) 60%);
 }
 
@@ -204,19 +208,19 @@ body::before {
   animation: heroShine 3.6s ease-in-out infinite;
 }
 
-/* Small pulsing "live" dot, bottom-right corner */
+/* Small pulsing "live" dot, top-right of the badge itself */
 .bot-logo-inline .live-dot {
   position: absolute;
   right: -1px;
-  bottom: -1px;
-  width: 8px;
-  height: 8px;
+  top: -1px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--mint);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 6px var(--mint);
+  border: 1.5px solid var(--bg);
+  box-shadow: 0 0 5px var(--mint);
   animation: pulse 1.8s ease-in-out infinite;
-  z-index: 2;
+  z-index: 3;
 }
 
 @keyframes botFloat {

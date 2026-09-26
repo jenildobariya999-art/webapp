@@ -11,12 +11,13 @@
  * It also plays a short tone based on the result (success / already /
  * failed), generated with the Web Audio API - no audio files needed.
  *
- * It also injects a small, animated bot logo right next to the user's
- * avatar in the header (dual counter-rotating rings, breathing glow,
- * moving shine). The bot is different every session (?bot=... in the URL),
- * so this reads that value dynamically - nothing is hardcoded. It's
- * inserted as a sibling of .avatar-container inside .user-profile, which
- * script.js does not touch, so it only needs to be added once.
+ * It also injects a small, animated bot logo badge merged onto the corner
+ * of the user's avatar (soft rotating glow ring, breathing pulse, moving
+ * shine, pulsing live-dot). The bot is different every session
+ * (?bot=... in the URL), so this reads that value dynamically - nothing is
+ * hardcoded. script.js periodically overwrites #avatarBox's innerHTML when
+ * it (re)draws the avatar, which would wipe out a badge placed inside it -
+ * a MutationObserver watches for that and re-inserts the badge every time.
  *
  * No other changes to script.js are required.
  */
@@ -26,7 +27,7 @@
   const webhookUrl = params.get('webhook');
   const botUsername = (params.get('bot') || '').replace(/^@/, '');
 
-  // ---- Bot logo (small, inline, beside the user avatar) ----
+  // ---- Bot logo (merged onto the user avatar's corner) ----
   function buildLogo() {
     const el = document.createElement('div');
     el.className = 'bot-logo-inline';
@@ -46,19 +47,20 @@
     return el;
   }
 
-  function injectLogo() {
-    if (document.querySelector('.bot-logo-inline')) return;
+  function ensureLogo() {
     const avatar = document.getElementById('avatarBox');
-    if (!avatar || !avatar.parentElement) return;
-    avatar.insertAdjacentElement('afterend', buildLogo());
+    if (!avatar || avatar.querySelector('.bot-logo-inline')) return;
+    avatar.appendChild(buildLogo());
   }
 
   function watchAvatar() {
-    if (document.getElementById('avatarBox')) {
-      injectLogo();
+    const avatar = document.getElementById('avatarBox');
+    if (!avatar) {
+      setTimeout(watchAvatar, 200);
       return;
     }
-    setTimeout(watchAvatar, 200);
+    ensureLogo();
+    new MutationObserver(ensureLogo).observe(avatar, { childList: true });
   }
 
   document.addEventListener('DOMContentLoaded', watchAvatar);
