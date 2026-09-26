@@ -40,7 +40,8 @@
     el.innerHTML =
       '<div class="ring r1"></div>' +
       '<div class="ring r2"></div>' +
-      '<div class="photo">' + photoInner + '</div>';
+      '<div class="photo">' + photoInner + '</div>' +
+      '<div class="live-dot"></div>';
 
     return el;
   }

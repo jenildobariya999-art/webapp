@@ -155,55 +155,73 @@ body::before {
 /* ---------- Bot logo: small, animated, sits beside the user avatar ---------- */
 .bot-logo-inline {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
+  animation: botFloat 3.4s ease-in-out infinite;
 }
 
+/* Soft rotating glow ring - conic gradient, not a hard border */
 .bot-logo-inline .ring {
   position: absolute;
-  inset: 0;
+  inset: -3px;
   border-radius: 50%;
-  border: 2px solid transparent;
-}
-
-.bot-logo-inline .ring.r1 {
-  border-color: var(--blue) var(--blue) transparent transparent;
-  animation: spin 3.6s linear infinite;
-  filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.75));
+  background: conic-gradient(from 0deg, transparent 0%, rgba(59, 130, 246, 0.9) 18%, rgba(34, 211, 238, 0.8) 32%, transparent 50%);
+  animation: spin 4.5s linear infinite;
+  filter: blur(0.3px);
 }
 
 .bot-logo-inline .ring.r2 {
-  inset: 4px;
-  border-color: transparent transparent var(--cyan) var(--cyan);
-  animation: spin 5.2s linear infinite reverse;
-  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.65));
+  inset: -3px;
+  background: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(148, 163, 255, 0.18);
 }
 
 .bot-logo-inline .photo {
   position: absolute;
-  inset: 8px;
+  inset: 3px;
   border-radius: 50%;
   overflow: hidden;
   background: #0a1128;
-  box-shadow: 0 0 0 1px rgba(6, 10, 23, 0.9), 0 0 10px rgba(59, 130, 246, 0.6);
-  animation: botBreathe 2.6s ease-in-out infinite;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 12px rgba(59, 130, 246, 0.55);
+  animation: botBreathe 2.8s ease-in-out infinite;
 }
 
 .bot-logo-inline .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .bot-logo-inline .photo .bot-fallback {
   width: 100%; height: 100%; display: grid; place-items: center;
-  font-family: var(--font-display); font-weight: 700; font-size: 10px; color: #7dbeff;
+  font-family: var(--font-display); font-weight: 700; font-size: 11px; color: #7dbeff;
   background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.1) 60%);
 }
 
 .bot-logo-inline .photo::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.4) 48%, transparent 62%);
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 48%, transparent 62%);
   background-size: 220% 220%;
-  animation: heroShine 3.2s ease-in-out infinite;
+  animation: heroShine 3.6s ease-in-out infinite;
+}
+
+/* Small pulsing "live" dot, bottom-right corner */
+.bot-logo-inline .live-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px var(--mint);
+  animation: pulse 1.8s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes botFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
 @keyframes heroShine {
@@ -214,7 +232,7 @@ body::before {
 
 @keyframes botBreathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+  50% { transform: scale(1.06); }
 }
 
 .text-info { min-width: 0; }
