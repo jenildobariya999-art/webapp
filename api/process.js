@@ -95,19 +95,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Internal status stored in DB (kept descriptive, independent of the
-    // wire-format 'success' | 'attempt' | 'failed' the frontend expects)
-    const dbStatus = outcome === 'success'
-      ? 'PASSED'
-      : outcome === 'attempt'
-        ? 'ALREADY_VERIFIED'
-        : 'BLOCKED_CLONE_ATTEMPT';
-
     // 2. Telemetry Insertion (log every attempt, regardless of outcome)
+    // status column stores the exact same value we send back to the client
+    // ('success' | 'attempt' | 'failed') - avoids any mismatch with a
+    // pre-existing CHECK constraint on this column.
     const insertPayload = {
       user_id: String(user_id),
       bot_username: botKey,
-      status: dbStatus,
+      status: outcome,
       device_id,
       ip_address: String(clientIp).split(',')[0].trim(),
       platform: platform || 'Unknown Platform',
@@ -136,7 +131,13 @@ export default async function handler(req, res) {
       .single();
 
     if (insertError) {
-      throw insertError;
+      console.error('Supabase insert error:', JSON.stringify(insertError));
+      // Surface the real reason instead of a generic message so it's
+      // diagnosable from the rendered page, not just server logs.
+      return res.status(200).json({
+        status: 'failed',
+        message: `DB insert failed: ${insertError.message || insertError.code || 'unknown error'}`
+      });
     }
 
     // 3. Optional Telegram Notification Callback (only on a fresh pass)
@@ -168,8 +169,12 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Processing engine exception:', err);
-    // Still respond with the status shape script.js understands, so it shows
-    // the failed view with a message instead of falling through to a raw error.
-    return res.status(500).json({ status: 'failed', message: err.message || 'Internal Verification Error' });
+    // Still respond 200 with the status shape script.js understands (a 500
+    // status is fine for logs, but keep the JSON body readable either way),
+    // and include the real error text so it's visible on-screen for debugging.
+    return res.status(200).json({
+      status: 'failed',
+      message: (err && err.message) ? `Error: ${err.message}` : 'Internal Verification Error'
+    });
   }
 }
