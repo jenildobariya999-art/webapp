@@ -806,6 +806,88 @@ p.desc {
   transform: translateY(-50%);
 }
 
+/* ---------- Bot logo badge (overlaps the user avatar, bottom-right) ---------- */
+.avatar-container {
+  position: relative; /* anchor for .bot-badge */
+}
+
+.bot-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.08) 60%), #0a1128;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45), 0 0 10px rgba(59, 130, 246, 0.5);
+  overflow: hidden;
+  animation: botBadgeIn 0.5s var(--ease-spring) 0.3s both, botBreathe 2.6s ease-in-out 0.8s infinite;
+}
+
+.bot-badge img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.bot-badge .bot-fallback {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  color: #7dbeff;
+}
+
+/* Rotating gradient ring - brighter and more "alive" than a flat dashed border */
+.bot-badge::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 260deg, rgba(125, 190, 255, 0.9) 340deg, var(--blue) 360deg);
+  animation: spin 3.5s linear infinite;
+  z-index: 0;
+}
+
+/* Mask keeps the ring a thin outline, not a filled disc */
+.bot-badge::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #0a1128;
+  z-index: 1;
+}
+
+@keyframes botBadgeIn {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes botBreathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45), 0 0 10px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6), 0 0 18px rgba(59, 130, 246, 0.8);
+  }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
   .header {

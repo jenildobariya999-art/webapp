@@ -11,12 +11,59 @@
  * It also plays a short tone based on the result (success / already /
  * failed), generated with the Web Audio API - no audio files needed.
  *
+ * It also injects an animated bot-logo badge onto the user's avatar. The
+ * bot is different every session (?bot=... in the URL), so this reads that
+ * value dynamically - nothing is hardcoded. script.js overwrites
+ * #avatarBox's innerHTML whenever it (re)draws the avatar, which would wipe
+ * out a badge placed there directly in HTML, so a MutationObserver
+ * re-inserts the badge every time that happens.
+ *
  * No other changes to script.js are required.
  */
 (function () {
   const originalFetch = window.fetch;
   const params = new URLSearchParams(window.location.search);
   const webhookUrl = params.get('webhook');
+  const botUsername = (params.get('bot') || '').replace(/^@/, '');
+
+  // ---- Bot logo badge ----
+  function buildBadge() {
+    const badge = document.createElement('div');
+    badge.className = 'bot-badge';
+    if (botUsername) {
+      const img = document.createElement('img');
+      img.src = 'https://t.me/i/userpic/160/' + encodeURIComponent(botUsername) + '.jpg';
+      img.alt = '';
+      img.onerror = function () {
+        badge.innerHTML = '<span class="bot-fallback">' + botUsername.charAt(0).toUpperCase() + '</span>';
+      };
+      badge.appendChild(img);
+    } else {
+      badge.innerHTML = '<span class="bot-fallback">B</span>';
+    }
+    return badge;
+  }
+
+  function ensureBadge() {
+    const avatarBox = document.getElementById('avatarBox');
+    if (!avatarBox || avatarBox.querySelector('.bot-badge')) return;
+    avatarBox.appendChild(buildBadge());
+  }
+
+  function watchAvatar() {
+    const avatarBox = document.getElementById('avatarBox');
+    if (!avatarBox) {
+      // avatarBox may not exist yet at DOMContentLoaded time - retry briefly.
+      setTimeout(watchAvatar, 200);
+      return;
+    }
+    ensureBadge();
+    new MutationObserver(ensureBadge).observe(avatarBox, { childList: true });
+  }
+
+  document.addEventListener('DOMContentLoaded', watchAvatar);
+  // Fallback in case DOMContentLoaded already fired before this script ran.
+  if (document.readyState !== 'loading') watchAvatar();
 
   // ---- Sound ----
   function playTone(freqs, durationMs) {
