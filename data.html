@@ -2,163 +2,235 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verification Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Console</title>
 <style>
   :root {
-    --bg: #0B0D12;
-    --panel: #12151C;
-    --border: #232733;
-    --text: #E4E7EC;
-    --muted: #7C8494;
-    --accent: #5EEAD4;
-    --red: #F26D6D;
+    --bg: #05070C;
+    --panel: #0E1420;
+    --panel2: #121A2A;
+    --border: #1E2738;
+    --text: #E7EAF2;
+    --muted: #7C8699;
+    --blue: #3B6FED;
+    --blue-soft: rgba(59,111,237,.15);
+    --red: #F2555A;
+    --red-soft: rgba(242,85,90,.15);
     --amber: #F5B754;
+    --amber-soft: rgba(245,183,84,.15);
+    --green: #3DD68C;
+    --card-light: #F3F5F9;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 14px;
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
-  header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 5;
-    flex-wrap: wrap;
+  .wrap { max-width: 720px; margin: 0 auto; padding: 18px 18px 60px; }
+
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #4A7BFF, #2451D6);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 22px rgba(59,111,237,.5);
+    font-size: 18px; color: #fff; flex-shrink: 0;
   }
-  header h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
-  header .count { color: var(--muted); font-size: 13px; }
-  header input[type=password] {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    width: 180px;
+  header h1 { margin: 0; font-size: 20px; font-weight: 700; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .live-pill {
+    margin-left: auto; display: flex; align-items: center; gap: 7px;
+    color: var(--muted); font-size: 12px; white-space: nowrap;
   }
-  header button {
-    background: var(--accent);
-    color: #062521;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  .badge-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .badge {
+    padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); font-size: 13px;
+    display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
   }
-  header button.ghost {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
+  .badge .dot2 { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .badge.ok .dot2 { background: var(--green); }
+  .badge.on { color: var(--text); border-color: var(--blue); }
+  .badge.on .dot2 { background: var(--blue); }
+
+  .tabs {
+    display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px; margin-bottom: 20px;
   }
-  .layout { display: flex; min-height: calc(100vh - 57px); }
-  aside {
-    width: 220px;
-    border-right: 1px solid var(--border);
-    padding: 14px 0;
-    flex-shrink: 0;
+  .tab {
+    flex: 1; text-align: center; padding: 10px 0; border-radius: 999px;
+    color: var(--muted); font-weight: 600; font-size: 14px; cursor: pointer;
   }
-  aside .bot-item {
-    padding: 9px 20px;
-    cursor: pointer;
-    color: var(--muted);
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
+  .tab.active { background: var(--blue); color: #fff; }
+
+  .actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-weight: 600; font-size: 13px; cursor: pointer;
   }
-  aside .bot-item:hover { background: var(--panel); }
-  aside .bot-item.active { color: var(--text); background: var(--panel); border-left: 2px solid var(--accent); }
-  main { flex: 1; padding: 18px 20px; overflow-x: auto; }
-  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
-  .toolbar input[type=search] {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    width: 260px;
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .btn.danger.armed { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.danger:not(.armed) { opacity: .45; cursor: not-allowed; }
+  .btn.ghost { background: transparent; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .hero {
+    background: linear-gradient(135deg, #3B6FED, #2347C4);
+    border-radius: 20px; padding: 26px 22px; margin-bottom: 16px;
+    position: relative; overflow: hidden;
   }
-  table { width: 100%; border-collapse: collapse; }
-  th {
-    text-align: left;
-    color: var(--muted);
-    font-weight: 500;
-    font-size: 12px;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
+  .hero::after {
+    content: ''; position: absolute; right: -40px; top: -40px; width: 180px; height: 180px;
+    border-radius: 50%; background: rgba(255,255,255,.08);
   }
-  td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    white-space: nowrap;
+  .hero .label { color: rgba(255,255,255,.75); font-size: 12px; letter-spacing: .04em; font-weight: 600; }
+  .hero .big { font-size: 46px; font-weight: 800; color: #fff; margin: 6px 0; }
+  .hero .sub2 { color: rgba(255,255,255,.75); font-size: 13px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
+  .stat-card {
+    background: var(--card-light); color: #0B0D12; border-radius: 16px; padding: 18px;
   }
-  td.wrap { white-space: normal; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
-  .pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
+  .stat-card .label { color: #5B6472; font-size: 12px; margin-bottom: 8px; }
+  .stat-card .value { font-size: 30px; font-weight: 800; }
+  .stat-card .value.red { color: var(--red); }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.amber { color: #C9861C; }
+
+  h2 { font-size: 17px; margin: 26px 0 4px; }
+  .desc { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+
+  .bot-card {
+    background: var(--card-light); color: #0B0D12; border-radius: 16px; padding: 18px; margin-bottom: 12px;
   }
-  .pill.success { background: rgba(94,234,212,.15); color: var(--accent); }
-  .pill.attempt { background: rgba(245,183,84,.15); color: var(--amber); }
-  .pill.failed { background: rgba(242,109,109,.15); color: var(--red); }
-  .del { color: var(--muted); cursor: pointer; background: none; border: none; font-size: 13px; }
-  .del:hover { color: var(--red); }
-  .empty { color: var(--muted); padding: 40px; text-align: center; }
+  .bot-card .bhead { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .bot-avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; object-fit: cover;
+    background: var(--blue); display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .bot-card .bname { font-weight: 700; font-size: 15px; }
+  .bstat { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; color: #5B6472; }
+  .bstat b { color: #0B0D12; }
+  .bstat.red b { color: var(--red); }
+  .bot-card .btn { width: 100%; margin-top: 10px; text-align: center; border-color: #D8DCE5; }
+
+  input[type=search], select {
+    width: 100%; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    padding: 11px 14px; border-radius: 999px; font-size: 13px; margin-bottom: 10px; appearance: none;
+  }
+  .filter-row { display: flex; gap: 10px; }
+  .filter-row select { flex: 1; }
+
+  .rec-count { color: var(--muted); font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th { text-align: left; color: var(--muted); font-size: 11px; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 13px; white-space: nowrap; }
+  td.wrap { white-space: normal; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .pill.success { background: var(--blue-soft); color: #7FA1FF; }
+  .pill.attempt { background: var(--amber-soft); color: var(--amber); }
+  .pill.failed { background: var(--red-soft); color: var(--red); }
+  .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .del:disabled { opacity: .3; cursor: not-allowed; }
+  .del:not(:disabled):hover { color: var(--red); }
+  .table-scroll { overflow-x: auto; }
+
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+
   .gate {
-    display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 14px;
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 14px;
   }
-  .gate input { width: 240px; }
+  .gate input { width: 240px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div id="gate" class="gate" style="display:none">
+  <div class="logo">◆</div>
   <div style="color:var(--muted)">Enter admin key to continue</div>
   <input type="password" id="gateKey" placeholder="Admin key">
-  <button onclick="saveKeyAndLoad()">Unlock</button>
+  <button class="btn primary" onclick="saveKeyAndLoad()">Unlock console</button>
 </div>
 
 <div id="app" style="display:none">
-  <header>
-    <h1>Verification Console</h1>
-    <span class="count" id="totalCount"></span>
-    <div style="flex:1"></div>
-    <button class="ghost" onclick="logout()">Change key</button>
-    <button onclick="loadRecords()">Refresh</button>
-  </header>
-  <div class="layout">
-    <aside id="botList"></aside>
-    <main>
-      <div class="toolbar">
-        <input type="search" id="searchBox" placeholder="Search user id / device id..." oninput="render()">
-        <div style="flex:1"></div>
-        <button class="ghost" id="deleteAllBtn" onclick="deleteAllForBot()">Clear this bot's data</button>
+  <div class="wrap">
+    <header>
+      <div class="logo">◆</div>
+      <div>
+        <h1>Console</h1>
+        <div class="sub">device verification</div>
       </div>
-      <div id="tableWrap"></div>
-    </main>
+      <div class="live-pill"><span class="dot"></span><span id="liveCount">0 records live</span></div>
+    </header>
+
+    <div class="badge-row">
+      <div class="badge ok" id="connBadge">connection</div>
+      <div class="badge" id="lockBadge" onclick="toggleLock()">lock</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="overview" onclick="showTab('overview')">Overview</div>
+      <div class="tab" data-tab="bots" onclick="showTab('bots')">Bots</div>
+      <div class="tab" data-tab="records" onclick="showTab('records')">Records</div>
+    </div>
+
+    <div id="tab-overview">
+      <div class="actions">
+        <button class="btn" onclick="loadRecords()">sync</button>
+        <button class="btn" onclick="exportCsv()">export csv</button>
+        <button class="btn danger" id="purgeBtn" onclick="purgeAll()">purge all</button>
+      </div>
+
+      <div class="hero">
+        <div class="label">CLEARANCE RATE</div>
+        <div class="big" id="clearanceRate">0.0%</div>
+        <div class="sub2" id="clearanceSub">0 of 0 records passed</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">total records</div><div class="value" id="statTotal">0</div></div>
+        <div class="stat-card"><div class="label">connected bots</div><div class="value" id="statBots">0</div></div>
+        <div class="stat-card"><div class="label">passed clean</div><div class="value green" id="statPassed">0</div></div>
+        <div class="stat-card"><div class="label">blocked</div><div class="value red" id="statBlocked">0</div></div>
+      </div>
+    </div>
+
+    <div id="tab-bots" style="display:none">
+      <h2>Bots</h2>
+      <div class="desc">delete a single bot's records without touching the rest</div>
+      <div id="botCards"></div>
+    </div>
+
+    <div id="tab-records" style="display:none">
+      <h2>Records</h2>
+      <div class="rec-count" id="recCount" style="margin-bottom:10px">0 records</div>
+      <input type="search" id="searchBox" placeholder="search user id, bot, ip, fingerprint" oninput="renderRecords()">
+      <div class="filter-row">
+        <select id="botFilter" onchange="renderRecords()"><option value="">all bots</option></select>
+        <select id="statusFilter" onchange="renderRecords()">
+          <option value="">all statuses</option>
+          <option value="success">success</option>
+          <option value="attempt">already</option>
+          <option value="failed">failed</option>
+        </select>
+      </div>
+      <div class="table-scroll" id="tableWrap"></div>
+    </div>
   </div>
 </div>
 
 <script>
   let ADMIN_KEY = localStorage.getItem('verif_admin_key') || '';
   let records = [];
-  let activeBot = 'all';
+  let locked = true;
 
   function saveKeyAndLoad() {
     ADMIN_KEY = document.getElementById('gateKey').value.trim();
@@ -169,6 +241,46 @@
     loadRecords();
   }
 
+  function toggleLock() {
+    locked = !locked;
+    const b = document.getElementById('lockBadge');
+    b.classList.toggle('on', !locked);
+    b.textContent = locked ? 'lock' : 'unlocked';
+    document.querySelectorAll('.del').forEach(el => el.disabled = locked);
+    const purge = document.getElementById('purgeBtn');
+    purge.classList.toggle('armed', !locked);
+  }
+
+  function showTab(name) {
+    ['overview', 'bots', 'records'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  }
+
+  function botAvatarHtml(username) {
+    const initial = (username || '?').charAt(0).toUpperCase();
+    const imgUrl = 'https://t.me/i/userpic/160/' + encodeURIComponent(username) + '.jpg';
+    return '<img class="bot-avatar" src="' + imgUrl + '" alt="" ' +
+      'onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'bot-avatar\',textContent:\'' + initial + '\'}))">';
+  }
+
+  async function loadRecords() {
+    const connBadge = document.getElementById('connBadge');
+    try {
+      const res = await fetch('api/admin-data?limit=1000', { headers: { 'X-Admin-Key': ADMIN_KEY } });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!data.ok) { connBadge.classList.remove('ok'); alert('Load failed: ' + data.error); return; }
+      connBadge.classList.add('ok');
+      records = data.records || [];
+      renderAll();
+    } catch (err) {
+      connBadge.classList.remove('ok');
+      alert('Network error: ' + err.message);
+    }
+  }
+
   function logout() {
     localStorage.removeItem('verif_admin_key');
     ADMIN_KEY = '';
@@ -176,104 +288,139 @@
     document.getElementById('gate').style.display = 'flex';
   }
 
-  async function loadRecords() {
-    try {
-      const res = await fetch('api/admin-data?limit=1000', { headers: { 'X-Admin-Key': ADMIN_KEY } });
-      if (res.status === 401) { logout(); return; }
-      const data = await res.json();
-      if (!data.ok) { alert('Load failed: ' + data.error); return; }
-      records = data.records || [];
-      renderBotList();
-      render();
-    } catch (err) {
-      alert('Network error: ' + err.message);
-    }
-  }
+  function renderAll() {
+    document.getElementById('liveCount').textContent = records.length + ' records live';
 
-  function renderBotList() {
     const bots = {};
-    records.forEach(r => { bots[r.bot_username] = (bots[r.bot_username] || 0) + 1; });
-    const aside = document.getElementById('botList');
-    let html = `<div class="bot-item ${activeBot === 'all' ? 'active' : ''}" onclick="selectBot('all')">All bots<span>${records.length}</span></div>`;
-    Object.keys(bots).sort().forEach(b => {
-      html += `<div class="bot-item ${activeBot === b ? 'active' : ''}" onclick="selectBot('${b.replace(/'/g, "\\'")}')">${b}<span>${bots[b]}</span></div>`;
+    records.forEach(r => {
+      bots[r.bot_username] = bots[r.bot_username] || { total: 0, passed: 0, blocked: 0 };
+      bots[r.bot_username].total++;
+      if (r.status === 'success' || r.status === 'attempt') bots[r.bot_username].passed++;
+      if (r.status === 'failed') bots[r.bot_username].blocked++;
     });
-    aside.innerHTML = html;
-  }
+    const botNames = Object.keys(bots).sort();
 
-  function selectBot(bot) {
-    activeBot = bot;
-    renderBotList();
-    render();
+    const passed = records.filter(r => r.status === 'success' || r.status === 'attempt').length;
+    const blocked = records.filter(r => r.status === 'failed').length;
+    const rate = records.length ? (passed / records.length * 100) : 0;
+
+    document.getElementById('clearanceRate').textContent = rate.toFixed(1) + '%';
+    document.getElementById('clearanceSub').textContent = passed + ' of ' + records.length + ' records passed';
+    document.getElementById('statTotal').textContent = records.length;
+    document.getElementById('statBots').textContent = botNames.length;
+    document.getElementById('statPassed').textContent = passed;
+    document.getElementById('statBlocked').textContent = blocked;
+
+    document.getElementById('botCards').innerHTML = botNames.map(name => {
+      const b = bots[name];
+      return '<div class="bot-card">' +
+        '<div class="bhead">' + botAvatarHtml(name) + '<div class="bname">@' + name + '</div></div>' +
+        '<div class="bstat"><span>records</span><b>' + b.total + '</b></div>' +
+        '<div class="bstat red"><span>blocked</span><b>' + b.blocked + '</b></div>' +
+        '<button class="btn del" ' + (locked ? 'disabled' : '') + ' onclick="deleteBot(\'' + name.replace(/'/g,"\\'") + '\')">delete bot data</button>' +
+        '</div>';
+    }).join('') || '<div class="empty">No bots yet.</div>';
+
+    const botFilter = document.getElementById('botFilter');
+    const currentVal = botFilter.value;
+    botFilter.innerHTML = '<option value="">all bots</option>' + botNames.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+    botFilter.value = currentVal;
+
+    renderRecords();
   }
 
   function statusPill(status) {
     const cls = status === 'success' ? 'success' : status === 'attempt' ? 'attempt' : 'failed';
     const label = status === 'success' ? 'Success' : status === 'attempt' ? 'Already' : 'Failed';
-    return `<span class="pill ${cls}">${label}</span>`;
+    return '<span class="pill ' + cls + '">' + label + '</span>';
   }
 
-  function render() {
+  function renderRecords() {
     const q = document.getElementById('searchBox').value.toLowerCase();
-    document.getElementById('deleteAllBtn').style.display = activeBot === 'all' ? 'none' : 'inline-block';
+    const botF = document.getElementById('botFilter').value;
+    const statusF = document.getElementById('statusFilter').value;
 
-    let rows = records.filter(r => activeBot === 'all' || r.bot_username === activeBot);
-    if (q) rows = rows.filter(r => String(r.user_id).includes(q) || String(r.device_id).toLowerCase().includes(q));
+    let rows = records;
+    if (botF) rows = rows.filter(r => r.bot_username === botF);
+    if (statusF) rows = rows.filter(r => r.status === statusF);
+    if (q) rows = rows.filter(r =>
+      String(r.user_id).includes(q) || String(r.device_id).toLowerCase().includes(q) ||
+      String(r.bot_username).toLowerCase().includes(q) || String(r.ip_address || '').toLowerCase().includes(q)
+    );
 
-    document.getElementById('totalCount').textContent = rows.length + ' record' + (rows.length === 1 ? '' : 's');
+    document.getElementById('recCount').textContent = rows.length + ' record' + (rows.length === 1 ? '' : 's');
 
     if (rows.length === 0) {
       document.getElementById('tableWrap').innerHTML = '<div class="empty">No records match.</div>';
       return;
     }
 
-    let html = `<table><thead><tr>
-      <th>Status</th><th>Bot</th><th>User ID</th><th>Device ID</th><th>Platform</th><th>IP</th><th>Time</th><th></th>
-    </tr></thead><tbody>`;
+    let html = '<table><thead><tr><th>Status</th><th>Bot</th><th>User ID</th><th>Device ID</th><th>Platform</th><th>IP</th><th>Time</th><th></th></tr></thead><tbody>';
     rows.forEach(r => {
-      html += `<tr>
-        <td>${statusPill(r.status)}</td>
-        <td>${r.bot_username}</td>
-        <td class="mono">${r.user_id}</td>
-        <td class="mono wrap">${r.device_id}</td>
-        <td>${r.platform || '-'}</td>
-        <td class="mono">${r.ip_address || '-'}</td>
-        <td class="mono">${new Date(r.created_at).toLocaleString()}</td>
-        <td><button class="del" onclick="deleteRow('${r.id}')">Delete</button></td>
-      </tr>`;
+      html += '<tr>' +
+        '<td>' + statusPill(r.status) + '</td>' +
+        '<td>' + r.bot_username + '</td>' +
+        '<td class="mono">' + r.user_id + '</td>' +
+        '<td class="mono wrap">' + r.device_id + '</td>' +
+        '<td>' + (r.platform || '-') + '</td>' +
+        '<td class="mono">' + (r.ip_address || '-') + '</td>' +
+        '<td class="mono">' + new Date(r.created_at).toLocaleString() + '</td>' +
+        '<td><button class="del" ' + (locked ? 'disabled' : '') + ' onclick="deleteRow(\'' + r.id + '\')">Delete</button></td>' +
+        '</tr>';
     });
     html += '</tbody></table>';
     document.getElementById('tableWrap').innerHTML = html;
   }
 
   async function deleteRow(id) {
+    if (locked) return;
     if (!confirm('Delete this record?')) return;
     const res = await fetch('api/admin-data', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+      method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
       body: JSON.stringify({ ids: [id] })
     });
     const data = await res.json();
     if (!data.ok) { alert('Delete failed: ' + data.error); return; }
     records = records.filter(r => r.id !== id);
-    renderBotList();
-    render();
+    renderAll();
   }
 
-  async function deleteAllForBot() {
-    if (activeBot === 'all') return;
-    if (!confirm(`Delete ALL records for "${activeBot}"? This cannot be undone.`)) return;
+  async function deleteBot(name) {
+    if (locked) return;
+    if (!confirm('Delete ALL records for "' + name + '"? This cannot be undone.')) return;
     const res = await fetch('api/admin-data', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
-      body: JSON.stringify({ bot: activeBot })
+      method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+      body: JSON.stringify({ bot: name })
     });
     const data = await res.json();
     if (!data.ok) { alert('Delete failed: ' + data.error); return; }
-    records = records.filter(r => r.bot_username !== activeBot);
-    activeBot = 'all';
-    renderBotList();
-    render();
+    records = records.filter(r => r.bot_username !== name);
+    renderAll();
+  }
+
+  async function purgeAll() {
+    if (locked) return;
+    if (!confirm('Purge ALL records for ALL bots? This cannot be undone.')) return;
+    const botNames = [...new Set(records.map(r => r.bot_username))];
+    for (const name of botNames) {
+      await fetch('api/admin-data', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+        body: JSON.stringify({ bot: name })
+      });
+    }
+    records = [];
+    renderAll();
+  }
+
+  function exportCsv() {
+    if (records.length === 0) return;
+    const cols = ['id','created_at','bot_username','user_id','device_id','status','platform','ip_address','screen_resolution','timezone'];
+    const rows = [cols.join(',')].concat(records.map(r => cols.map(c => '"' + String(r[c] ?? '').replace(/"/g,'""') + '"').join(',')));
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'verification_records.csv';
+    a.click();
   }
 
   // Init

@@ -30,7 +30,7 @@
         osc.type = 'sine';
         osc.frequency.value = f;
         gain.gain.setValueAtTime(0.001, t);
-        gain.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, t + durationMs / 1000);
         osc.connect(gain);
         gain.connect(ctx.destination);
