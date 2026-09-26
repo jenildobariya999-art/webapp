@@ -29,21 +29,27 @@
         // Clone so script.js can still read the original response body itself.
         const clone = response.clone();
         clone.json().then(function (data) {
-          // Fire-and-forget: mode 'no-cors' avoids CORS blocking this
-          // notification (we don't need to read the webhook's reply).
+          // mode: 'no-cors' is required here - this webhook endpoint is a
+          // server-to-server style receiver, not CORS-enabled for browser
+          // calls. A normal 'cors' POST gets silently blocked by the
+          // preflight check and never leaves the browser at all. Under
+          // no-cors we can't read the response (it's opaque), but the
+          // request genuinely gets sent and the JSON body arrives intact -
+          // that's all we need since nothing here reads the reply.
           originalFetch(webhookUrl, {
             method: 'POST',
             mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
+          }).then(function () {
+            console.log('webhook-bridge: webhook POST sent (no-cors, response not readable)');
           }).catch(function (err) {
-            console.warn('webhook-bridge: failed to notify bot webhook', err);
+            console.error('webhook-bridge: failed to notify bot webhook', err);
           });
         }).catch(function (err) {
-          console.warn('webhook-bridge: could not read response to forward', err);
+          console.error('webhook-bridge: could not read response to forward', err);
         });
       } catch (err) {
-        console.warn('webhook-bridge: unexpected error', err);
+        console.error('webhook-bridge: unexpected error', err);
       }
     }
 
