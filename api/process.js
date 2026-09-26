@@ -13,6 +13,23 @@ const BOT_TOKENS = {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// POSTs the result to the bot's TBC webhook URL server-side. No browser CORS
+// restrictions apply here (server-to-server), unlike calling it from
+// script.js directly. Never throws - a notify failure must not break the
+// response the Mini App itself depends on.
+async function notifyWebhook(webhookUrl, resultBody) {
+  if (!webhookUrl) return;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(resultBody)
+    });
+  } catch (err) {
+    console.error('Webhook notify failed:', err && err.message);
+  }
+}
+
 // Confirmed by executing script.js in a sandbox and logging its real fetch body
 // and its real response-property reads:
 //
@@ -59,7 +76,12 @@ export default async function handler(req, res) {
       screen_resolution,
       hardware_concurrency,
       device_memory,
-      canvas_hash
+      canvas_hash,
+      // Injected by webhook-bridge.js from the page's ?webhook=... query
+      // param (script.js itself never sends this). When present, we POST
+      // the final result to it server-side below, so the bot gets notified
+      // - no browser CORS restrictions apply to a server-side call.
+      webhook
     } = payload;
 
     const botKey = (bot || bot_username || bot_hash || '').toString().replace(/^@/, '').trim();
@@ -141,13 +163,15 @@ export default async function handler(req, res) {
       console.error('Supabase insert error:', JSON.stringify(insertError));
       // Surface the real reason instead of a generic message so it's
       // diagnosable from the rendered page, not just server logs.
-      return res.status(200).json({
+      const body = {
         status: 'failed',
         attempt: false,
         message: `DB insert failed: ${insertError.message || insertError.code || 'unknown error'}`,
         fingerprint: device_id,
         botusername: botKey
-      });
+      };
+      await notifyWebhook(webhook, body);
+      return res.status(200).json(body);
     }
 
     // 3. Optional Telegram Notification Callback (only on a fresh pass)
@@ -175,32 +199,40 @@ export default async function handler(req, res) {
     // fingerprint/botusername are echoed back for the bot-side webhook handler,
     // which sends a chat message based on this same response.
     if (outcome === 'success') {
-      return res.status(200).json({
+      const body = {
         status: 'success',
         attempt: false,
         fingerprint: device_id,
         botusername: botKey,
         record_id: inserted.id
-      });
+      };
+      await notifyWebhook(webhook, body);
+      return res.status(200).json(body);
     }
     if (outcome === 'attempt') {
-      return res.status(200).json({
+      const body = {
         status: 'attempt',
         attempt: true,
         fingerprint: device_id,
         botusername: botKey,
         record_id: inserted.id
-      });
+      };
+      await notifyWebhook(webhook, body);
+      return res.status(200).json(body);
     }
     // outcome === 'failed' (blocked clone attempt)
-    return res.status(200).json({
-      status: 'failed',
-      attempt: false,
-      message: failMessage || 'Verification criteria not met.',
-      fingerprint: device_id,
-      botusername: botKey,
-      record_id: inserted.id
-    });
+    {
+      const body = {
+        status: 'failed',
+        attempt: false,
+        message: failMessage || 'Verification criteria not met.',
+        fingerprint: device_id,
+        botusername: botKey,
+        record_id: inserted.id
+      };
+      await notifyWebhook(webhook, body);
+      return res.status(200).json(body);
+    }
 
   } catch (err) {
     console.error('Processing engine exception:', err);
