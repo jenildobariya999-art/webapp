@@ -1,22 +1,6 @@
 /**
  * Jenil Dobariya • Multi-Bot Telemetry & Verification Processor
  * Route: /api/process
- *
- * Contract (matches script.js exactly):
- *   REQUEST body sent by script.js:
- *     { user_id, bot_hash, device_id, user_agent, platform, timezone,
- *       hardware_concurrency, device_memory, screen_resolution }
- *     - bot_hash is read by script.js from the URL query param `?bot=...`
- *     - device_id is the FingerprintJS visitorId
- *
- *   RESPONSE sent to script.js:
- *     { status: 'success' | 'attempt' | 'failed', message?: string }
- *     - 'success' -> brand-new device for this bot -> view-success
- *     - 'attempt' -> this exact device already has a record for this bot,
- *                    REGARDLESS of which user_id it was verified under
- *                    -> view-already ("Already Verified")
- *     - 'failed'  -> only for genuine errors: missing params, DB failure,
- *                    or an unexpected exception -> view-failed
  */
 import { createClient } from '@supabase/supabase-js';
 
@@ -28,6 +12,20 @@ const BOT_TOKENS = {
 };
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// Confirmed by executing script.js in a sandbox and logging its real fetch body
+// and its real response-property reads:
+//
+// REQUEST body script.js actually sends:
+//   { user_id, bot, bot_hash, device_id, user_agent, platform, language,
+//     timezone, hardware_concurrency, device_memory, screen_resolution }
+//   - "bot" is the real bot identifier (from ?bot= query param)
+//   - "bot_hash" is a separate field, usually null - NOT the identifier
+//
+// RESPONSE script.js actually reads:
+//   if (data.status === 'success')  -> view-success
+//   else if (data.attempt)          -> view-already   (boolean field! not status==='attempt')
+//   else                            -> view-failed, using data.message
 
 export default async function handler(req, res) {
   // Enable CORS for Telegram WebApp clients
@@ -48,8 +46,10 @@ export default async function handler(req, res) {
     const payload = req.body || {};
     const {
       user_id,
-      // script.js sends the bot identifier as "bot_hash" (from the ?bot= query
-      // param). Some older callers may still send "bot_username" - accept either.
+      // script.js sends the bot identifier as "bot" (raw ?bot= query param).
+      // "bot_hash" is a separate field it also sends but is usually null -
+      // kept here only as a fallback for older/other callers.
+      bot,
       bot_hash,
       bot_username,
       device_id,
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       canvas_hash
     } = payload;
 
-    const botKey = (bot_hash || bot_username || '').toString().replace(/^@/, '').trim();
+    const botKey = (bot || bot_username || bot_hash || '').toString().replace(/^@/, '').trim();
 
     if (!user_id || !botKey || !device_id) {
       return res.status(400).json({ status: 'failed', message: 'Missing mandatory identification params' });
@@ -107,7 +107,7 @@ export default async function handler(req, res) {
       hardware_concurrency: Number(hardware_concurrency) || 4,
       device_memory: Number(device_memory) || 8,
       canvas_hash: canvas_hash || null,
-      bot_hash: botKey,
+      bot_hash: bot_hash || null,
       details: {
         timestamp: new Date().toISOString(),
         action: outcome === 'success' ? 'APPROVED' : 'ALREADY_VERIFIED',
@@ -152,9 +152,15 @@ export default async function handler(req, res) {
       }
     }
 
-    // Response shape matches exactly what script.js checks:
-    // data.status === 'success' | 'attempt', routing to view-success / view-already.
-    return res.status(200).json({ status: outcome, record_id: inserted.id });
+    // Response shape confirmed by executing script.js directly:
+    //   status: 'success' -> view-success
+    //   attempt: true (checked only when status !== 'success') -> view-already
+    //   anything else -> view-failed
+    return res.status(200).json({
+      status: outcome === 'success' ? 'success' : 'attempt',
+      attempt: outcome === 'attempt',
+      record_id: inserted.id
+    });
 
   } catch (err) {
     console.error('Processing engine exception:', err);
