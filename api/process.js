@@ -143,7 +143,10 @@ export default async function handler(req, res) {
       // diagnosable from the rendered page, not just server logs.
       return res.status(200).json({
         status: 'failed',
-        message: `DB insert failed: ${insertError.message || insertError.code || 'unknown error'}`
+        attempt: false,
+        message: `DB insert failed: ${insertError.message || insertError.code || 'unknown error'}`,
+        fingerprint: device_id,
+        botusername: botKey
       });
     }
 
@@ -169,17 +172,33 @@ export default async function handler(req, res) {
     //   status: 'success'      -> view-success
     //   attempt: true          -> view-already   (checked only when status !== 'success')
     //   anything else          -> view-failed, using data.message
+    // fingerprint/botusername are echoed back for the bot-side webhook handler,
+    // which sends a chat message based on this same response.
     if (outcome === 'success') {
-      return res.status(200).json({ status: 'success', record_id: inserted.id });
+      return res.status(200).json({
+        status: 'success',
+        attempt: false,
+        fingerprint: device_id,
+        botusername: botKey,
+        record_id: inserted.id
+      });
     }
     if (outcome === 'attempt') {
-      return res.status(200).json({ status: 'attempt', attempt: true, record_id: inserted.id });
+      return res.status(200).json({
+        status: 'attempt',
+        attempt: true,
+        fingerprint: device_id,
+        botusername: botKey,
+        record_id: inserted.id
+      });
     }
     // outcome === 'failed' (blocked clone attempt)
     return res.status(200).json({
       status: 'failed',
       attempt: false,
       message: failMessage || 'Verification criteria not met.',
+      fingerprint: device_id,
+      botusername: botKey,
       record_id: inserted.id
     });
 
