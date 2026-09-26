@@ -81,20 +81,24 @@ export default async function handler(req, res) {
       console.error('Supabase lookup error:', checkError);
     }
 
-    // Decide the outcome BEFORE inserting:
-    //   - no prior record for this device+bot            -> 'success' (new, clean device)
-    //   - prior record(s), all belonging to THIS user_id  -> 'attempt' (already verified)
-    //   - prior record belonging to a DIFFERENT user_id   -> 'failed'  (blocked clone attempt)
+    // Decide the outcome BEFORE inserting. IMPORTANT: check for a match with
+    // THIS user_id first - a device can legitimately have prior rows under
+    // other user_ids (e.g. from earlier tests) without that making every
+    // future check for the correct user a "clone".
+    //   - a row already exists for THIS device+bot+user_id -> 'attempt' (already verified)
+    //   - no row for this user, but a row exists under a
+    //     DIFFERENT user_id for this device+bot            -> 'failed'  (blocked clone attempt)
+    //   - no rows at all for this device+bot                -> 'success' (new, clean device)
     let outcome = 'success';
     let failMessage = null;
 
     if (existingRecords && existingRecords.length > 0) {
-      const clone = existingRecords.find(r => String(r.user_id) !== String(user_id));
-      if (clone) {
+      const ownRecord = existingRecords.find(r => String(r.user_id) === String(user_id));
+      if (ownRecord) {
+        outcome = 'attempt';
+      } else {
         outcome = 'failed';
         failMessage = 'This device has already been verified under a different account.';
-      } else {
-        outcome = 'attempt';
       }
     }
 
