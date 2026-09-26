@@ -82,13 +82,21 @@ export default async function handler(req, res) {
     }
 
     // Decide the outcome BEFORE inserting:
-    //   - no prior record for this device+bot  -> 'success'  (new, clean device)
-    //   - ANY prior record for this device+bot  -> 'attempt'  (already verified,
-    //                                               regardless of which user_id
-    //                                               it was verified under)
-    // 'failed' is reserved for genuine errors (missing params, DB errors,
-    // exceptions) - not for repeat verification of the same device.
-    const outcome = (existingRecords && existingRecords.length > 0) ? 'attempt' : 'success';
+    //   - no prior record for this device+bot            -> 'success' (new, clean device)
+    //   - prior record(s), all belonging to THIS user_id  -> 'attempt' (already verified)
+    //   - prior record belonging to a DIFFERENT user_id   -> 'failed'  (blocked clone attempt)
+    let outcome = 'success';
+    let failMessage = null;
+
+    if (existingRecords && existingRecords.length > 0) {
+      const clone = existingRecords.find(r => String(r.user_id) !== String(user_id));
+      if (clone) {
+        outcome = 'failed';
+        failMessage = 'This device has already been verified under a different account.';
+      } else {
+        outcome = 'attempt';
+      }
+    }
 
     // 2. Telemetry Insertion (log every attempt, regardless of outcome)
     // status column stores the exact same value we send back to the client
@@ -110,7 +118,8 @@ export default async function handler(req, res) {
       bot_hash: bot_hash || null,
       details: {
         timestamp: new Date().toISOString(),
-        action: outcome === 'success' ? 'APPROVED' : 'ALREADY_VERIFIED',
+        action: outcome === 'success' ? 'APPROVED' : outcome === 'attempt' ? 'ALREADY_VERIFIED' : 'DENIED_CLONE',
+        reason: failMessage,
         headers: {
           cf_ray: req.headers['cf-ray'] || null,
           user_lang: req.headers['accept-language'] || null
@@ -153,12 +162,20 @@ export default async function handler(req, res) {
     }
 
     // Response shape confirmed by executing script.js directly:
-    //   status: 'success' -> view-success
-    //   attempt: true (checked only when status !== 'success') -> view-already
-    //   anything else -> view-failed
+    //   status: 'success'      -> view-success
+    //   attempt: true          -> view-already   (checked only when status !== 'success')
+    //   anything else          -> view-failed, using data.message
+    if (outcome === 'success') {
+      return res.status(200).json({ status: 'success', record_id: inserted.id });
+    }
+    if (outcome === 'attempt') {
+      return res.status(200).json({ status: 'attempt', attempt: true, record_id: inserted.id });
+    }
+    // outcome === 'failed' (blocked clone attempt)
     return res.status(200).json({
-      status: outcome === 'success' ? 'success' : 'attempt',
-      attempt: outcome === 'attempt',
+      status: 'failed',
+      attempt: false,
+      message: failMessage || 'Verification criteria not met.',
       record_id: inserted.id
     });
 
