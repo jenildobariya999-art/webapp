@@ -9,11 +9,14 @@
  *     - bot_hash is read by script.js from the URL query param `?bot=...`
  *     - device_id is the FingerprintJS visitorId
  *
- *   RESPONSE expected by script.js:
+ *   RESPONSE sent to script.js:
  *     { status: 'success' | 'attempt' | 'failed', message?: string }
- *     - 'success' -> new device, verification passes -> view-success
- *     - 'attempt' -> this user already verified this exact device before -> view-already
- *     - 'failed'  -> device previously verified under a DIFFERENT user (clone) -> view-failed
+ *     - 'success' -> brand-new device for this bot -> view-success
+ *     - 'attempt' -> this exact device already has a record for this bot,
+ *                    REGARDLESS of which user_id it was verified under
+ *                    -> view-already ("Already Verified")
+ *     - 'failed'  -> only for genuine errors: missing params, DB failure,
+ *                    or an unexpected exception -> view-failed
  */
 import { createClient } from '@supabase/supabase-js';
 
@@ -78,22 +81,14 @@ export default async function handler(req, res) {
       console.error('Supabase lookup error:', checkError);
     }
 
-    // Decide the outcome BEFORE inserting, based on prior records:
-    //   - no prior record for this device                -> 'success'  (new, clean device)
-    //   - prior record(s), all belonging to this user     -> 'attempt'  (already verified)
-    //   - prior record belonging to a DIFFERENT user       -> 'failed'   (clone attempt, blocked)
-    let outcome = 'success';
-    let failMessage = null;
-
-    if (existingRecords && existingRecords.length > 0) {
-      const clone = existingRecords.find(r => String(r.user_id) !== String(user_id));
-      if (clone) {
-        outcome = 'failed';
-        failMessage = `This device was already verified under a different Telegram account.`;
-      } else {
-        outcome = 'attempt';
-      }
-    }
+    // Decide the outcome BEFORE inserting:
+    //   - no prior record for this device+bot  -> 'success'  (new, clean device)
+    //   - ANY prior record for this device+bot  -> 'attempt'  (already verified,
+    //                                               regardless of which user_id
+    //                                               it was verified under)
+    // 'failed' is reserved for genuine errors (missing params, DB errors,
+    // exceptions) - not for repeat verification of the same device.
+    const outcome = (existingRecords && existingRecords.length > 0) ? 'attempt' : 'success';
 
     // 2. Telemetry Insertion (log every attempt, regardless of outcome)
     // status column stores the exact same value we send back to the client
@@ -115,8 +110,7 @@ export default async function handler(req, res) {
       bot_hash: botKey,
       details: {
         timestamp: new Date().toISOString(),
-        action: outcome === 'success' ? 'APPROVED' : outcome === 'attempt' ? 'DUPLICATE' : 'DENIED_FRAUD',
-        reason: failMessage,
+        action: outcome === 'success' ? 'APPROVED' : 'ALREADY_VERIFIED',
         headers: {
           cf_ray: req.headers['cf-ray'] || null,
           user_lang: req.headers['accept-language'] || null
@@ -159,13 +153,8 @@ export default async function handler(req, res) {
     }
 
     // Response shape matches exactly what script.js checks:
-    // data.status === 'success' | 'attempt' | 'failed', and data.message on failure.
-    const responseBody = { status: outcome, record_id: inserted.id };
-    if (outcome === 'failed') {
-      responseBody.message = failMessage || 'Verification criteria not met.';
-    }
-
-    return res.status(200).json(responseBody);
+    // data.status === 'success' | 'attempt', routing to view-success / view-already.
+    return res.status(200).json({ status: outcome, record_id: inserted.id });
 
   } catch (err) {
     console.error('Processing engine exception:', err);
