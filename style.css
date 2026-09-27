@@ -197,6 +197,23 @@ body::before {
 .icon-wrapper::before { content: ''; position: absolute; inset: -32px; border-radius: 50%; border: 1px dashed rgba(var(--accent-rgb), 0.32); animation: spin 40s linear infinite; }
 .icon-wrapper::after { content: ''; position: absolute; left: 50%; bottom: -36px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
 .icon-wrapper i { position: relative; z-index: 2; font-size: 46px; color: var(--accent); text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.6); }
+
+/* Success state: show the actual ✅ emoji instead of the FontAwesome icon */
+.icon-wrapper.success i { display: none; }
+.icon-wrapper.success::after {
+  content: '✅';
+  position: relative;
+  z-index: 2;
+  font-size: 52px;
+  line-height: 1;
+  filter: drop-shadow(0 0 14px rgba(34, 197, 94, 0.55));
+  animation: checkPop 0.5s var(--ease-spring) 0.35s both;
+}
+
+@keyframes checkPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 @keyframes sealIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
