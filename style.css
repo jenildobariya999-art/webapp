@@ -203,6 +203,23 @@ body::before {
 /* ---------- Network scan (view-scanning) ---------- */
 .network-scan { width: 148px; height: 148px; position: relative; margin: 10px 0 30px; }
 
+/* Outer dashed ring, slow rotation - the layered "orbit" feel from earlier designs */
+.network-scan::before {
+  content: ''; position: absolute; inset: -16px; border-radius: 50%;
+  border: 1px dashed rgba(59, 130, 246, 0.35);
+  animation: spin 18s linear infinite;
+}
+
+/* Inner bright partial-sweep ring, faster and reverse - adds a second layer of motion */
+.network-scan::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 250deg, rgba(147, 197, 253, 0.9) 340deg, #fff 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: spin 3s linear infinite reverse;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.7));
+}
+
 .scan-grid {
   position: absolute; inset: 0; border-radius: 50%;
   background:
@@ -314,7 +331,7 @@ p.desc { max-width: 320px; margin-bottom: 26px; font-size: 16px; line-height: 1.
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 .btn.success { --a: #6bffce; --b: #2dffa8; --fg: #032019; --glow: 45, 255, 168; }
 .btn.danger { --a: #ff8695; --b: #e11d48; --fg: #fff; --glow: 255, 90, 110; }
-.btn.primary { --a: #ff8fc4; --b: #c026d3; --fg: #fff; --glow: 96, 165, 250; }
+.btn.primary { --a: #7fb0ff; --b: #2563eb; --fg: #fff; --glow: 59, 130, 246; }
 
 /* ---------- Footer ---------- */
 .footer { width: 100%; flex-shrink: 0; padding: 12px 0 calc(16px + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: 14px; color: var(--text-3); }

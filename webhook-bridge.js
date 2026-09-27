@@ -12,16 +12,17 @@
  * failed), generated with the Web Audio API - no audio files needed.
  *
  * It also injects a small, animated bot logo badge merged onto the corner
- * of the user's avatar (soft rotating glow ring, breathing pulse, moving
- * shine, pulsing live-dot). The bot is different every session
- * (?bot=... in the URL), so this reads that value dynamically. It shows a
- * colored initial rather than fetching the bot's actual Telegram photo -
- * that photo comes from an unofficial endpoint (t.me/i/userpic/...) whose
- * caching is entirely outside our control and was showing stale/old
- * photos unpredictably. An initial badge never goes stale. script.js
- * periodically overwrites #avatarBox's innerHTML when it (re)draws the
- * avatar, which would wipe out a badge placed inside it - a
- * MutationObserver watches for that and re-inserts the badge every time.
+ * of the user's avatar (rotating ring, breathing pulse, moving shine,
+ * pulsing live-dot). The bot is different every session (?bot=... in the
+ * URL), so this reads that value dynamically. It tries to show the bot's
+ * real Telegram profile photo via the unofficial t.me/i/userpic/... endpoint,
+ * with a daily cache-buster to reduce staleness (this endpoint's own
+ * server-side caching is outside our control, so some staleness may still
+ * occur) - falling back to a colored initial if the bot has no public
+ * photo or the request fails. script.js periodically overwrites
+ * #avatarBox's innerHTML when it (re)draws the avatar, which would wipe out
+ * a badge placed inside it - a MutationObserver watches for that and
+ * re-inserts the badge every time.
  *
  * No other changes to script.js are required.
  */
@@ -36,11 +37,23 @@
     const el = document.createElement('div');
     el.className = 'bot-logo-inline';
     const initial = botUsername ? botUsername.charAt(0).toUpperCase() : 'B';
+    const fallbackHtml = '<span class="bot-fallback">' + initial + '</span>';
+
+    let photoInner = fallbackHtml;
+    if (botUsername) {
+      // Daily cache-buster: fights OUR browser's cache. Telegram's own CDN
+      // may still serve a stale thumbnail for a while after a bot changes
+      // its photo - that part is outside our control.
+      const cacheBust = new Date().toISOString().slice(0, 10);
+      const src = 'https://t.me/i/userpic/160/' + encodeURIComponent(botUsername) + '.jpg?d=' + cacheBust;
+      photoInner = '<img src="' + src + '" alt="" ' +
+        'onerror="this.parentElement.innerHTML=\'' + fallbackHtml.replace(/'/g, '&#39;') + '\'">';
+    }
 
     el.innerHTML =
       '<div class="ring r1"></div>' +
       '<div class="ring r2"></div>' +
-      '<div class="photo"><span class="bot-fallback">' + initial + '</span></div>' +
+      '<div class="photo">' + photoInner + '</div>' +
       '<div class="live-dot"></div>';
 
     return el;
