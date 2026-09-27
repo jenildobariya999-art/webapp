@@ -79,9 +79,14 @@
       <button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button>
     </div>
 
-    <!-- Success screen -->
+    <!-- Success screen: animated SVG checkmark (circle draws in, then check strokes in) -->
     <div class="view-section" id="view-success">
-      <div class="icon-wrapper success"><i class="fa-solid fa-shield-check"></i></div>
+      <div class="icon-wrapper success">
+        <svg class="check-svg" viewBox="0 0 52 52">
+          <circle class="check-circle" cx="26" cy="26" r="23"/>
+          <path class="check-mark" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
       <h1 class="text-success">Access Granted</h1>
       <p class="desc">Your device has been successfully verified and secured.</p>
       <button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button>
