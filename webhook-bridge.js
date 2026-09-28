@@ -13,16 +13,17 @@
  *
  * It also injects a small, animated bot logo badge merged onto the corner
  * of the user's avatar (rotating ring, breathing pulse, moving shine,
- * pulsing live-dot). The bot is different every session (?bot=... in the
- * URL), so this reads that value dynamically. It tries to show the bot's
- * real Telegram profile photo via the unofficial t.me/i/userpic/... endpoint,
- * with a daily cache-buster to reduce staleness (this endpoint's own
- * server-side caching is outside our control, so some staleness may still
- * occur) - falling back to a colored initial if the bot has no public
- * photo or the request fails. script.js periodically overwrites
- * #avatarBox's innerHTML when it (re)draws the avatar, which would wipe out
- * a badge placed inside it - a MutationObserver watches for that and
- * re-inserts the badge every time.
+ * pulsing live-dot), showing a colored initial derived from the bot's
+ * username (?bot=... in the URL). No external photo is fetched - that was
+ * unreliable (Telegram's own CDN caching is outside our control). script.js
+ * periodically overwrites #avatarBox's innerHTML when it (re)draws the
+ * avatar, which would wipe out a badge placed inside it - a
+ * MutationObserver watches for that and re-inserts the badge every time.
+ *
+ * It also fixes the header status pill (#headerBadge/#headerStatusText):
+ * script.js only ever sets it to an "active" state regardless of the real
+ * outcome, so this overrides it with the true result - FAILED on a blocked
+ * device, ALREADY on a repeat device, ACTIVE on a fresh pass.
  *
  * No other changes to script.js are required.
  */
@@ -37,23 +38,11 @@
     const el = document.createElement('div');
     el.className = 'bot-logo-inline';
     const initial = botUsername ? botUsername.charAt(0).toUpperCase() : 'B';
-    const fallbackHtml = '<span class="bot-fallback">' + initial + '</span>';
-
-    let photoInner = fallbackHtml;
-    if (botUsername) {
-      // Daily cache-buster: fights OUR browser's cache. Telegram's own CDN
-      // may still serve a stale thumbnail for a while after a bot changes
-      // its photo - that part is outside our control.
-      const cacheBust = new Date().toISOString().slice(0, 10);
-      const src = 'https://t.me/i/userpic/160/' + encodeURIComponent(botUsername) + '.jpg?d=' + cacheBust;
-      photoInner = '<img src="' + src + '" alt="" ' +
-        'onerror="this.parentElement.innerHTML=\'' + fallbackHtml.replace(/'/g, '&#39;') + '\'">';
-    }
 
     el.innerHTML =
       '<div class="ring r1"></div>' +
       '<div class="ring r2"></div>' +
-      '<div class="photo">' + photoInner + '</div>' +
+      '<div class="photo"><span class="bot-fallback">' + initial + '</span></div>' +
       '<div class="live-dot"></div>';
 
     return el;
@@ -113,6 +102,27 @@
     }
   }
 
+  // ---- Header status pill fix ----
+  // script.js only ever marks this "active" regardless of true outcome.
+  function fixHeaderStatus(data) {
+    const badge = document.getElementById('headerBadge');
+    const text = document.getElementById('headerStatusText');
+    if (!badge || !text) return;
+
+    badge.classList.remove('pill-blue', 'pill-green', 'pill-red');
+
+    if (data && data.status === 'success') {
+      text.textContent = 'ACTIVE';
+      badge.classList.add('pill-green');
+    } else if (data && data.attempt) {
+      text.textContent = 'ALREADY';
+      badge.classList.add('pill-blue');
+    } else {
+      text.textContent = 'FAILED';
+      badge.classList.add('pill-red');
+    }
+  }
+
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const isProcessCall = url.indexOf('api/process.js') !== -1;
@@ -131,7 +141,10 @@
 
     if (isProcessCall) {
       promise.then(function (response) {
-        response.clone().json().then(playResultSound).catch(function () {});
+        response.clone().json().then(function (data) {
+          playResultSound(data);
+          fixHeaderStatus(data);
+        }).catch(function () {});
       }).catch(function () {});
     }
 
