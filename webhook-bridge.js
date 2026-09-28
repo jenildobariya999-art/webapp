@@ -13,11 +13,17 @@
  *
  * It also injects a small, animated bot logo badge merged onto the corner
  * of the user's avatar (rotating ring, breathing pulse, moving shine,
- * pulsing live-dot), showing a colored initial derived from the bot's
- * username (?bot=... in the URL). No external photo is fetched - that was
- * unreliable (Telegram's own CDN caching is outside our control). script.js
- * periodically overwrites #avatarBox's innerHTML when it (re)draws the
- * avatar, which would wipe out a badge placed inside it - a
+ * pulsing live-dot). Shows the bot's real Telegram profile photo (?bot=...
+ * in the URL) via the unofficial t.me/i/userpic/... endpoint, with a
+ * per-page-load cache-buster so OUR browser always attempts a fresh fetch
+ * (Telegram's own CDN-side caching of that endpoint is outside our
+ * control, so some staleness there is still possible) - falling back to a
+ * colored initial if the bot has no public photo or the request fails.
+ * Note: the USER's photo (in #avatarBox itself) is drawn entirely by
+ * script.js from Telegram's own WebApp data - this script does not touch
+ * that; if it's missing, that account likely has no Telegram profile photo
+ * set. script.js periodically overwrites #avatarBox's innerHTML when it
+ * (re)draws the avatar, which would wipe out a badge placed inside it - a
  * MutationObserver watches for that and re-inserts the badge every time.
  *
  * It also fixes the header status pill (#headerBadge/#headerStatusText):
@@ -38,11 +44,22 @@
     const el = document.createElement('div');
     el.className = 'bot-logo-inline';
     const initial = botUsername ? botUsername.charAt(0).toUpperCase() : 'B';
+    const fallbackHtml = '<span class="bot-fallback">' + initial + '</span>';
+
+    let photoInner = fallbackHtml;
+    if (botUsername) {
+      // Cache-buster tied to this page load, so every fresh visit forces a
+      // real network attempt rather than reusing our own browser cache.
+      const cacheBust = Date.now();
+      const src = 'https://t.me/i/userpic/320/' + encodeURIComponent(botUsername) + '.jpg?_=' + cacheBust;
+      photoInner = '<img src="' + src + '" alt="" ' +
+        'onerror="this.parentElement.innerHTML=\'' + fallbackHtml.replace(/'/g, '&#39;') + '\'">';
+    }
 
     el.innerHTML =
       '<div class="ring r1"></div>' +
       '<div class="ring r2"></div>' +
-      '<div class="photo"><span class="bot-fallback">' + initial + '</span></div>' +
+      '<div class="photo">' + photoInner + '</div>' +
       '<div class="live-dot"></div>';
 
     return el;
