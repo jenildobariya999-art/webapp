@@ -63,27 +63,44 @@
         <div class="node-center"><i class="fa-solid fa-shield-halved"></i></div>
         <div class="scan-line"></div>
       </div>
+
       <h1>Security Scan</h1>
-      <p class="desc" style="margin-bottom:10px">Checking your device security environment...</p>
+
+      <p class="desc" style="margin-bottom:10px">
+        Checking your device security environment...
+      </p>
+
       <div class="scan-status">
         <div><span>DEVICE INTEGRITY</span><b>●</b></div>
         <div><span>NETWORK SECURITY</span><b>●</b></div>
         <div><span>SESSION VALIDATION</span><b>●</b></div>
       </div>
-      <div class="progress-container"><div class="progress-bar" id="scanBar"></div></div>
+
+      <div class="progress-container">
+        <div class="progress-bar" id="scanBar"></div>
+      </div>
     </div>
 
     <!-- Failed screen -->
     <div class="view-section" id="view-failed">
-      <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
+      <div class="icon-wrapper error">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+
       <h1 class="text-error">Verification Failed</h1>
-      <p class="desc" id="failedMsg">We encountered an issue during verification.</p>
+
+      <p class="desc" id="failedMsg">
+        We encountered an issue during verification.
+      </p>
+
       <div class="action-bar">
-        <button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button>
+        <button class="btn danger" id="btnFailClose">
+          CONTINUE TO BOT
+        </button>
       </div>
     </div>
 
-    <!-- Success screen: animated SVG checkmark (circle draws in, then check strokes in) -->
+    <!-- Success screen -->
     <div class="view-section" id="view-success">
       <div class="icon-wrapper success">
         <svg class="check-svg" viewBox="0 0 52 52">
@@ -91,20 +108,36 @@
           <path class="check-mark" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
         </svg>
       </div>
+
       <h1 class="text-success">Access Granted</h1>
-      <p class="desc">Your device has been successfully verified and secured.</p>
+
+      <p class="desc">
+        Your device has been successfully verified and secured.
+      </p>
+
       <div class="action-bar">
-        <button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button>
+        <button class="btn success" id="btnSuccessClose">
+          CONTINUE TO BOT
+        </button>
       </div>
     </div>
 
     <!-- Already verified screen -->
     <div class="view-section" id="view-already">
-      <div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="icon-wrapper info">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+
       <h1 class="text-info-h">Already Verified</h1>
-      <p class="desc">This device has already been authorized for use.</p>
+
+      <p class="desc">
+        This device has already been authorized for use.
+      </p>
+
       <div class="action-bar">
-        <button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button>
+        <button class="btn primary" id="btnAlreadyClose">
+          CONTINUE TO BOT
+        </button>
       </div>
     </div>
 
@@ -112,7 +145,9 @@
 </div>
 
 <div class="footer">
-  <a href="https://t.me/Jenish_Dobariya1" target="_blank">Designed By Jenil Dobariya</a>
+  <a href="https://t.me/Jenish_Dobariya1" target="_blank">
+    Designed By Jenil Dobariya
+  </a>
 </div>
         <script>
         document.addEventListener('keydown', function(e) {
