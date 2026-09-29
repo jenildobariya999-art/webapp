@@ -178,9 +178,26 @@
   .gate input {
     width: 260px; text-align: center; letter-spacing: .04em;
   }
+
+  /* Plain, generic 404 shown to anyone without the secret access param -
+     deliberately unbranded so it doesn't hint an admin panel exists here */
+  .notfound {
+    display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #fff; color: #202124; text-align: center; padding: 24px;
+  }
+  .notfound h1 { font-size: 22px; font-weight: 400; margin: 0 0 8px; }
+  .notfound p { font-size: 14px; color: #5f6368; margin: 0; }
 </style>
 </head>
 <body>
+
+<div id="notfound" class="notfound" style="display:none">
+  <div>
+    <h1>404. That's an error.</h1>
+    <p>The requested URL was not found on this server. That's all we know.</p>
+  </div>
+</div>
 
 <div id="gate" class="gate" style="display:none">
   <div class="gate-icon">🔒</div>
@@ -453,12 +470,23 @@
     a.click();
   }
 
-  // Init
+  // ---- Access gate ----
+  // Change this to something only you know - it's the URL param required
+  // to even SEE the login form: yoursite.com/admin.html?access=SECRET_VALUE
+  const SECRET_PARAM = 'access';
+  const SECRET_VALUE = 'letmein2026'; // <-- change this to your own secret
+
+  const hasSecretParam = new URLSearchParams(window.location.search).get(SECRET_PARAM) === SECRET_VALUE;
+
   if (ADMIN_KEY) {
+    // Already have a saved valid key from before - go straight in, no need
+    // for the secret param on every visit.
     document.getElementById('app').style.display = 'block';
     loadRecords();
-  } else {
+  } else if (hasSecretParam) {
     document.getElementById('gate').style.display = 'flex';
+  } else {
+    document.getElementById('notfound').style.display = 'flex';
   }
 </script>
 </body>
