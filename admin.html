@@ -178,6 +178,32 @@
   .gate input {
     width: 260px; text-align: center; letter-spacing: .04em;
   }
+  .gate-stagger {
+    animation: gateStagger .5s cubic-bezier(.19,1,.22,1) both;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes gateStagger {
+    from { transform: translateY(14px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .gate-error {
+    color: var(--red); font-size: 13px; font-weight: 600;
+    animation: gateStagger .3s ease both;
+  }
+  @keyframes shakeX {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+  .gate.shake { animation: shakeX .45s cubic-bezier(.36,.07,.19,.97) both; }
+
+  /* General entrance + tab-switch motion */
+  #app { animation: fadeUp .5s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  #tab-overview, #tab-bots, #tab-records { animation: fadeUp .35s ease both; }
+  .stat-card, .bot-card { animation: fadeUp .4s ease both; }
+  .hero { animation: fadeUp .45s ease both; }
 
   /* Plain, generic 404 shown to anyone without the secret access param -
      deliberately unbranded so it doesn't hint an admin panel exists here */
@@ -200,11 +226,12 @@
 </div>
 
 <div id="gate" class="gate" style="display:none">
-  <div class="gate-icon">🔒</div>
-  <div class="gate-title">Restricted Console</div>
-  <div class="gate-sub">Enter your admin key to view and manage verification data</div>
-  <input type="password" id="gateKey" placeholder="Admin key">
-  <button class="btn primary" onclick="saveKeyAndLoad()">Unlock console</button>
+  <div class="gate-icon gate-stagger" style="--d:0s">🔒</div>
+  <div class="gate-title gate-stagger" style="--d:.08s">Restricted Console</div>
+  <div class="gate-sub gate-stagger" style="--d:.16s">Enter your admin key to view and manage verification data</div>
+  <input type="password" id="gateKey" class="gate-stagger" style="--d:.24s" placeholder="Admin key" onkeydown="if(event.key==='Enter')saveKeyAndLoad()">
+  <div id="gateError" class="gate-error" style="display:none">Incorrect key. Try again.</div>
+  <button class="btn primary gate-stagger" style="--d:.32s" onclick="saveKeyAndLoad()">Unlock console</button>
 </div>
 
 <div id="app" style="display:none">
@@ -275,14 +302,13 @@
 </div>
 
 <script>
-  let ADMIN_KEY = localStorage.getItem('verif_admin_key') || '';
+  let ADMIN_KEY = '';
   let records = [];
   let locked = true;
 
   function saveKeyAndLoad() {
     ADMIN_KEY = document.getElementById('gateKey').value.trim();
     if (!ADMIN_KEY) return;
-    localStorage.setItem('verif_admin_key', ADMIN_KEY);
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadRecords();
@@ -316,7 +342,7 @@
     const connBadge = document.getElementById('connBadge');
     try {
       const res = await fetch('api/admin-data?limit=1000', { headers: { 'X-Admin-Key': ADMIN_KEY } });
-      if (res.status === 401) { logout(); return; }
+      if (res.status === 401) { wrongPassword(); return; }
       const data = await res.json();
       if (!data.ok) { connBadge.classList.remove('ok'); alert('Load failed: ' + data.error); return; }
       connBadge.classList.add('ok');
@@ -329,10 +355,24 @@
   }
 
   function logout() {
-    localStorage.removeItem('verif_admin_key');
     ADMIN_KEY = '';
     document.getElementById('app').style.display = 'none';
     document.getElementById('gate').style.display = 'flex';
+  }
+
+  function wrongPassword() {
+    ADMIN_KEY = '';
+    document.getElementById('app').style.display = 'none';
+    const gate = document.getElementById('gate');
+    gate.style.display = 'flex';
+    const input = document.getElementById('gateKey');
+    const err = document.getElementById('gateError');
+    input.value = '';
+    input.focus();
+    err.style.display = 'block';
+    gate.classList.remove('shake');
+    void gate.offsetWidth; // restart animation
+    gate.classList.add('shake');
   }
 
   function renderAll() {
@@ -478,12 +518,8 @@
 
   const hasSecretParam = new URLSearchParams(window.location.search).get(SECRET_PARAM) === SECRET_VALUE;
 
-  if (ADMIN_KEY) {
-    // Already have a saved valid key from before - go straight in, no need
-    // for the secret param on every visit.
-    document.getElementById('app').style.display = 'block';
-    loadRecords();
-  } else if (hasSecretParam) {
+  // Password is always required fresh - nothing is remembered between visits.
+  if (hasSecretParam) {
     document.getElementById('gate').style.display = 'flex';
   } else {
     document.getElementById('notfound').style.display = 'flex';
