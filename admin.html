@@ -66,6 +66,9 @@
   .badge.ok .dot2 { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .badge.on { color: var(--text); border-color: var(--blue); background: var(--blue-soft); }
   .badge.on .dot2 { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+  .badge.checking .dot2 { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: dotPulse .8s ease-in-out infinite; }
+  @keyframes dotPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+  .badge:active { transform: scale(.96); }
 
   .tabs {
     display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--border);
@@ -246,8 +249,10 @@
     </header>
 
     <div class="badge-row">
-      <div class="badge ok" id="connBadge">connection</div>
-      <div class="badge" id="lockBadge" onclick="toggleLock()">lock</div>
+      <div class="badge ok" id="connBadge" title="Click to test connection" onclick="loadRecords()">
+        <span class="dot2"></span><span class="badge-label">connection</span>
+      </div>
+      <div class="badge" id="lockBadge" onclick="toggleLock()"><span class="dot2"></span><span class="badge-label">lock</span></div>
     </div>
 
     <div class="tabs">
@@ -318,7 +323,7 @@
     locked = !locked;
     const b = document.getElementById('lockBadge');
     b.classList.toggle('on', !locked);
-    b.textContent = locked ? 'lock' : 'unlocked';
+    b.querySelector('.badge-label').textContent = locked ? 'lock' : 'unlocked';
     document.querySelectorAll('.del').forEach(el => el.disabled = locked);
     const purge = document.getElementById('purgeBtn');
     purge.classList.toggle('armed', !locked);
@@ -340,16 +345,26 @@
 
   async function loadRecords() {
     const connBadge = document.getElementById('connBadge');
+    connBadge.classList.add('checking');
+    connBadge.querySelector('.badge-label').textContent = 'checking...';
     try {
       const res = await fetch('api/admin-data?limit=1000', { headers: { 'X-Admin-Key': ADMIN_KEY } });
       if (res.status === 401) { wrongPassword(); return; }
       const data = await res.json();
-      if (!data.ok) { connBadge.classList.remove('ok'); alert('Load failed: ' + data.error); return; }
+      connBadge.classList.remove('checking');
+      if (!data.ok) {
+        connBadge.classList.remove('ok');
+        connBadge.querySelector('.badge-label').textContent = 'offline';
+        alert('Load failed: ' + data.error);
+        return;
+      }
       connBadge.classList.add('ok');
+      connBadge.querySelector('.badge-label').textContent = 'connected';
       records = data.records || [];
       renderAll();
     } catch (err) {
-      connBadge.classList.remove('ok');
+      connBadge.classList.remove('ok', 'checking');
+      connBadge.querySelector('.badge-label').textContent = 'offline';
       alert('Network error: ' + err.message);
     }
   }
