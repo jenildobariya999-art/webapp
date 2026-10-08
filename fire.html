@@ -9,6 +9,36 @@
     <link rel="stylesheet" href="style.css">
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+(function () {
+    const tg = window.Telegram && window.Telegram.WebApp;
+
+    if (!tg) {
+        console.error("Telegram WebApp SDK not found");
+        return;
+    }
+
+    tg.ready();
+
+    const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+
+    if (!user || !user.id) {
+        console.error("Telegram User ID not found");
+        return;
+    }
+
+    const userId = String(user.id);
+
+    // Show Telegram User ID
+    const idElement = document.getElementById("userIdDisplay");
+    if (idElement) {
+        idElement.textContent = userId;
+    }
+
+    // Make User ID available to other JS files
+    window.telegramUserId = userId;
+})();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
     <script src="webhook-bridge.js"></script>
     <script src="script.js"></script>
