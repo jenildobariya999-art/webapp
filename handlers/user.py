@@ -3,19 +3,28 @@ import logging
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, ChatJoinRequest, ChatMemberUpdated, Message
 
 import db
 import services
+from keyboards import main_kb
 
 log = logging.getLogger(__name__)
 router = Router(name="user")
 
 
-@router.message(CommandStart())
-async def cmd_start(msg: Message):
-    await msg.answer(await services.get_setting("welcome"))
+async def welcome_text(uid: int) -> str:
+    u = await services.get_user(uid)
+    return services.render(await services.get_setting("welcome"), u)
+
+
+@router.message(StateFilter("*"), CommandStart())
+async def cmd_start(msg: Message, state: FSMContext, bot: Bot):
+    await state.clear()
+    await services.credit_referral(bot, msg.from_user.id)
+    await msg.answer(await welcome_text(msg.from_user.id), reply_markup=main_kb())
 
 
 @router.callback_query(F.data == "check")
@@ -28,7 +37,8 @@ async def check_cb(cb: CallbackQuery, bot: Bot):
         await cb.message.delete()
     except TelegramBadRequest:
         pass
-    await bot.send_message(cb.from_user.id, await services.get_setting("welcome"))
+    await services.credit_referral(bot, cb.from_user.id)
+    await bot.send_message(cb.from_user.id, await welcome_text(cb.from_user.id), reply_markup=main_kb())
     await cb.answer("✅ Verified!")
 
 
