@@ -37,6 +37,7 @@ async def check_cb(cb: CallbackQuery, bot: Bot):
         await cb.message.delete()
     except TelegramBadRequest:
         pass
+    await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=cb.from_user.id)
     await services.credit_referral(bot, cb.from_user.id)
     await bot.send_message(cb.from_user.id, await welcome_text(cb.from_user.id), reply_markup=main_kb())
     await cb.answer("✅ Verified!")

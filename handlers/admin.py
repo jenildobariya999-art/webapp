@@ -2,6 +2,8 @@
 import asyncio
 import html
 import logging
+import re
+import time
 
 from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus
@@ -46,6 +48,11 @@ router.callback_query.filter(IsAdmin())
 class AddChannel(StatesGroup):
     chat = State()
     mode = State()
+
+
+class AddUnchecked(StatesGroup):
+    link = State()
+    title = State()
 
 
 class Broadcast(StatesGroup):
@@ -164,23 +171,33 @@ async def make_link(bot: Bot, chat, request_mode: int) -> str:
     return inv.invite_link
 
 
+def _tag(ch: dict) -> str:
+    if ch["unchecked"]:
+        return "☑️"
+    return "📨" if ch["request_mode"] else "📢"
+
+
 async def render_channels(cb: CallbackQuery):
     rows = await db.fetch("SELECT * FROM channels ORDER BY added, chat_id")
     b = InlineKeyboardBuilder()
     for ch in rows:
-        tag = "📨" if ch["request_mode"] else "📢"
-        b.row(
-            InlineKeyboardButton(text=f"{tag} {ch['title']}"[:30], callback_data=f"a:chinfo:{ch['chat_id']}"),
-            InlineKeyboardButton(text="🔄 Mode", callback_data=f"a:chmode:{ch['chat_id']}"),
-            InlineKeyboardButton(text="🗑", callback_data=f"a:chdel:{ch['chat_id']}"),
-        )
-    b.row(InlineKeyboardButton(text="➕ Add channel", callback_data="a:chadd"))
+        b.row(InlineKeyboardButton(text=f"{_tag(ch)} {ch['title']}"[:40], callback_data=f"a:chinfo:{ch['chat_id']}"))
+        line = []
+        if not ch["unchecked"]:
+            line.append(InlineKeyboardButton(text="🔄 Mode", callback_data=f"a:chmode:{ch['chat_id']}"))
+        line.append(InlineKeyboardButton(
+            text="☑️ Uncheck" if not ch["unchecked"] else "✅ Check", callback_data=f"a:chchk:{ch['chat_id']}"))
+        line.append(InlineKeyboardButton(text="🗑 Delete", callback_data=f"a:chdel:{ch['chat_id']}"))
+        b.row(*line)
+    b.row(InlineKeyboardButton(text="➕ Add channel", callback_data="a:chadd"),
+          InlineKeyboardButton(text="☑️ Add unchecked", callback_data="a:chaddu"))
     b.row(InlineKeyboardButton(text="⬅️ Back", callback_data="a:home"))
     await show(
         cb,
         "📢 <b>Force-join channels</b>\n\n"
-        "📢 normal join   •   📨 join-request (a pending request passes)\n"
-        "Tap a name to see its link, 🔄 to switch mode, 🗑 to delete.\n\n"
+        "📢 normal   •   📨 join-request (pending passes)   •   ☑️ unchecked\n\n"
+        "☑️ <b>Unchecked</b> channels are shown to users as a Join button, but the bot "
+        "<u>doesn't verify</u> membership (the bot doesn't even need to be admin there).\n\n"
         f"Total: <b>{len(rows)}</b>",
         b.as_markup(),
     )
@@ -197,7 +214,7 @@ async def cb_chinfo(cb: CallbackQuery):
     ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=int(cb.data.split(":")[2]))
     if not ch:
         return await cb.answer("Not found", show_alert=True)
-    mode = "Join request" if ch["request_mode"] else "Normal"
+    mode = "Unchecked (display only)" if ch["unchecked"] else ("Join request" if ch["request_mode"] else "Normal")
     await cb.answer(f"{ch['title']}\nMode: {mode}\n{ch['link']}"[:190], show_alert=True)
 
 
@@ -229,13 +246,35 @@ async def cb_chmode(cb: CallbackQuery, bot: Bot):
     await render_channels(cb)
 
 
+@router.callback_query(F.data.startswith("a:chchk:"))
+async def cb_chchk(cb: CallbackQuery, bot: Bot):
+    """Toggle between 'checked' (verified) and 'unchecked' (display only)."""
+    cid = int(cb.data.split(":")[2])
+    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
+    if not ch:
+        return await cb.answer("Not found", show_alert=True)
+    if ch["unchecked"]:
+        try:
+            me = await bot.get_chat_member(cid, bot.id)
+            if me.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
+                raise ValueError
+        except (TelegramAPIError, ValueError):
+            return await cb.answer("❌ To check a channel the bot must be an admin there.", show_alert=True)
+        await db.execute("UPDATE channels SET unchecked=0 WHERE chat_id=:c", c=cid)
+    else:
+        await db.execute("UPDATE channels SET unchecked=1, request_mode=0 WHERE chat_id=:c", c=cid)
+        await db.execute("DELETE FROM join_requests WHERE chat_id=:c", c=cid)
+        await db.execute("UPDATE users SET verified=0")  # show it to everyone once
+    services.invalidate()
+    await render_channels(cb)
+
+
 @router.callback_query(F.data == "a:chadd")
 async def cb_chadd(cb: CallbackQuery, state: FSMContext):
     await state.set_state(AddChannel.chat)
     await show(
         cb,
-        "➕ <b>Add a channel</b>\n\n"
-        "Send the channel <b>@username</b> or numeric <b>ID</b> "
+        "➕ <b>Add a channel</b>\n\nSend the channel <b>@username</b> or numeric <b>ID</b> "
         "(e.g. <code>-1001234567890</code>) — or simply <b>forward any post</b> from it.\n\n"
         "⚠️ The bot must already be an <b>admin</b> there "
         "(with “Invite users via link” for request channels).",
@@ -294,14 +333,107 @@ async def cb_chmode_pick(cb: CallbackQuery, state: FSMContext, bot: Bot):
                 "Give the bot the “Invite users via link” permission.", back("a:ch"),
         )
     await db.execute(
-        "INSERT INTO channels(chat_id, title, link, request_mode) VALUES(:c, :t, :l, :m) "
+        "INSERT INTO channels(chat_id, title, link, request_mode, unchecked) VALUES(:c, :t, :l, :m, 0) "
         "ON CONFLICT(chat_id) DO UPDATE SET title=excluded.title, link=excluded.link, "
-        "request_mode=excluded.request_mode",
+        "request_mode=excluded.request_mode, unchecked=0",
         c=d["chat_id"], t=d["title"], l=link, m=mode,
     )
     services.invalidate()
     await state.clear()
     await show(cb, f"✅ Added <b>{html.escape(d['title'])}</b>", back("a:ch"))
+
+
+# ---- unchecked channels (display-only join buttons) ----
+_USERNAME_RE = re.compile(r"^(?:https?://)?(?:t|telegram)\.me/([A-Za-z][A-Za-z0-9_]{3,31})(?:[/?].*)?$")
+
+
+async def save_unchecked(chat_id: int, title: str, link: str):
+    await db.execute(
+        "INSERT INTO channels(chat_id, title, link, request_mode, unchecked) VALUES(:c, :t, :l, 0, 1) "
+        "ON CONFLICT(chat_id) DO UPDATE SET title=excluded.title, link=excluded.link, "
+        "request_mode=0, unchecked=1",
+        c=chat_id, t=title, l=link,
+    )
+    await db.execute("UPDATE users SET verified=0")  # every user sees the new Join button once
+    services.invalidate()
+
+
+@router.callback_query(F.data == "a:chaddu")
+async def cb_chaddu(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(AddUnchecked.link)
+    await show(
+        cb,
+        "☑️ <b>Add an unchecked channel</b>\n\n"
+        "Users will see a <b>Join</b> button for it, but the bot <u>won't verify</u> that they joined. "
+        "The bot doesn't need to be admin there.\n\n"
+        "Send the channel <b>link</b> (public link or private invite link), its <b>@username</b>, "
+        "or forward a post from it.",
+        back("a:ch"),
+    )
+
+
+@router.message(AddUnchecked.link)
+async def msg_chaddu(m: Message, state: FSMContext, bot: Bot):
+    d = await state.get_data()
+    chat_id, title, link = d.get("chat_id"), d.get("title"), None
+    t = (m.text or "").strip()
+    fo = m.forward_origin
+
+    if fo is not None and getattr(fo, "type", None) == "channel":
+        chat_id, title = fo.chat.id, fo.chat.title
+        try:
+            c = await bot.get_chat(chat_id)
+            title = c.title or title
+            link = f"https://t.me/{c.username}" if c.username else None
+        except TelegramAPIError:
+            pass
+        if not link:
+            try:
+                link = (await bot.create_chat_invite_link(chat_id, name="forcejoin")).invite_link
+            except TelegramAPIError:
+                pass
+    elif t:
+        username = t.lstrip("@") if re.fullmatch(r"@?[A-Za-z][A-Za-z0-9_]{3,31}", t) else None
+        if not username:
+            mm = _USERNAME_RE.match(t)
+            username = mm.group(1) if mm else None
+        if username and username.lower() != "joinchat":
+            link = f"https://t.me/{username}"
+            try:
+                c = await bot.get_chat("@" + username)
+                chat_id, title = c.id, (c.title or title)
+            except TelegramAPIError:
+                pass
+        elif t.startswith(("http://", "https://")):
+            link = t
+
+    if not link:
+        if chat_id and title:
+            await state.update_data(chat_id=chat_id, title=title)
+            return await m.answer(
+                f"I found <b>{html.escape(title)}</b> but couldn't create a link.\n"
+                "Please send its <b>invite link</b> (https://t.me/+…)."
+            )
+        return await m.answer("❌ Send a valid link, an @username, or forward a post from the channel.")
+
+    if title:
+        await save_unchecked(chat_id or int(time.time() * 1000), title, link)
+        await state.clear()
+        return await m.answer(f"✅ Added <b>{html.escape(title)}</b> as ☑️ unchecked.", reply_markup=back("a:ch"))
+
+    await state.update_data(link=link, chat_id=chat_id)
+    await state.set_state(AddUnchecked.title)
+    await m.answer("✍️ Now send the <b>name</b> of this channel (used inside the button if you add <code>{title}</code>).")
+
+
+@router.message(AddUnchecked.title, F.text)
+async def msg_chaddu_title(m: Message, state: FSMContext):
+    d = await state.get_data()
+    title = m.text.strip()[:60]
+    # positive synthetic id: real chat ids are never positive, so no clash
+    await save_unchecked(d.get("chat_id") or int(time.time() * 1000), title, d["link"])
+    await state.clear()
+    await m.answer(f"✅ Added <b>{html.escape(title)}</b> as ☑️ unchecked.", reply_markup=back("a:ch"))
 
 
 # ───────────────────────── settings ─────────────────────────
@@ -316,6 +448,8 @@ TEXTS = {
     "force_text": "🔒 Force-join message",
     "off_text": "🛠 Maintenance message",
     "refer_text": "👥 Refer & Earn message",
+    "join_btn": "🔘 “Join” button label",
+    "check_btn": "🔘 “I've joined” button label",
 }
 NUMS = {
     "refer_reward": ("👥 Referral reward", "₹"),
@@ -328,6 +462,8 @@ HINTS = {
     "force_text": "no placeholders",
     "off_text": "{name}",
     "refer_text": "{link} {reward} {refs} {name}",
+    "join_btn": "{title} {n}",
+    "check_btn": "none",
 }
 
 
@@ -365,6 +501,9 @@ async def cb_toggle(cb: CallbackQuery):
 
 
 # ---- texts ----
+PLAIN = {"join_btn", "check_btn"}  # plain-text button labels (no formatting)
+
+
 @router.callback_query(F.data == "a:txts")
 async def cb_texts(cb: CallbackQuery, state: FSMContext):
     await state.clear()
@@ -377,35 +516,91 @@ async def cb_texts(cb: CallbackQuery, state: FSMContext):
         cb,
         "✏️ <b>Edit texts</b>\n\nPick a message to change. Just send your new text "
         "<b>formatted in Telegram</b> (bold, italic, links, <b>premium emoji</b>) — "
-        "it is detected and saved automatically, <u>no HTML needed</u>.",
+        "it is detected and saved automatically, <u>no HTML needed</u>.\n\n"
+        "You'll always see a live preview, and ♻️ <b>Reset to default</b> restores the original.",
         b.as_markup(),
     )
 
 
+async def send_preview(bot: Bot, chat_id: int, key: str, tg_user):
+    """Show the text exactly as users will see it (rendered, never raw HTML)."""
+    tpl = await services.get_setting(key)
+    if key in PLAIN:
+        if key == "join_btn":
+            label = tpl.replace("{title}", "Channel name").replace("{n}", "1")
+            btn = InlineKeyboardButton(text=label[:60], url="https://t.me/telegram")
+        else:
+            btn = InlineKeyboardButton(text=tpl[:60], callback_data="noop")
+        return await bot.send_message(
+            chat_id, "👁 <b>Preview</b>", reply_markup=InlineKeyboardMarkup(inline_keyboard=[[btn]])
+        )
+    u = await services.get_user(tg_user.id)
+    extra = {}
+    if key == "refer_text":
+        extra = {
+            "link": f"https://t.me/{(await bot.me()).username}?start=ref_{tg_user.id}",
+            "reward": services.fmt(await services.money_setting("refer_reward")),
+        }
+    text = services.render(tpl, u, **extra)
+    try:
+        await bot.send_message(chat_id, text)
+    except TelegramBadRequest:
+        await bot.send_message(chat_id, "⚠️ This text has invalid formatting:\n\n" + text, parse_mode=None)
+
+
+@router.callback_query(F.data == "noop")
+async def cb_noop(cb: CallbackQuery):
+    await cb.answer("👁 Preview only")
+
+
 @router.callback_query(F.data.startswith("a:txt:"))
-async def cb_txt(cb: CallbackQuery, state: FSMContext):
+async def cb_txt(cb: CallbackQuery, state: FSMContext, bot: Bot):
     key = cb.data.split(":")[2]
     if key not in TEXTS:
         return await cb.answer()
     await state.set_state(EditText.value)
     await state.update_data(key=key)
-    cur = html.escape(await services.get_setting(key))[:1500]
+    b = InlineKeyboardBuilder()
+    b.button(text="♻️ Reset to default", callback_data=f"a:txtdef:{key}")
+    b.button(text="⬅️ Back", callback_data="a:txts")
+    b.adjust(1)
+    kind = "plain text (no formatting)" if key in PLAIN else "text, formatting & premium emoji"
     await show(
         cb,
         f"✏️ <b>{TEXTS[key]}</b>\n\n"
         f"🧩 Placeholders: <code>{HINTS[key]}</code>\n\n"
-        f"Current:\n<code>{cur}</code>\n\n"
-        "👉 Send the new message now.",
-        back("a:txts"),
+        f"👇 The current version is previewed below.\n"
+        f"✍️ Send a new message to replace it ({kind}).",
+        b.as_markup(),
     )
+    await send_preview(bot, cb.message.chat.id, key, cb.from_user)
+
+
+@router.callback_query(F.data.startswith("a:txtdef:"))
+async def cb_txtdef(cb: CallbackQuery, state: FSMContext, bot: Bot):
+    key = cb.data.split(":")[2]
+    if key not in TEXTS:
+        return await cb.answer()
+    await services.reset_setting(key)
+    await state.clear()
+    await show(cb, f"♻️ <b>{TEXTS[key]}</b> was reset to the default.\n\n👇 Preview:", back("a:txts"))
+    await send_preview(bot, cb.message.chat.id, key, cb.from_user)
 
 
 @router.message(EditText.value, F.text)
-async def msg_txt(m: Message, state: FSMContext):
+async def msg_txt(m: Message, state: FSMContext, bot: Bot):
     d = await state.get_data()
-    await services.set_setting(d["key"], m.html_text)  # entities (incl. premium emoji) -> HTML automatically
+    key = d["key"]
+    if key in PLAIN:
+        value = m.text.strip()[:60]
+        if not value:
+            return await m.answer("❌ Please send some text.")
+    else:
+        value = m.html_text  # entities (bold, links, premium emoji…) -> stored automatically
+    await services.set_setting(key, value)
     await state.clear()
-    await m.answer("✅ <b>Saved!</b>", reply_markup=back("a:txts"))
+    await m.answer("✅ <b>Saved!</b> This is how it looks:", reply_markup=back("a:txts"))
+    await send_preview(bot, m.chat.id, key, m.from_user)
 
 
 # ---- numbers ----
@@ -430,11 +625,23 @@ async def cb_num(cb: CallbackQuery, state: FSMContext):
     await state.set_state(EditNum.value)
     await state.update_data(key=key)
     label, unit = NUMS[key]
+    b = InlineKeyboardBuilder()
+    b.button(text=f"♻️ Default ({services.DEFAULTS[key]} {unit})", callback_data=f"a:numdef:{key}")
+    b.button(text="⬅️ Back", callback_data="a:nums")
+    b.adjust(1)
     await show(
         cb,
         f"{label}\n\nCurrent: <b>{await services.get_setting(key)}</b> {unit}\n\nSend the new number:",
-        back("a:nums"),
+        b.as_markup(),
     )
+
+
+@router.callback_query(F.data.startswith("a:numdef:"))
+async def cb_numdef(cb: CallbackQuery, state: FSMContext):
+    key = cb.data.split(":")[2]
+    if key in NUMS:
+        await services.reset_setting(key)
+    await cb_nums(cb, state)
 
 
 @router.message(EditNum.value, F.text)
