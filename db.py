@@ -15,6 +15,12 @@ USER_COLUMNS = {
     "refs": "INTEGER NOT NULL DEFAULT 0",
     "upi": "TEXT",
     "last_bonus": "BIGINT NOT NULL DEFAULT 0",   # unix time of last bonus
+    "verified": "INTEGER NOT NULL DEFAULT 0",    # pressed "I've joined" at least once
+}
+
+# columns added to `channels` (unchecked = shown as a Join button but membership is NOT verified)
+CHANNEL_COLUMNS = {
+    "unchecked": "INTEGER NOT NULL DEFAULT 0",
 }
 
 
@@ -65,10 +71,11 @@ async def init():
     async with engine.begin() as conn:
         for stmt in _schema():
             await conn.execute(text(stmt))
-        cols = await conn.run_sync(lambda c: {x["name"] for x in inspect(c).get_columns("users")})
-        for name, ddl in USER_COLUMNS.items():
-            if name not in cols:
-                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {ddl}"))
+        for table, wanted in (("users", USER_COLUMNS), ("channels", CHANNEL_COLUMNS)):
+            cols = await conn.run_sync(lambda c, t=table: {x["name"] for x in inspect(c).get_columns(t)})
+            for name, ddl in wanted.items():
+                if name not in cols:
+                    await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
 
 
 async def fetch(sql: str, **params) -> list[dict]:

@@ -3,13 +3,15 @@
 aiogram 3 • Render (webhook) • PostgreSQL (Neon / Render) • SQLite for local testing
 
 ## Features
-- **Force join** – many channels, normal **and join-request** channels (a pending request counts).
+- **Force join** – many channels: normal, **join-request** (pending request counts) and **☑️ unchecked** (shown as a Join button, never verified).
+- Join buttons show only **Join** (label editable) – the channel type is never shown to users.
 - **User menu** after joining: 💰 Balance · 👥 Refer & Earn · 🎁 Bonus · 💸 Withdrawal · 🏦 Link UPI
 - **Referrals** – reward is paid only after the invited user passes force-join.
 - **Withdrawals** – user requests → admins get Approve / Reject buttons → user is notified (rejections auto-refund).
 - **Admin panel** (`/admin`): stats, channels, broadcast, users (ban / balance), withdrawals,
   settings (Bot ON/OFF, force join, auto-approve, withdrawals ON/OFF, texts, rewards), admins.
 - **Premium emoji + formatting**: send any text/broadcast formatted in Telegram – it's detected automatically (no HTML).
+- **Texts editor**: live rendered preview + ♻️ Reset to default for every text and button label.
 
 ## Environment variables
 | Name | Meaning |

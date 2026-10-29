@@ -24,6 +24,9 @@ DEFAULTS = {
     "bonus_amount": "2",
     "bonus_hours": "24",
     "min_withdraw": "50",
+    # button labels (plain text). {title} = channel name, {n} = channel number
+    "join_btn": "➕ Join",
+    "check_btn": "✅ I've joined",
     # texts (HTML / premium emoji allowed)
     "welcome": (
         "🎉 <b>Welcome, {name}!</b>\n\n"
@@ -66,6 +69,11 @@ async def set_setting(key: str, value: str):
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         k=key, v=value,
     )
+
+
+async def reset_setting(key: str):
+    """Back to the built-in default."""
+    await db.execute("DELETE FROM settings WHERE key=:k", k=key)
 
 
 # ── money helpers (balances are stored in paise) ────────────────
@@ -189,7 +197,7 @@ async def _satisfied(bot: Bot, ch: dict, user_id: int, pending: set[int]) -> boo
 async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> list[dict]:
     if use_cache and _ok_until.get(user_id, 0) > time.monotonic():
         return []
-    channels = await db.fetch("SELECT * FROM channels ORDER BY added, chat_id")
+    channels = await db.fetch("SELECT * FROM channels WHERE unchecked=0 ORDER BY added, chat_id")
     if not channels:
         return []
     rows = await db.fetch("SELECT chat_id FROM join_requests WHERE user_id=:u", u=user_id)
@@ -199,3 +207,13 @@ async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> li
     if not missing:
         mark_ok(user_id)
     return missing
+
+
+async def unchecked_channels() -> list[dict]:
+    """Channels that are only displayed (membership is never verified)."""
+    return await db.fetch("SELECT * FROM channels WHERE unchecked=1 ORDER BY added, chat_id")
+
+
+def merge_channels(*groups) -> list[dict]:
+    allc = [c for g in groups for c in g]
+    return sorted(allc, key=lambda c: (str(c["added"]), c["chat_id"]))
