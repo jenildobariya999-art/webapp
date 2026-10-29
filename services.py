@@ -1,7 +1,9 @@
-"""Shared logic: settings, users, force-join checking."""
+"""Shared logic: settings, users, wallet helpers, force-join checking."""
 import asyncio
+import html
 import logging
 import time
+from decimal import Decimal, InvalidOperation
 
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
@@ -12,13 +14,47 @@ import db
 log = logging.getLogger(__name__)
 
 DEFAULTS = {
+    # switches
+    "bot_enabled": "1",
     "force_join": "1",
     "auto_approve": "0",
-    "welcome": "👋 Welcome! You're all set to use the bot.",
-    "force_text": "🔒 To use this bot, please join the channels below, then press <b>✅ I've joined</b>.",
+    "withdraw_on": "1",
+    # numbers
+    "refer_reward": "5",
+    "bonus_amount": "2",
+    "bonus_hours": "24",
+    "min_withdraw": "50",
+    # texts (HTML / premium emoji allowed)
+    "welcome": (
+        "🎉 <b>Welcome, {name}!</b>\n\n"
+        "You're verified and ready to go 🚀\n\n"
+        "💰 Earn rewards by inviting friends\n"
+        "🎁 Claim your bonus regularly\n"
+        "💸 Withdraw straight to your UPI\n\n"
+        "👇 <i>Pick an option from the menu below.</i>"
+    ),
+    "force_text": (
+        "🔒 <b>Join required</b>\n\n"
+        "To unlock the bot, please join all the channels below, "
+        "then tap <b>✅ I've joined</b>.\n\n"
+        "📨 <i>For request channels, sending a join request is enough!</i>"
+    ),
+    "off_text": (
+        "🛠 <b>We'll be right back!</b>\n\n"
+        "The bot is under maintenance at the moment.\n"
+        "Please try again in a little while 🙏"
+    ),
+    "refer_text": (
+        "👥 <b>Refer & Earn</b>\n\n"
+        "Invite your friends and earn <b>₹{reward}</b> for every friend who joins using your link! 🎁\n\n"
+        "🔗 <b>Your personal link</b>\n{link}\n\n"
+        "👤 Total referrals: <b>{refs}</b>\n\n"
+        "<i>Tap the button below to share it.</i>"
+    ),
 }
 
 
+# ── settings ────────────────────────────────────────────────────
 async def get_setting(key: str) -> str:
     row = await db.fetchone("SELECT value FROM settings WHERE key=:k", k=key)
     return row["value"] if row else DEFAULTS[key]
@@ -32,13 +68,87 @@ async def set_setting(key: str, value: str):
     )
 
 
-async def upsert_user(user):
+# ── money helpers (balances are stored in paise) ────────────────
+def fmt(p) -> str:
+    p = int(p or 0)
+    sign = "-" if p < 0 else ""
+    p = abs(p)
+    return f"{sign}{p // 100}" + (f".{p % 100:02d}" if p % 100 else "")
+
+
+def to_paise(s: str):
+    try:
+        d = Decimal(str(s).strip().replace("₹", "").replace(",", ""))
+    except InvalidOperation:
+        return None
+    if not d.is_finite():
+        return None
+    return int((d * 100).to_integral_value())
+
+
+async def money_setting(key: str) -> int:
+    return to_paise(await get_setting(key)) or 0
+
+
+async def int_setting(key: str) -> int:
+    try:
+        return int(float(await get_setting(key)))
+    except ValueError:
+        return int(float(DEFAULTS[key]))
+
+
+# ── users ───────────────────────────────────────────────────────
+async def upsert_user(user, ref: int | None = None):
+    """Create/update a user. `ref` (referrer id) is stored only when the user is new."""
+    referred_by = None
+    if ref and ref != user.id and await db.fetchone("SELECT 1 AS x FROM users WHERE id=:r", r=ref):
+        referred_by = ref
     await db.execute(
-        "INSERT INTO users(id, username, first_name) VALUES(:i, :u, :f) "
+        "INSERT INTO users(id, username, first_name, referred_by) VALUES(:i, :u, :f, :r) "
         "ON CONFLICT(id) DO UPDATE SET username=excluded.username, "
         "first_name=excluded.first_name, blocked=0",
-        i=user.id, u=user.username, f=user.first_name,
+        i=user.id, u=user.username, f=user.first_name, r=referred_by,
     )
+
+
+async def get_user(uid: int):
+    return await db.fetchone("SELECT * FROM users WHERE id=:i", i=uid)
+
+
+def render(tpl: str, u: dict | None, **extra) -> str:
+    """Fill {placeholders} in admin-editable texts."""
+    vals = {
+        "name": html.escape((u or {}).get("first_name") or "friend"),
+        "id": str(u["id"]) if u else "",
+        "balance": fmt(u["balance"]) if u else "0",
+        "refs": str(u["refs"]) if u else "0",
+    }
+    vals.update(extra)
+    for k, v in vals.items():
+        tpl = tpl.replace("{" + k + "}", str(v))
+    return tpl
+
+
+async def credit_referral(bot: Bot, uid: int):
+    """Pay the referrer once, after the new user passed force-join. Safe to call many times."""
+    u = await get_user(uid)
+    if not u or not u["referred_by"] or u["ref_paid"]:
+        return
+    if not await db.execute("UPDATE users SET ref_paid=1 WHERE id=:u AND ref_paid=0", u=uid):
+        return
+    reward = await money_setting("refer_reward")
+    await db.execute(
+        "UPDATE users SET balance=balance+:r, refs=refs+1 WHERE id=:ref", r=reward, ref=u["referred_by"]
+    )
+    try:
+        await bot.send_message(
+            u["referred_by"],
+            "🎉 <b>New referral!</b>\n\n"
+            f"{html.escape(u['first_name'] or 'Someone')} joined using your link.\n"
+            f"💰 <b>+₹{fmt(reward)}</b> added to your wallet.",
+        )
+    except Exception:
+        pass
 
 
 async def load_admins():

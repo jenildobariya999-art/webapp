@@ -21,8 +21,17 @@ async def send_join_prompt(bot: Bot, user_id: int, missing: list[dict]):
     await bot.send_message(user_id, await services.get_setting("force_text"), reply_markup=kb.as_markup())
 
 
+def _referrer(event) -> int | None:
+    """Extract the referrer id from '/start ref_123'."""
+    if isinstance(event, Message) and event.text and event.text.startswith("/start"):
+        parts = event.text.split(maxsplit=1)
+        if len(parts) == 2 and parts[1].startswith("ref_") and parts[1][4:].isdigit():
+            return int(parts[1][4:])
+    return None
+
+
 class GateMiddleware(BaseMiddleware):
-    """Registers users, drops banned users and enforces force-join."""
+    """Registers users (+referrals), drops banned users, handles bot ON/OFF and force-join."""
 
     async def __call__(self, handler, event, data):
         user = data.get("event_from_user")
@@ -32,7 +41,7 @@ class GateMiddleware(BaseMiddleware):
         if isinstance(event, Message) and event.chat.type != "private" and user.id not in config.ADMINS:
             return  # ignore groups for non-admins
 
-        await services.upsert_user(user)
+        await services.upsert_user(user, _referrer(event))
 
         if user.id in config.ADMINS:
             return await handler(event, data)
@@ -41,6 +50,14 @@ class GateMiddleware(BaseMiddleware):
         if row and row["banned"]:
             if isinstance(event, CallbackQuery):
                 await event.answer("🚫 You are banned.", show_alert=True)
+            return
+
+        # bot OFF -> maintenance message
+        if await services.get_setting("bot_enabled") != "1":
+            if isinstance(event, CallbackQuery):
+                await event.answer("🛠 Bot is under maintenance. Try again later.", show_alert=True)
+            else:
+                await event.answer(await services.get_setting("off_text"))
             return
 
         if isinstance(event, CallbackQuery) and event.data == "check":

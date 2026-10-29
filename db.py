@@ -1,47 +1,74 @@
-"""Tiny async DB layer. Works with SQLite (local) and PostgreSQL (Render)."""
-from sqlalchemy import text
+"""Tiny async DB layer. Works with SQLite (local) and PostgreSQL (Render/Neon).
+Tables are created and old databases are migrated automatically on startup."""
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import config
 
 engine = create_async_engine(config.DATABASE_URL, pool_pre_ping=True)
 
-SCHEMA = [
-    """CREATE TABLE IF NOT EXISTS users(
-        id BIGINT PRIMARY KEY,
-        username TEXT,
-        first_name TEXT,
-        blocked INTEGER NOT NULL DEFAULT 0,
-        banned INTEGER NOT NULL DEFAULT 0,
-        created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )""",
-    """CREATE TABLE IF NOT EXISTS channels(
-        chat_id BIGINT PRIMARY KEY,
-        title TEXT,
-        link TEXT NOT NULL,
-        request_mode INTEGER NOT NULL DEFAULT 0,
-        added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )""",
-    """CREATE TABLE IF NOT EXISTS join_requests(
-        user_id BIGINT NOT NULL,
-        chat_id BIGINT NOT NULL,
-        created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY(user_id, chat_id)
-    )""",
-    """CREATE TABLE IF NOT EXISTS settings(
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-    )""",
-    """CREATE TABLE IF NOT EXISTS admins(
-        user_id BIGINT PRIMARY KEY
-    )""",
-]
+# columns added to `users` for the wallet / referral system (added automatically if missing)
+USER_COLUMNS = {
+    "balance": "BIGINT NOT NULL DEFAULT 0",      # stored in paise (₹1 = 100)
+    "referred_by": "BIGINT",
+    "ref_paid": "INTEGER NOT NULL DEFAULT 0",
+    "refs": "INTEGER NOT NULL DEFAULT 0",
+    "upi": "TEXT",
+    "last_bonus": "BIGINT NOT NULL DEFAULT 0",   # unix time of last bonus
+}
+
+
+def _schema() -> list[str]:
+    pg = engine.dialect.name == "postgresql"
+    pk = "BIGSERIAL PRIMARY KEY" if pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    return [
+        """CREATE TABLE IF NOT EXISTS users(
+            id BIGINT PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            blocked INTEGER NOT NULL DEFAULT 0,
+            banned INTEGER NOT NULL DEFAULT 0,
+            created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS channels(
+            chat_id BIGINT PRIMARY KEY,
+            title TEXT,
+            link TEXT NOT NULL,
+            request_mode INTEGER NOT NULL DEFAULT 0,
+            added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+        """CREATE TABLE IF NOT EXISTS join_requests(
+            user_id BIGINT NOT NULL,
+            chat_id BIGINT NOT NULL,
+            created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id, chat_id)
+        )""",
+        """CREATE TABLE IF NOT EXISTS settings(
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )""",
+        """CREATE TABLE IF NOT EXISTS admins(
+            user_id BIGINT PRIMARY KEY
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS withdrawals(
+            id {pk},
+            user_id BIGINT NOT NULL,
+            amount BIGINT NOT NULL,
+            upi TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""",
+    ]
 
 
 async def init():
     async with engine.begin() as conn:
-        for stmt in SCHEMA:
+        for stmt in _schema():
             await conn.execute(text(stmt))
+        cols = await conn.run_sync(lambda c: {x["name"] for x in inspect(c).get_columns("users")})
+        for name, ddl in USER_COLUMNS.items():
+            if name not in cols:
+                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {ddl}"))
 
 
 async def fetch(sql: str, **params) -> list[dict]:
@@ -61,9 +88,18 @@ async def scalar(sql: str, **params):
         return res.scalar()
 
 
-async def execute(sql: str, **params):
+async def execute(sql: str, **params) -> int:
+    """Run a write statement, returns number of affected rows."""
     async with engine.begin() as conn:
-        await conn.execute(text(sql), params)
+        res = await conn.execute(text(sql), params)
+        return res.rowcount or 0
+
+
+async def insert_returning(sql: str, **params):
+    """INSERT ... and return the new row id."""
+    async with engine.begin() as conn:
+        res = await conn.execute(text(sql + " RETURNING id"), params)
+        return res.scalar()
 
 
 async def close():

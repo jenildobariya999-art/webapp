@@ -10,7 +10,7 @@ from aiohttp import web
 import config
 import db
 import services
-from handlers import admin, user
+from handlers import admin, menu, user
 from middleware import GateMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -45,6 +45,7 @@ def build() -> tuple[Bot, Dispatcher]:
     dp.message.outer_middleware(gate)
     dp.callback_query.outer_middleware(gate)
     dp.include_router(admin.router)  # admin first so FSM states win
+    dp.include_router(menu.router)
     dp.include_router(user.router)
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
