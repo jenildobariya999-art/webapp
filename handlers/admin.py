@@ -137,7 +137,7 @@ async def cmd_admin(m: Message, state: FSMContext):
 @router.message(ANY, Command("cancel"))
 async def cmd_cancel(m: Message, state: FSMContext):
     await state.clear()
-    await m.answer("✖️ Cancelled.", reply_markup=menu_kb(m.from_user.id))
+    await m.answer("✖️ Cancelled.")
 
 
 @router.callback_query(F.data == "a:home")
@@ -349,7 +349,8 @@ async def cb_chedit(cb: CallbackQuery, state: FSMContext):
         cb,
         f"✏️ <b>New {'request ' if which == 'req' else ''}link</b>\n\n"
         f"Current:\n{html.escape(cur or '—')}\n\n"
-        "Send the new link (<code>https://t.me/…</code> or <code>@username</code>).",
+        "Send the new link (<code>https://t.me/…</code> or <code>@username</code>).\n"
+        "✅ It will be used for users immediately.",
         back(f"a:chlink:{cid}"),
     )
 
@@ -360,11 +361,19 @@ async def msg_editlink(m: Message, state: FSMContext):
     link = normalize_link(m.text)
     if not link:
         return await m.answer("❌ Send a valid link, e.g. <code>https://t.me/+AbCd…</code> or <code>@username</code>")
-    col = "req_link" if d["which"] == "req" else "link"  # fixed whitelist, never user input
-    await db.execute(f"UPDATE channels SET {col}=:l WHERE chat_id=:c", l=link, c=d["cid"])
+    is_req = d["which"] == "req"
+    col = "req_link" if is_req else "link"  # fixed whitelist, never user input
+    # the link you just changed becomes the one users get, automatically
+    await db.execute(
+        f"UPDATE channels SET {col}=:l, request_mode=:m WHERE chat_id=:c",
+        l=link, m=1 if is_req else 0, c=d["cid"],
+    )
     services.invalidate()
     await state.clear()
-    await m.answer("✅ <b>Link updated.</b>", reply_markup=back(f"a:chlink:{d['cid']}"))
+    await m.answer(
+        f"✅ <b>{'Request' if is_req else 'Normal'} link updated</b> and now in use — users get it right away.",
+        reply_markup=back(f"a:chlink:{d['cid']}"),
+    )
 
 
 @router.callback_query(F.data.regexp(r"^a:chregen:-?\d+$"))

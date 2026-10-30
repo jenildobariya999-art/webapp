@@ -37,6 +37,7 @@ async def check_cb(cb: CallbackQuery, bot: Bot):
         await cb.message.delete()
     except TelegramBadRequest:
         pass
+    await services.clear_extra(bot, cb.from_user.id)  # the extra message is deleted together with the prompt
     await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=cb.from_user.id)
     await services.credit_referral(bot, cb.from_user.id)
     await services.send_rich(bot, cb.from_user.id, "welcome", await welcome_text(cb.from_user.id), main_kb())
