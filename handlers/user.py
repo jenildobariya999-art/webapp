@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery, ChatJoinRequest, ChatMemberUpdated, Mes
 import db
 import services
 from keyboards import main_kb
+from middleware import send_join_prompt
 
 log = logging.getLogger(__name__)
 router = Router(name="user")
@@ -29,19 +30,19 @@ async def cmd_start(msg: Message, state: FSMContext, bot: Bot):
 
 @router.callback_query(F.data == "check")
 async def check_cb(cb: CallbackQuery, bot: Bot):
-    missing = await services.missing_channels(bot, cb.from_user.id, use_cache=False)
+    uid = cb.from_user.id
+    missing = await services.missing_channels(bot, uid, use_cache=False)
+    # Claim always removes THIS join message and its extra message (only these two, only on Claim)
+    await services.delete_prompt(bot, uid, cb.message.message_id)
     if missing:
-        names = ", ".join(c["title"] or "channel" for c in missing)
-        return await cb.answer(f"❌ You still need to join: {names}"[:190], show_alert=True)
-    try:
-        await cb.message.delete()
-    except TelegramBadRequest:
-        pass
-    await services.clear_extra(bot, cb.from_user.id)  # the extra message is deleted together with the prompt
-    await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=cb.from_user.id)
-    await services.credit_referral(bot, cb.from_user.id)
-    await services.send_rich(bot, cb.from_user.id, "welcome", await welcome_text(cb.from_user.id), main_kb())
-    await cb.answer("✅ Verified!")
+        # no pop-up: just show a fresh join message (+ extra message)
+        unchecked = await services.unchecked_channels()
+        await send_join_prompt(bot, uid, services.merge_channels(missing, unchecked))
+        return await cb.answer()
+    await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=uid)
+    await services.credit_referral(bot, uid)
+    await services.send_rich(bot, uid, "welcome", await welcome_text(uid), main_kb())
+    await cb.answer()
 
 
 @router.chat_join_request()

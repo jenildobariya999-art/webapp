@@ -75,6 +75,16 @@ class Broadcast(StatesGroup):
     confirm = State()
 
 
+class MenuAdd(StatesGroup):
+    name = State()
+    reply = State()
+
+
+class MenuEdit(StatesGroup):
+    name = State()
+    reply = State()
+
+
 class EditText(StatesGroup):
     value = State()
 
@@ -722,6 +732,7 @@ TOGGLES = {
     "auto_approve": "📨 Auto-approve requests",
     "withdraw_on": "💸 Withdrawals",
     "notify_new_user": "🔔 New-user alerts",
+    "wallet_on": "💼 Wallet menu (Balance, Refer…)",
 }
 TEXTS = {
     "welcome": "👋 Welcome message",
@@ -760,14 +771,16 @@ async def render_settings(cb: CallbackQuery):
         b.button(text=f"{label}: {'ON ✅' if on else 'OFF ❌'}", callback_data=f"a:tog:{key}")
     b.button(text="✏️ Texts", callback_data="a:txts")
     b.button(text="💰 Rewards & limits", callback_data="a:nums")
+    b.button(text="🧭 Menu buttons", callback_data="a:menu")
     b.button(text="🎨 Button colors", callback_data="a:styles")
     b.button(text="⬅️ Back", callback_data="a:home")
-    b.adjust(1, 1, 1, 1, 1, 2, 1, 1)
+    b.adjust(1, 1, 1, 1, 1, 1, 2, 2, 1)
     await show(
         cb,
         "⚙️ <b>Settings</b>\n\nTap a switch to turn it ON/OFF.\n"
         "🤖 <b>Bot OFF</b> shows the maintenance message to all users (admins can still use it).\n"
-        "🔔 <b>New-user alerts</b> message every admin when someone starts the bot.",
+        "🔔 <b>New-user alerts</b> message every admin when someone starts the bot.\n"
+        "💼 <b>Wallet menu</b> shows/hides Balance, Refer & Earn, Bonus, Withdrawal and Link UPI.",
         b.as_markup(),
     )
 
@@ -926,15 +939,209 @@ async def msg_txt_photo(m: Message, state: FSMContext, bot: Bot):
     await send_preview(bot, m.chat.id, key, m.from_user)
 
 
+# ---- 🧭 menu buttons: name + reply, fully editable ----
+def extract_reply(m: Message):
+    """(html text, photo file_id) of an admin message — formatting & premium emoji are kept automatically."""
+    photo = m.photo[-1].file_id if m.photo else None
+    text = m.html_text if (m.text or m.caption) else None
+    return text, photo
+
+
+async def render_menu(cb: CallbackQuery):
+    rows = []
+    for i, b in enumerate(services.MENU, 1):
+        rows.append([InlineKeyboardButton(text=f"{i}. {b['label']}"[:60], callback_data=f"a:mb:{b['id']}")])
+    rows.append([InlineKeyboardButton(text="➕ Add button", callback_data="a:mbadd")])
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:set")])
+    wallet = "ON" if services.setting("wallet_on") == "1" else "OFF"
+    await show(
+        cb,
+        "🧭 <b>Menu buttons</b>\n\nThese are the buttons users see at the bottom of the chat. "
+        "Tap one to change its <b>name</b> or the <b>reply</b> it sends (text, photo, premium emoji).\n\n"
+        f"💼 Wallet menu (Balance, Refer & Earn, Bonus, Withdrawal, Link UPI): <b>{wallet}</b> — switch it in Settings.\n"
+        "<i>Users see changes the next time they send /start.</i>",
+        InlineKeyboardMarkup(inline_keyboard=rows),
+    )
+
+
+async def send_mb_preview(bot: Bot, chat_id: int, b: dict, tg_user):
+    """The reply exactly as users get it."""
+    u = await services.get_user(tg_user.id)
+    text = services.render(b["reply"] or "", u)
+    try:
+        await services.send_photo_text(bot, chat_id, b["photo"], text)
+    except TelegramBadRequest:
+        await bot.send_message(chat_id, "⚠️ This reply has invalid formatting:\n\n" + text, parse_mode=None)
+
+
+async def render_mb(cb: CallbackQuery, bot: Bot, bid: int, preview: bool = True):
+    b = await db.fetchone("SELECT * FROM menu_buttons WHERE id=:i", i=bid)
+    if not b:
+        return await render_menu(cb)
+    st = b["style"] or ""
+    rows = [
+        [InlineKeyboardButton(text="✏️ Name", callback_data=f"a:mbname:{bid}"),
+         InlineKeyboardButton(text="✏️ Reply", callback_data=f"a:mbreply:{bid}")],
+        [icons.btn(f"{STYLE_DOT.get(st, '⚪')} Color", cb=f"a:mbstyle:{bid}", style=st or None),
+         InlineKeyboardButton(text="🗑 Delete", callback_data=f"a:mbdel:{bid}")],
+    ]
+    if b["photo"]:
+        rows.append([InlineKeyboardButton(text="🗑 Remove photo", callback_data=f"a:mbnophoto:{bid}")])
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:menu")])
+    await show(
+        cb,
+        f"🧭 <b>{html.escape(b['label'])}</b>\n\n👇 The reply users get is previewed below.\n"
+        "🎨 <b>Color</b> cycles ⚪ → 🔵 → 🟢 → 🔴 for this button.",
+        InlineKeyboardMarkup(inline_keyboard=rows),
+    )
+    if preview:
+        await send_mb_preview(bot, cb.message.chat.id, b, cb.from_user)
+
+
+@router.callback_query(F.data == "a:menu")
+async def cb_menu(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await render_menu(cb)
+
+
+@router.callback_query(F.data.regexp(r"^a:mb:\d+$"))
+async def cb_mb(cb: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.clear()
+    await render_mb(cb, bot, int(cb.data.split(":")[2]))
+
+
+@router.callback_query(F.data.startswith("a:mbstyle:"))
+async def cb_mbstyle(cb: CallbackQuery, bot: Bot):
+    bid = int(cb.data.split(":")[2])
+    b = await db.fetchone("SELECT style FROM menu_buttons WHERE id=:i", i=bid)
+    if b:
+        cur = b["style"] if b["style"] in STYLE_CYCLE else ""
+        nxt = STYLE_CYCLE[(STYLE_CYCLE.index(cur) + 1) % len(STYLE_CYCLE)]
+        await db.execute("UPDATE menu_buttons SET style=:s WHERE id=:i", s=nxt, i=bid)
+        await services.load_menu()
+    await render_mb(cb, bot, bid, preview=False)
+
+
+@router.callback_query(F.data.startswith("a:mbdel:"))
+async def cb_mbdel(cb: CallbackQuery):
+    await db.execute("DELETE FROM menu_buttons WHERE id=:i", i=int(cb.data.split(":")[2]))
+    await services.load_menu()
+    await render_menu(cb)
+
+
+@router.callback_query(F.data.startswith("a:mbnophoto:"))
+async def cb_mbnophoto(cb: CallbackQuery, bot: Bot):
+    bid = int(cb.data.split(":")[2])
+    await db.execute("UPDATE menu_buttons SET photo=NULL WHERE id=:i", i=bid)
+    await services.load_menu()
+    await render_mb(cb, bot, bid)
+
+
+# -- edit name --
+@router.callback_query(F.data.startswith("a:mbname:"))
+async def cb_mbname(cb: CallbackQuery, state: FSMContext):
+    bid = int(cb.data.split(":")[2])
+    await state.set_state(MenuEdit.name)
+    await state.update_data(bid=bid)
+    await show(cb, "✏️ Send the <b>new name</b> for this button.", back(f"a:mb:{bid}"))
+
+
+@router.message(MenuEdit.name, F.text)
+async def msg_mbname(m: Message, state: FSMContext):
+    d = await state.get_data()
+    label = " ".join(m.text.split())[:60]
+    if not label:
+        return await m.answer("❌ Please send a name.")
+    if any(x["label"] == label and x["id"] != d["bid"] for x in services.MENU):
+        return await m.answer("❌ Another button already has this name. Send a different one.")
+    await db.execute("UPDATE menu_buttons SET label=:l WHERE id=:i", l=label, i=d["bid"])
+    await services.load_menu()
+    await state.clear()
+    await m.answer("✅ <b>Name updated.</b>", reply_markup=back(f"a:mb:{d['bid']}"))
+
+
+# -- edit reply --
+@router.callback_query(F.data.startswith("a:mbreply:"))
+async def cb_mbreply(cb: CallbackQuery, state: FSMContext):
+    bid = int(cb.data.split(":")[2])
+    await state.set_state(MenuEdit.reply)
+    await state.update_data(bid=bid)
+    await show(
+        cb,
+        "✏️ Send the <b>new reply</b> — <b>text</b>, or a <b>photo with caption</b>.\n"
+        "Bold, italic, links and <b>premium emoji</b> are kept automatically (no HTML needed).\n"
+        "🧩 Placeholders: <code>{name} {balance} {refs} {id}</code>",
+        back(f"a:mb:{bid}"),
+    )
+
+
+@router.message(MenuEdit.reply, F.text | F.photo)
+async def msg_mbreply(m: Message, state: FSMContext, bot: Bot):
+    d = await state.get_data()
+    text, photo = extract_reply(m)
+    if photo:
+        await db.execute("UPDATE menu_buttons SET photo=:p WHERE id=:i", p=photo, i=d["bid"])
+    if text is not None:
+        await db.execute("UPDATE menu_buttons SET reply=:r WHERE id=:i", r=text, i=d["bid"])
+    await services.load_menu()
+    await state.clear()
+    await m.answer("✅ <b>Reply saved!</b> This is how it looks:", reply_markup=back(f"a:mb:{d['bid']}"))
+    b = await db.fetchone("SELECT * FROM menu_buttons WHERE id=:i", i=d["bid"])
+    if b:
+        await send_mb_preview(bot, m.chat.id, b, m.from_user)
+
+
+# -- add a new button: name, then reply --
+@router.callback_query(F.data == "a:mbadd")
+async def cb_mbadd(cb: CallbackQuery, state: FSMContext):
+    await state.set_state(MenuAdd.name)
+    await show(cb, "➕ <b>New menu button</b>\n\nSend the button <b>name</b>, e.g. <code>New yono app</code>.", back("a:menu"))
+
+
+@router.message(MenuAdd.name, F.text)
+async def msg_mbadd_name(m: Message, state: FSMContext):
+    label = " ".join(m.text.split())[:60]
+    if not label:
+        return await m.answer("❌ Please send a name.")
+    if any(x["label"] == label for x in services.MENU):
+        return await m.answer("❌ A button with this name already exists. Send a different name.")
+    await state.update_data(label=label)
+    await state.set_state(MenuAdd.reply)
+    await m.answer(
+        "✍️ Now send the <b>reply</b> users get when they tap it — text, or a photo with caption "
+        "(formatting & premium emoji are kept)."
+    )
+
+
+@router.message(MenuAdd.reply, F.text | F.photo)
+async def msg_mbadd_reply(m: Message, state: FSMContext, bot: Bot):
+    d = await state.get_data()
+    text, photo = extract_reply(m)
+    pos = int(await db.scalar("SELECT COALESCE(MAX(pos),0) FROM menu_buttons") or 0) + 1
+    bid = await db.insert_returning(
+        "INSERT INTO menu_buttons(label, reply, photo, pos) VALUES(:l, :r, :p, :o)",
+        l=d["label"], r=text or "", p=photo, o=pos,
+    )
+    await services.load_menu()
+    await state.clear()
+    await m.answer(
+        f"✅ Button <b>{html.escape(d['label'])}</b> added. Users see it after their next /start.",
+        reply_markup=back("a:menu"),
+    )
+    b = await db.fetchone("SELECT * FROM menu_buttons WHERE id=:i", i=bid)
+    if b:
+        await send_mb_preview(bot, m.chat.id, b, m.from_user)
+
+
 # ---- 🎨 button colors (primary / success / danger) ----
 STYLE_KEYS = {
     "join_btn": "Join button",
     "check_btn": "Claim button",
-    "btn_balance": "Balance (menu)",
-    "btn_refer": "Refer & Earn (menu)",
-    "btn_bonus": "Bonus (menu)",
-    "btn_withdraw": "Withdrawal (menu)",
-    "btn_upi": "Link UPI (menu)",
+    "btn_balance": "Balance (wallet menu)",
+    "btn_refer": "Refer & Earn (wallet menu)",
+    "btn_bonus": "Bonus (wallet menu)",
+    "btn_withdraw": "Withdrawal (wallet menu)",
+    "btn_upi": "Link UPI (wallet menu)",
 }
 STYLE_CYCLE = ["", "primary", "success", "danger"]
 STYLE_DOT = {"": "⚪", "primary": "🔵", "success": "🟢", "danger": "🔴"}
@@ -952,7 +1159,8 @@ async def render_styles(cb: CallbackQuery):
         cb,
         "🎨 <b>Button colors</b>\n\nTap a button to change its color:\n"
         "⚪ default → 🔵 primary → 🟢 success → 🔴 danger\n\n"
-        "Join is 🔵 and Claim is 🟢 by default. Menu colors reach users the next time they send /start.",
+        "Join is 🔵 and Claim is 🟢 by default. Custom menu buttons get their color on their own page "
+        "(Settings → Menu buttons). Menu colors reach users the next time they send /start.",
         InlineKeyboardMarkup(inline_keyboard=rows),
     )
 

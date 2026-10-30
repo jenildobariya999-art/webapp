@@ -26,8 +26,21 @@ class MenuBtn(BaseFilter):
         self.key = key
 
     async def __call__(self, m: Message) -> bool:
+        if services.setting("wallet_on") != "1":
+            return False  # wallet menu is switched off
         t = (m.text or "").strip()
         return bool(t) and t in {services.setting(self.key), services.DEFAULTS[self.key]}
+
+
+class CustomBtn(BaseFilter):
+    """Matches the label of a custom menu button and hands that button to the handler."""
+
+    async def __call__(self, m: Message):
+        t = (m.text or "").strip()
+        for b in services.MENU:
+            if b["label"] == t:
+                return {"mbtn": b}
+        return False
 
 
 UPI_RE = re.compile(r"^[a-zA-Z0-9.\-_]{2,64}@[a-zA-Z0-9]{2,64}$")
@@ -61,6 +74,15 @@ async def cb_cancel(cb: CallbackQuery, state: FSMContext):
     except Exception:
         pass
     await cb.answer()
+
+
+# ───────────── custom menu buttons (reply text is edited in the admin panel) ─────────────
+@router.message(ANY, CustomBtn())
+async def custom_button(m: Message, state: FSMContext, bot: Bot, mbtn: dict):
+    await state.clear()
+    u = await services.get_user(m.from_user.id)
+    text = services.render(mbtn["reply"] or "", u)
+    await services.send_photo_text(bot, m.chat.id, mbtn["photo"], text)
 
 
 # ───────────── 💰 Balance ─────────────
