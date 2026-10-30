@@ -4,6 +4,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
@@ -16,19 +17,57 @@ from middleware import GateMiddleware
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("main")
 
+_tasks: set = set()  # keep references so background tasks aren't garbage-collected
+
+
+async def init_database():
+    """DB init with retries (e.g. Neon waking up from sleep)."""
+    delay = 2
+    for attempt in range(1, 8):
+        try:
+            await db.init()
+            await services.load_admins()
+            return
+        except Exception as e:
+            log.warning("Database not ready (attempt %s): %s", attempt, e)
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 20)
+    await db.init()  # last try – raise the real error
+    await services.load_admins()
+
+
+async def setup_telegram(bot: Bot):
+    """Talk to Telegram with endless retries, so a network hiccup never crashes the service."""
+    delay = 3
+    while True:
+        try:
+            me = await bot.get_me()
+            if config.WEBHOOK_URL:
+                url = config.WEBHOOK_URL + config.WEBHOOK_PATH
+                await bot.set_webhook(url, secret_token=config.WEBHOOK_SECRET, allowed_updates=config.ALLOWED_UPDATES)
+                log.info("Started as @%s | webhook set: %s | db=%s", me.username, url, config.DATABASE_URL.split("://")[0])
+            else:
+                await bot.delete_webhook()
+                log.info("Started as @%s | long polling | db=%s", me.username, config.DATABASE_URL.split("://")[0])
+            return
+        except TelegramUnauthorizedError:
+            log.error("❌ BOT_TOKEN is invalid. Fix it in Render → Environment and redeploy.")
+            return
+        except Exception as e:
+            log.warning("Telegram not reachable yet (%s). Retrying in %ss…", e, delay)
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 60)
+
 
 async def on_startup(bot: Bot):
-    await db.init()
-    await services.load_admins()
-    me = await bot.get_me()
-    log.info("Started as @%s | db=%s", me.username, config.DATABASE_URL.split("://")[0])
+    await init_database()
     if config.WEBHOOK_URL:
-        url = config.WEBHOOK_URL + config.WEBHOOK_PATH
-        await bot.set_webhook(url, secret_token=config.WEBHOOK_SECRET, allowed_updates=config.ALLOWED_UPDATES)
-        log.info("Webhook set: %s", url)
+        # don't block the web server: Render needs the port open quickly
+        t = asyncio.create_task(setup_telegram(bot))
+        _tasks.add(t)
+        t.add_done_callback(_tasks.discard)
     else:
-        await bot.delete_webhook()
-        log.info("No WEBHOOK_URL -> long polling")
+        await setup_telegram(bot)
 
 
 async def on_shutdown(bot: Bot):
