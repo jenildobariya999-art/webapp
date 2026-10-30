@@ -16,6 +16,7 @@ USER_COLUMNS = {
     "upi": "TEXT",
     "last_bonus": "BIGINT NOT NULL DEFAULT 0",   # unix time of last bonus
     "verified": "INTEGER NOT NULL DEFAULT 0",    # pressed "I've joined" at least once
+    "extra_msg": "TEXT",                         # message id of the extra force-join message (deleted after Claim)
 }
 
 # columns added to `channels` (unchecked = shown as a Join button but membership is NOT verified)

@@ -17,7 +17,7 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
     """Join buttons only say 'Join' (label + premium icon are editable) — the channel type is never shown.
     The message can carry a photo, and an optional extra message is sent right after it."""
     join_tpl = services.setting("join_btn")
-    rows = []
+    join_btns = []
     for i, ch in enumerate(channels, 1):
         if ch["kind"] == "social":
             label = ch["title"] or "Link"
@@ -25,14 +25,17 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
         else:
             label = join_tpl.replace("{title}", ch["title"] or "Channel").replace("{n}", str(i))
             iid = ch["icon"] or icons.icon("join_btn")
-        rows.append([icons.btn(label[:60], url=services.join_url(ch), icon_id=iid)])
+        join_btns.append(icons.btn(label[:60], url=services.join_url(ch), icon_id=iid))
+    rows = [join_btns[i:i + 2] for i in range(0, len(join_btns), 2)]  # 2 Join buttons per line
     rows.append([icons.btn(services.setting("check_btn")[:60], cb="check", icon_id=icons.icon("check_btn"))])
     markup = InlineKeyboardMarkup(inline_keyboard=rows)
 
     await services.send_rich(bot, user_id, "force_text", services.setting("force_text"), markup)
+    await services.clear_extra(bot, user_id)  # never leave an old extra message behind
     extra = services.setting("force_extra")
     if extra.strip():
-        await services.send_rich(bot, user_id, "force_extra", extra)
+        sent = await services.send_rich(bot, user_id, "force_extra", extra)
+        await db.execute("UPDATE users SET extra_msg=:m WHERE id=:u", m=str(sent.message_id), u=user_id)
 
 
 def _referrer(event) -> int | None:

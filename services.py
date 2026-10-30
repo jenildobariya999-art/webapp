@@ -291,3 +291,16 @@ def join_url(ch: dict) -> str:
     if ch.get("request_mode") and ch.get("req_link"):
         return ch["req_link"]
     return ch["link"]
+
+
+async def clear_extra(bot: Bot, uid: int):
+    """Delete the 'extra message' that was sent with the force-join prompt (if any)."""
+    row = await db.fetchone("SELECT extra_msg FROM users WHERE id=:i", i=uid)
+    if not row or not row["extra_msg"]:
+        return
+    for mid in str(row["extra_msg"]).split(","):
+        try:
+            await bot.delete_message(uid, int(mid))
+        except Exception:
+            pass  # already deleted / too old
+    await db.execute("UPDATE users SET extra_msg=NULL WHERE id=:i", i=uid)
