@@ -24,7 +24,7 @@ async def welcome_text(uid: int) -> str:
 async def cmd_start(msg: Message, state: FSMContext, bot: Bot):
     await state.clear()
     await services.credit_referral(bot, msg.from_user.id)
-    await msg.answer(await welcome_text(msg.from_user.id), reply_markup=main_kb())
+    await services.send_rich(bot, msg.chat.id, "welcome", await welcome_text(msg.from_user.id), main_kb())
 
 
 @router.callback_query(F.data == "check")
@@ -39,7 +39,7 @@ async def check_cb(cb: CallbackQuery, bot: Bot):
         pass
     await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=cb.from_user.id)
     await services.credit_referral(bot, cb.from_user.id)
-    await bot.send_message(cb.from_user.id, await welcome_text(cb.from_user.id), reply_markup=main_kb())
+    await services.send_rich(bot, cb.from_user.id, "welcome", await welcome_text(cb.from_user.id), main_kb())
     await cb.answer("✅ Verified!")
 
 

@@ -6,18 +6,29 @@ import time
 from urllib.parse import quote
 
 from aiogram import Bot, F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import BaseFilter, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import config
 import services
-from keyboards import BTN_BALANCE, BTN_BONUS, BTN_REFER, BTN_UPI, BTN_WITHDRAW, main_kb, wd_kb
+from keyboards import main_kb, wd_kb
 
 log = logging.getLogger(__name__)
 router = Router(name="menu")
 ANY = StateFilter("*")  # menu buttons work even if the user is in the middle of a flow
+
+class MenuBtn(BaseFilter):
+    """Matches a menu button by its (admin-editable) label — the old default label also keeps working."""
+
+    def __init__(self, key: str):
+        self.key = key
+
+    async def __call__(self, m: Message) -> bool:
+        t = (m.text or "").strip()
+        return bool(t) and t in {services.setting(self.key), services.DEFAULTS[self.key]}
+
 
 UPI_RE = re.compile(r"^[a-zA-Z0-9.\-_]{2,64}@[a-zA-Z0-9]{2,64}$")
 
@@ -53,7 +64,7 @@ async def cb_cancel(cb: CallbackQuery, state: FSMContext):
 
 
 # ───────────── 💰 Balance ─────────────
-@router.message(ANY, F.text == BTN_BALANCE)
+@router.message(ANY, MenuBtn("btn_balance"))
 async def balance(m: Message, state: FSMContext):
     await state.clear()
     u = await services.get_user(m.from_user.id)
@@ -69,7 +80,7 @@ async def balance(m: Message, state: FSMContext):
 
 
 # ───────────── 👥 Refer & Earn ─────────────
-@router.message(ANY, F.text == BTN_REFER)
+@router.message(ANY, MenuBtn("btn_refer"))
 async def refer(m: Message, state: FSMContext, bot: Bot):
     await state.clear()
     u = await services.get_user(m.from_user.id)
@@ -84,7 +95,7 @@ async def refer(m: Message, state: FSMContext, bot: Bot):
 
 
 # ───────────── 🎁 Bonus ─────────────
-@router.message(ANY, F.text == BTN_BONUS)
+@router.message(ANY, MenuBtn("btn_bonus"))
 async def bonus(m: Message, state: FSMContext):
     await state.clear()
     amount = await services.money_setting("bonus_amount")
@@ -114,7 +125,7 @@ async def bonus(m: Message, state: FSMContext):
 
 
 # ───────────── 🏦 Link UPI ─────────────
-@router.message(ANY, F.text == BTN_UPI)
+@router.message(ANY, MenuBtn("btn_upi"))
 async def upi_start(m: Message, state: FSMContext):
     u = await services.get_user(m.from_user.id)
     await state.set_state(LinkUpi.upi)
@@ -138,7 +149,7 @@ async def upi_save(m: Message, state: FSMContext):
 
 
 # ───────────── 💸 Withdrawal ─────────────
-@router.message(ANY, F.text == BTN_WITHDRAW)
+@router.message(ANY, MenuBtn("btn_withdraw"))
 async def wd_start(m: Message, state: FSMContext):
     await state.clear()
     if await services.get_setting("withdraw_on") != "1":
