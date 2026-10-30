@@ -301,57 +301,35 @@ async def cb_joinmode(cb: CallbackQuery):
     await render_channels(cb)
 
 
-# ---- tap on a channel name: see + change its link(s) ----
+# ---- tap on a channel name: straight away ask for the new link ----
 def two_links(ch: dict) -> bool:
     """Real, verified channels carry two auto-generated links (normal + request)."""
     return ch["kind"] == "channel" and ch["chat_id"] < 0 and not ch["unchecked"]
 
 
-async def render_link_editor(cb: CallbackQuery, cid: int):
+@router.callback_query(F.data.regexp(r"^a:chlink:-?\d+$"))
+async def cb_chlink(cb: CallbackQuery, state: FSMContext):
+    cid = int(cb.data.split(":")[2])
     ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
     if not ch:
         return await render_channels(cb)
-    title = html.escape(ch["title"] or str(cid))
+    # the link that is currently in use is the one that gets replaced
+    which = "req" if (two_links(ch) and ch["request_mode"]) else "link"
+    await state.set_state(EditLink.link)
+    await state.update_data(cid=cid, which=which)
+    cur = (ch["req_link"] if which == "req" else ch["link"]) or "—"
+    kind = "📨 request link" if which == "req" else ("📢 normal link" if two_links(ch) else "link")
     rows = []
     if two_links(ch):
-        req_on = bool(ch["request_mode"])
-        text = (
-            f"🔗 <b>{title}</b>\n\n"
-            f"📢 <b>Normal link</b>{'' if req_on else '  ✅ in use'}\n{html.escape(ch['link'])}\n\n"
-            f"📨 <b>Request link</b>{'  ✅ in use' if req_on else ''}\n{html.escape(ch['req_link'] or '—')}\n\n"
-            "Tap a button to replace a link, or auto-generate fresh ones.\n"
-            "<i>Switch which one users get from 👀 details.</i>"
-        )
-        rows.append([InlineKeyboardButton(text="✏️ Normal link", callback_data=f"a:chedit:{cid}:link"),
-                     InlineKeyboardButton(text="✏️ Request link", callback_data=f"a:chedit:{cid}:req")])
-        rows.append([InlineKeyboardButton(text="♻️ Auto-generate both", callback_data=f"a:chregen:{cid}")])
-    else:
-        text = f"🔗 <b>{title}</b>\n\nCurrent link:\n{html.escape(ch['link'])}\n\nTap the button to replace it."
-        rows.append([InlineKeyboardButton(text="✏️ Change link", callback_data=f"a:chedit:{cid}:link")])
-    rows.append([pb("⬅️", "Back", "a:ch")])
-    await show(cb, text, InlineKeyboardMarkup(inline_keyboard=rows))
-
-
-@router.callback_query(F.data.regexp(r"^a:chlink:-?\d+$"))
-async def cb_chlink(cb: CallbackQuery, state: FSMContext):
-    await state.clear()
-    await render_link_editor(cb, int(cb.data.split(":")[2]))
-
-
-@router.callback_query(F.data.regexp(r"^a:chedit:-?\d+:(link|req)$"))
-async def cb_chedit(cb: CallbackQuery, state: FSMContext):
-    _, _, cid, which = cb.data.split(":")
-    await state.set_state(EditLink.link)
-    await state.update_data(cid=int(cid), which=which)
-    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=int(cid))
-    cur = (ch["req_link"] if which == "req" else ch["link"]) if ch else ""
+        rows.append([InlineKeyboardButton(text="♻️ Auto-generate new links", callback_data=f"a:chregen:{cid}")])
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:ch")])
     await show(
         cb,
-        f"✏️ <b>New {'request ' if which == 'req' else ''}link</b>\n\n"
-        f"Current:\n{html.escape(cur or '—')}\n\n"
-        "Send the new link (<code>https://t.me/…</code> or <code>@username</code>).\n"
-        "✅ It will be used for users immediately.",
-        back(f"a:chlink:{cid}"),
+        f"✏️ <b>{html.escape(ch['title'] or str(cid))}</b>\n\n"
+        f"Current {kind} (in use):\n{html.escape(cur)}\n\n"
+        "👉 Send the <b>new link</b> now (<code>https://t.me/…</code> or <code>@username</code>).\n"
+        "It replaces this link and is used for users immediately.",
+        InlineKeyboardMarkup(inline_keyboard=rows),
     )
 
 
@@ -363,7 +341,6 @@ async def msg_editlink(m: Message, state: FSMContext):
         return await m.answer("❌ Send a valid link, e.g. <code>https://t.me/+AbCd…</code> or <code>@username</code>")
     is_req = d["which"] == "req"
     col = "req_link" if is_req else "link"  # fixed whitelist, never user input
-    # the link you just changed becomes the one users get, automatically
     await db.execute(
         f"UPDATE channels SET {col}=:l, request_mode=:m WHERE chat_id=:c",
         l=link, m=1 if is_req else 0, c=d["cid"],
@@ -371,13 +348,13 @@ async def msg_editlink(m: Message, state: FSMContext):
     services.invalidate()
     await state.clear()
     await m.answer(
-        f"✅ <b>{'Request' if is_req else 'Normal'} link updated</b> and now in use — users get it right away.",
-        reply_markup=back(f"a:chlink:{d['cid']}"),
+        f"✅ <b>Link updated</b> — users get the new link right away.",
+        reply_markup=back("a:ch"),
     )
 
 
 @router.callback_query(F.data.regexp(r"^a:chregen:-?\d+$"))
-async def cb_chregen(cb: CallbackQuery, bot: Bot):
+async def cb_chregen(cb: CallbackQuery, state: FSMContext, bot: Bot):
     cid = int(cb.data.split(":")[2])
     ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
     if not ch:
@@ -389,12 +366,17 @@ async def cb_chregen(cb: CallbackQuery, bot: Bot):
     normal, req, warn = await build_links(bot, chat)
     if not normal and not req:
         return await cb.answer(f"❌ {warn}"[:190], show_alert=True)
-    await db.execute(
-        "UPDATE channels SET link=:l, req_link=:r WHERE chat_id=:c",
-        l=normal or ch["link"], r=req or ch["req_link"], c=cid,
-    )
+    normal, req = normal or ch["link"], req or ch["req_link"]
+    await db.execute("UPDATE channels SET link=:l, req_link=:r WHERE chat_id=:c", l=normal, r=req, c=cid)
     services.invalidate()
-    await render_link_editor(cb, cid)
+    await state.clear()
+    await show(
+        cb,
+        "♻️ <b>New links generated</b>\n\n"
+        f"📢 Normal:\n{html.escape(normal or '—')}\n\n📨 Request:\n{html.escape(req or '—')}\n\n"
+        f"In use: <b>{'request' if ch['request_mode'] else 'normal'}</b> link.",
+        back("a:ch"),
+    )
 
 
 # ---- 👀 channel details ----
@@ -422,7 +404,7 @@ async def render_channel_view(cb: CallbackQuery, bot: Bot, cid: int):
         pend = await db.scalar("SELECT COUNT(*) FROM join_requests WHERE chat_id=:c", c=cid)
         if pend:
             text += f"\n📨 Pending join requests: <b>{pend}</b>"
-    rows = [[InlineKeyboardButton(text="🔗 Links", callback_data=f"a:chlink:{cid}")]]
+    rows = [[InlineKeyboardButton(text="✏️ Change link", callback_data=f"a:chlink:{cid}")]]
     if two_links(ch) or (ch["kind"] == "channel" and cid < 0):
         line = []
         if not ch["unchecked"]:
@@ -778,8 +760,9 @@ async def render_settings(cb: CallbackQuery):
         b.button(text=f"{label}: {'ON ✅' if on else 'OFF ❌'}", callback_data=f"a:tog:{key}")
     b.button(text="✏️ Texts", callback_data="a:txts")
     b.button(text="💰 Rewards & limits", callback_data="a:nums")
+    b.button(text="🎨 Button colors", callback_data="a:styles")
     b.button(text="⬅️ Back", callback_data="a:home")
-    b.adjust(1, 1, 1, 1, 1, 2, 1)
+    b.adjust(1, 1, 1, 1, 1, 2, 1, 1)
     await show(
         cb,
         "⚙️ <b>Settings</b>\n\nTap a switch to turn it ON/OFF.\n"
@@ -833,9 +816,9 @@ async def send_preview(bot: Bot, chat_id: int, key: str, tg_user):
         iid = icons.icon(key)
         if key == "join_btn":
             label = label.replace("{title}", "Channel name").replace("{n}", "1")
-            btn = icons.btn(label[:60], url="https://t.me/telegram", icon_id=iid)
+            btn = icons.btn(label[:60], url="https://t.me/telegram", icon_id=iid, style=icons.style_of(key))
         else:
-            btn = icons.btn(label[:60], cb="noop", icon_id=iid)
+            btn = icons.btn(label[:60], cb="noop", icon_id=iid, style=icons.style_of(key))
         return await bot.send_message(chat_id, "👁 <b>Preview</b>", reply_markup=rows_kb([[btn]]))
     tpl = services.setting(key)
     if not tpl.strip():
@@ -941,6 +924,59 @@ async def msg_txt_photo(m: Message, state: FSMContext, bot: Bot):
     await state.clear()
     await m.answer("✅ <b>Saved!</b> This is how it looks:", reply_markup=back("a:txts"))
     await send_preview(bot, m.chat.id, key, m.from_user)
+
+
+# ---- 🎨 button colors (primary / success / danger) ----
+STYLE_KEYS = {
+    "join_btn": "Join button",
+    "check_btn": "Claim button",
+    "btn_balance": "Balance (menu)",
+    "btn_refer": "Refer & Earn (menu)",
+    "btn_bonus": "Bonus (menu)",
+    "btn_withdraw": "Withdrawal (menu)",
+    "btn_upi": "Link UPI (menu)",
+}
+STYLE_CYCLE = ["", "primary", "success", "danger"]
+STYLE_DOT = {"": "⚪", "primary": "🔵", "success": "🟢", "danger": "🔴"}
+
+
+async def render_styles(cb: CallbackQuery):
+    rows = []
+    for key, label in STYLE_KEYS.items():
+        cur = icons.style_of(key) or ""
+        # each button wears its own colour, so this page is a live preview
+        rows.append([icons.btn(f"{STYLE_DOT[cur]} {label}", cb=f"a:style:{key}", style=cur or None)])
+    rows.append([InlineKeyboardButton(text="♻️ Reset colors", callback_data="a:styledef")])
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:set")])
+    await show(
+        cb,
+        "🎨 <b>Button colors</b>\n\nTap a button to change its color:\n"
+        "⚪ default → 🔵 primary → 🟢 success → 🔴 danger\n\n"
+        "Join is 🔵 and Claim is 🟢 by default. Menu colors reach users the next time they send /start.",
+        InlineKeyboardMarkup(inline_keyboard=rows),
+    )
+
+
+@router.callback_query(F.data == "a:styles")
+async def cb_styles(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await render_styles(cb)
+
+
+@router.callback_query(F.data.regexp(r"^a:style:[a-z_]+$"))
+async def cb_style(cb: CallbackQuery):
+    key = cb.data.split(":")[2]
+    if key in STYLE_KEYS:
+        cur = icons.style_of(key) or ""
+        await services.set_setting(f"style:{key}", STYLE_CYCLE[(STYLE_CYCLE.index(cur) + 1) % len(STYLE_CYCLE)])
+    await render_styles(cb)
+
+
+@router.callback_query(F.data == "a:styledef")
+async def cb_styledef(cb: CallbackQuery):
+    for key in STYLE_KEYS:
+        await services.reset_setting(f"style:{key}")
+    await render_styles(cb)
 
 
 # ---- numbers ----
