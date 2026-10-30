@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiogram import BaseMiddleware, Bot
@@ -9,6 +10,7 @@ import icons
 import services
 
 log = logging.getLogger(__name__)
+_bg: set = set()  # keeps background tasks alive
 
 
 async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
@@ -23,7 +25,7 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
         else:
             label = join_tpl.replace("{title}", ch["title"] or "Channel").replace("{n}", str(i))
             iid = ch["icon"] or icons.icon("join_btn")
-        rows.append([icons.btn(label[:60], url=ch["link"], icon_id=iid)])
+        rows.append([icons.btn(label[:60], url=services.join_url(ch), icon_id=iid)])
     rows.append([icons.btn(services.setting("check_btn")[:60], cb="check", icon_id=icons.icon("check_btn"))])
     markup = InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -53,7 +55,11 @@ class GateMiddleware(BaseMiddleware):
         if isinstance(event, Message) and event.chat.type != "private" and user.id not in config.ADMINS:
             return  # ignore groups for non-admins
 
-        await services.upsert_user(user, _referrer(event))
+        is_new = await services.upsert_user(user, _referrer(event))
+        if is_new and user.id not in config.ADMINS:
+            t = asyncio.create_task(services.notify_new_user(data["bot"], user))
+            _bg.add(t)
+            t.add_done_callback(_bg.discard)
 
         if user.id in config.ADMINS:
             return await handler(event, data)

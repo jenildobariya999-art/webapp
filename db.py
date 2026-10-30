@@ -24,6 +24,7 @@ CHANNEL_COLUMNS = {
     "kind": "TEXT NOT NULL DEFAULT 'channel'",   # 'channel' | 'social' (link button only)
     "pos": "INTEGER NOT NULL DEFAULT 0",         # order in the panel (⬆️ ⬇️)
     "icon": "TEXT",                              # premium-emoji id for this button (social links)
+    "req_link": "TEXT",                          # auto-generated join-REQUEST invite link (link = normal link)
 }
 
 

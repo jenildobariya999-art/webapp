@@ -1,4 +1,4 @@
-"""Premium (custom) emoji on buttons.
+"""Premium (custom) emoji on the Join / Claim / social-link buttons.
 
 Telegram shows a custom emoji in front of a button's text via `icon_custom_emoji_id`.
 Icon ids are stored in the settings table as  icon:<key>  and cached in memory.
@@ -14,22 +14,6 @@ from aiogram.types import InlineKeyboardButton, Message
 import services
 
 log = logging.getLogger(__name__)
-
-# icons the admin can customise on the channel panel (key -> label shown in the editor)
-PANEL_ICONS = {
-    "del": "❌ Delete",
-    "up": "⬆️ Move up",
-    "down": "⬇️ Move down",
-    "view": "👀 View",
-    "add": "➕ Add channel",
-    "social": "🔗 Add social link",
-    "unc": "☑️ Add uncheck channel",
-    "stats": "📊 Joined stats",
-    "cbc": "📡 Channel broadcast",
-    "mode": "🎛 Join mode",
-    "back": "⬅️ Back",
-}
-
 
 def icon(key: str) -> str | None:
     return services.setting(f"icon:{key}") or None
@@ -47,14 +31,6 @@ def btn(text: str, *, cb: str | None = None, url: str | None = None, icon_id: st
     """Inline button, optionally with a premium-emoji icon."""
     extra = {"icon_custom_emoji_id": icon_id} if icon_id else {}
     return InlineKeyboardButton(text=text, callback_data=cb, url=url, **extra)
-
-
-def pbtn(key: str, emoji: str, text: str = "", *, cb: str | None = None, url: str | None = None) -> InlineKeyboardButton:
-    """Panel button. No icon set -> normal emoji + text. Icon set -> premium icon (+ text, or invisible text)."""
-    iid = icon(key)
-    if iid:
-        return btn(text or "\u2800", cb=cb, url=url, icon_id=iid)
-    return btn(f"{emoji} {text}".strip(), cb=cb, url=url)
 
 
 # ── reading premium emoji out of an admin message ───────────────

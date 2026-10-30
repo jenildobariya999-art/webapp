@@ -21,6 +21,7 @@ DEFAULTS = {
     "auto_approve": "0",
     "withdraw_on": "1",
     "join_mode": "all",          # all = must join every channel, any = one is enough
+    "notify_new_user": "1",      # tell admins when a new user starts the bot
     # numbers
     "refer_reward": "5",
     "bonus_amount": "2",
@@ -28,7 +29,7 @@ DEFAULTS = {
     "min_withdraw": "50",
     # button labels (plain text). {title} = channel name, {n} = channel number
     "join_btn": "➕ Join",
-    "check_btn": "✅ I've joined",
+    "check_btn": "✅ Claim",
     "btn_balance": "💰 Balance",
     "btn_refer": "👥 Refer & Earn",
     "btn_bonus": "🎁 Bonus",
@@ -46,7 +47,7 @@ DEFAULTS = {
     "force_text": (
         "🔒 <b>Join required</b>\n\n"
         "To unlock the bot, please join all the channels below, "
-        "then tap <b>✅ I've joined</b>.\n\n"
+        "then tap <b>✅ Claim</b>.\n\n"
         "📨 <i>For request channels, sending a join request is enough!</i>"
     ),
     "force_extra": "",           # optional 2nd message sent right after the force-join message
@@ -144,8 +145,9 @@ async def int_setting(key: str) -> int:
 
 
 # ── users ───────────────────────────────────────────────────────
-async def upsert_user(user, ref: int | None = None):
+async def upsert_user(user, ref: int | None = None) -> bool:
     """Create/update a user. `ref` (referrer id) is stored only when the user is new."""
+    existed = await db.fetchone("SELECT 1 AS x FROM users WHERE id=:i", i=user.id)
     referred_by = None
     if ref and ref != user.id and await db.fetchone("SELECT 1 AS x FROM users WHERE id=:r", r=ref):
         referred_by = ref
@@ -155,6 +157,30 @@ async def upsert_user(user, ref: int | None = None):
         "first_name=excluded.first_name, blocked=0",
         i=user.id, u=user.username, f=user.first_name, r=referred_by,
     )
+    return existed is None  # True -> first time we see this user
+
+
+async def notify_new_user(bot: Bot, user):
+    """Tell every admin that someone new started the bot (switchable in Settings)."""
+    if setting("notify_new_user") != "1":
+        return
+    u = await get_user(user.id)
+    total = await db.scalar("SELECT COUNT(*) FROM users")
+    ref = f"\n🔗 Referred by: <code>{u['referred_by']}</code>" if u and u["referred_by"] else ""
+    uname = f" (@{user.username})" if user.username else ""
+    text = (
+        "🆕 <b>New user!</b>\n\n"
+        f"👤 {html.escape(user.full_name)}{uname}\n"
+        f"🆔 <code>{user.id}</code>{ref}\n\n"
+        f"👥 Total users: <b>{total}</b>"
+    )
+    for aid in list(config.ADMINS):
+        if aid == user.id:
+            continue
+        try:
+            await bot.send_message(aid, text)
+        except Exception:
+            pass
 
 
 async def get_user(uid: int):
@@ -229,7 +255,7 @@ async def _satisfied(bot: Bot, ch: dict, user_id: int, pending: set[int]) -> boo
         return True
     if m.status in _OK or (m.status == ChatMemberStatus.RESTRICTED and getattr(m, "is_member", False)):
         return True
-    return bool(ch["request_mode"] and ch["chat_id"] in pending)
+    return ch["chat_id"] in pending  # a pending join request counts as joined
 
 
 async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> list[dict]:
@@ -258,3 +284,10 @@ async def unchecked_channels() -> list[dict]:
 def merge_channels(*groups) -> list[dict]:
     allc = [c for g in groups for c in g]
     return sorted(allc, key=lambda c: (c["pos"], str(c["added"]), c["chat_id"]))
+
+
+def join_url(ch: dict) -> str:
+    """The link a user gets: request link when the channel is in request mode, else the normal link."""
+    if ch.get("request_mode") and ch.get("req_link"):
+        return ch["req_link"]
+    return ch["link"]
