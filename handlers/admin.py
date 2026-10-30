@@ -1,4 +1,4 @@
-"""Admin panel (/admin): stats, channels, broadcast, users, withdrawals, settings, admins."""
+"""Admin panel (/admin): stats, channels, broadcast, users, settings, menu buttons, admins."""
 import asyncio
 import html
 import logging
@@ -29,7 +29,6 @@ import config
 import db
 import icons
 import services
-from keyboards import wd_kb
 
 log = logging.getLogger(__name__)
 router = Router(name="admin")
@@ -89,16 +88,8 @@ class EditText(StatesGroup):
     value = State()
 
 
-class EditNum(StatesGroup):
-    value = State()
-
-
 class UserLookup(StatesGroup):
     query = State()
-
-
-class AdjustBal(StatesGroup):
-    amount = State()
 
 
 class AddAdmin(StatesGroup):
@@ -127,7 +118,6 @@ def menu_kb(user_id: int) -> InlineKeyboardMarkup:
     b.button(text="📢 Channels", callback_data="a:ch")
     b.button(text="📨 Broadcast", callback_data="a:bc")
     b.button(text="👥 Users", callback_data="a:users")
-    b.button(text="💸 Withdrawals", callback_data="a:wd")
     b.button(text="⚙️ Settings", callback_data="a:set")
     if user_id in config.OWNERS:
         b.button(text="👮 Admins", callback_data="a:adm")
@@ -162,23 +152,19 @@ async def cb_stats(cb: CallbackQuery):
     total = await db.scalar("SELECT COUNT(*) FROM users")
     blocked = await db.scalar("SELECT COUNT(*) FROM users WHERE blocked=1")
     banned = await db.scalar("SELECT COUNT(*) FROM users WHERE banned=1")
+    verified = await db.scalar("SELECT COUNT(*) FROM users WHERE verified=1")
     chans = await db.scalar("SELECT COUNT(*) FROM channels")
     reqs = await db.scalar("SELECT COUNT(*) FROM join_requests")
-    owed = int(await db.scalar("SELECT COALESCE(SUM(balance),0) FROM users") or 0)
-    paid = int(await db.scalar("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE status='paid'") or 0)
-    pend = await db.fetchone("SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS s FROM withdrawals WHERE status='pending'")
     await show(
         cb,
         "📊 <b>Statistics</b>\n\n"
         f"👥 Total users: <b>{total}</b>\n"
         f"✅ Reachable: <b>{total - blocked - banned}</b>\n"
         f"🚫 Blocked the bot: <b>{blocked}</b>\n"
-        f"⛔ Banned: <b>{banned}</b>\n\n"
+        f"⛔ Banned: <b>{banned}</b>\n"
+        f"🎯 Passed force-join (Claim): <b>{verified}</b>\n\n"
         f"📢 Force-join channels: <b>{chans}</b>\n"
         f"📨 Stored join requests: <b>{reqs}</b>\n\n"
-        f"💰 Wallet balances (owed): <b>₹{services.fmt(owed)}</b>\n"
-        f"⏳ Pending withdrawals: <b>{pend['n']}</b> (₹{services.fmt(pend['s'])})\n"
-        f"✅ Total paid out: <b>₹{services.fmt(paid)}</b>\n\n"
         f"👮 Admins: <b>{len(config.ADMINS)}</b>",
         back(),
     )
@@ -262,13 +248,13 @@ async def render_channels(cb: CallbackQuery):
             pb("⬇️", "", f"a:chdn:{cid}"),
             pb("👀", "", f"a:chview:{cid}"),
         ])
-    any_mode = services.setting("join_mode") == "any"
+    only_pending = services.setting("join_mode") == "not_joined"
     kb += [
         [pb("➕", "Add Channel", "a:chadd")],
         [pb("➕", "Add Social Link", "a:chaddsoc")],
         [pb("➕", "Add Uncheck Channel", "a:chaddu")],
         [pb("📡", "Channel Broadcast", "a:chbc")],
-        [pb("🎛", f"Join Mode: {'Any One Channel' if any_mode else 'All Channels'}", "a:joinmode")],
+        [pb("🎛", f"Join Mode: {'Not Joined Only' if only_pending else 'Show All Channels'}", "a:joinmode")],
         [pb("⬅️", "Back", "a:home")],
     ]
     await show(
@@ -276,7 +262,7 @@ async def render_channels(cb: CallbackQuery):
         "📢 <b>Force-join channels</b>\n\n"
         "Tap a <b>name</b> to change its link • ❌ delete • ⬆️⬇️ reorder • 👀 details\n"
         "📨 request mode  •  ☑️ unchecked  •  🔗 social link\n\n"
-        f"🎛 <b>Join mode:</b> {'users must join <u>any one</u> channel' if any_mode else 'users must join <u>all</u> channels'}\n"
+        f"🎛 <b>Join mode:</b> {'the join message shows only the channels the user has <u>not joined</u> yet' if only_pending else 'the join message shows <u>all</u> channels'}\n"
         f"Total: <b>{len(rows)}</b>",
         InlineKeyboardMarkup(inline_keyboard=kb),
     )
@@ -306,7 +292,7 @@ async def cb_chmove(cb: CallbackQuery):
 
 @router.callback_query(F.data == "a:joinmode")
 async def cb_joinmode(cb: CallbackQuery):
-    await services.set_setting("join_mode", "all" if services.setting("join_mode") == "any" else "any")
+    await services.set_setting("join_mode", "all" if services.setting("join_mode") == "not_joined" else "not_joined")
     services.invalidate()
     await render_channels(cb)
 
@@ -730,32 +716,22 @@ TOGGLES = {
     "bot_enabled": "🤖 Bot",
     "force_join": "🔒 Force join",
     "auto_approve": "📨 Auto-approve requests",
-    "withdraw_on": "💸 Withdrawals",
     "notify_new_user": "🔔 New-user alerts",
-    "wallet_on": "💼 Wallet menu (Balance, Refer…)",
 }
 TEXTS = {
     "welcome": "👋 Welcome message",
     "force_text": "🔒 Force-join message",
     "force_extra": "➕ Extra message (after force-join)",
     "off_text": "🛠 Maintenance message",
-    "refer_text": "👥 Refer & Earn message",
     "join_btn": "🔘 Join button",
     "check_btn": "🔘 Claim button",
 }
 BTN_KEYS = {"join_btn", "check_btn"}  # short button labels (plain text, optional premium-emoji icon)
 LABELS = TEXTS
 MEDIA_KEYS = {"welcome", "force_text", "force_extra"}  # these can carry a photo
-NUMS = {
-    "refer_reward": ("👥 Referral reward", "₹"),
-    "bonus_amount": ("🎁 Bonus amount", "₹"),
-    "bonus_hours": ("⏳ Bonus cooldown", "hours"),
-    "min_withdraw": ("📉 Min. withdrawal", "₹"),
-}
 HINTS = {
-    "welcome": "{name} {balance} {refs} {id}",
+    "welcome": "{name} {id}",
     "off_text": "{name}",
-    "refer_text": "{link} {reward} {refs} {name}",
     "join_btn": "{title} {n}",
 }
 
@@ -770,17 +746,15 @@ async def render_settings(cb: CallbackQuery):
         on = services.setting(key) == "1"
         b.button(text=f"{label}: {'ON ✅' if on else 'OFF ❌'}", callback_data=f"a:tog:{key}")
     b.button(text="✏️ Texts", callback_data="a:txts")
-    b.button(text="💰 Rewards & limits", callback_data="a:nums")
     b.button(text="🧭 Menu buttons", callback_data="a:menu")
     b.button(text="🎨 Button colors", callback_data="a:styles")
     b.button(text="⬅️ Back", callback_data="a:home")
-    b.adjust(1, 1, 1, 1, 1, 1, 2, 2, 1)
+    b.adjust(1, 1, 1, 1, 2, 1, 1)
     await show(
         cb,
         "⚙️ <b>Settings</b>\n\nTap a switch to turn it ON/OFF.\n"
         "🤖 <b>Bot OFF</b> shows the maintenance message to all users (admins can still use it).\n"
-        "🔔 <b>New-user alerts</b> message every admin when someone starts the bot.\n"
-        "💼 <b>Wallet menu</b> shows/hides Balance, Refer & Earn, Bonus, Withdrawal and Link UPI.",
+        "🔔 <b>New-user alerts</b> message every admin when someone starts the bot.",
         b.as_markup(),
     )
 
@@ -836,14 +810,7 @@ async def send_preview(bot: Bot, chat_id: int, key: str, tg_user):
     tpl = services.setting(key)
     if not tpl.strip():
         return await bot.send_message(chat_id, "ℹ️ <i>Not set — this extra message is currently disabled.</i>")
-    u = await services.get_user(tg_user.id)
-    extra = {}
-    if key == "refer_text":
-        extra = {
-            "link": f"https://t.me/{(await bot.me()).username}?start=ref_{tg_user.id}",
-            "reward": services.fmt(await services.money_setting("refer_reward")),
-        }
-    text = services.render(tpl, u, **extra)
+    text = services.render(tpl, await services.get_user(tg_user.id))
     try:
         await services.send_rich(bot, chat_id, key, text)
     except TelegramBadRequest:
@@ -852,7 +819,7 @@ async def send_preview(bot: Bot, chat_id: int, key: str, tg_user):
 
 @router.callback_query(F.data == "noop")
 async def cb_noop(cb: CallbackQuery):
-    await cb.answer("👁 Preview only")
+    await cb.answer()
 
 
 @router.callback_query(F.data.startswith("a:txt:"))
@@ -939,7 +906,7 @@ async def msg_txt_photo(m: Message, state: FSMContext, bot: Bot):
     await send_preview(bot, m.chat.id, key, m.from_user)
 
 
-# ---- 🧭 menu buttons: name + reply, fully editable ----
+# ---- 🧭 menu buttons: name + reply + layout ----
 def extract_reply(m: Message):
     """(html text, photo file_id) of an admin message — formatting & premium emoji are kept automatically."""
     photo = m.photo[-1].file_id if m.photo else None
@@ -947,23 +914,110 @@ def extract_reply(m: Message):
     return text, photo
 
 
+def layout_text() -> str:
+    lines = []
+    for i, line in enumerate(services.layout_rows(services.MENU), 1):
+        lines.append(f"Line {i}:  " + "  |  ".join(html.escape(b["label"]) for b in line))
+    return "\n".join(lines) or "<i>No buttons yet.</i>"
+
+
 async def render_menu(cb: CallbackQuery):
     rows = []
     for i, b in enumerate(services.MENU, 1):
         rows.append([InlineKeyboardButton(text=f"{i}. {b['label']}"[:60], callback_data=f"a:mb:{b['id']}")])
-    rows.append([InlineKeyboardButton(text="➕ Add button", callback_data="a:mbadd")])
+    rows.append([InlineKeyboardButton(text="➕ Add button", callback_data="a:mbadd"),
+                 InlineKeyboardButton(text="📐 Layout", callback_data="a:mblay")])
     rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:set")])
-    wallet = "ON" if services.setting("wallet_on") == "1" else "OFF"
     await show(
         cb,
         "🧭 <b>Menu buttons</b>\n\nThese are the buttons users see at the bottom of the chat. "
-        "Tap one to change its <b>name</b> or the <b>reply</b> it sends (text, photo, premium emoji).\n\n"
-        f"💼 Wallet menu (Balance, Refer & Earn, Bonus, Withdrawal, Link UPI): <b>{wallet}</b> — switch it in Settings.\n"
+        "Tap one to change its <b>name</b>, the <b>reply</b> it sends (text, photo, premium emoji) or its <b>color</b>.\n\n"
+        f"<b>Current layout</b>\n{layout_text()}\n\n"
+        "📐 <b>Layout</b> decides how many buttons sit on one line.\n"
         "<i>Users see changes the next time they send /start.</i>",
         InlineKeyboardMarkup(inline_keyboard=rows),
     )
 
 
+# ---- 📐 layout: how many buttons per line, order ----
+async def move_menu(bid: int, delta: int):
+    ids = [b["id"] for b in services.MENU]
+    if bid in ids:
+        i = ids.index(bid)
+        j = i + delta
+        if 0 <= j < len(ids):
+            ids[i], ids[j] = ids[j], ids[i]
+        for pos, x in enumerate(ids, 1):
+            await db.execute("UPDATE menu_buttons SET pos=:p WHERE id=:i", p=pos, i=x)
+        await services.load_menu()
+
+
+async def render_layout(cb: CallbackQuery):
+    rows = [[InlineKeyboardButton(text=f"{n} per line", callback_data=f"a:mbpre:{n}") for n in (1, 2, 3)]]
+    for i, b in enumerate(services.MENU):
+        if i == 0:
+            toggle = InlineKeyboardButton(text="🔒 line 1", callback_data="noop")
+        else:
+            toggle = InlineKeyboardButton(
+                text="⤵️ new line" if b["newline"] else "↔️ same line", callback_data=f"a:mbnl:{b['id']}")
+        rows.append([
+            InlineKeyboardButton(text=b["label"][:18], callback_data=f"a:mb:{b['id']}"),
+            InlineKeyboardButton(text="⬆️", callback_data=f"a:mbup:{b['id']}"),
+            InlineKeyboardButton(text="⬇️", callback_data=f"a:mbdn:{b['id']}"),
+            toggle,
+        ])
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:menu")])
+    await show(
+        cb,
+        "📐 <b>Menu layout</b>\n\n"
+        "• <b>1 / 2 / 3 per line</b> — quick presets\n"
+        "• ⬆️⬇️ — change the order\n"
+        "• <b>↔️ same line</b> puts a button next to the one before it, <b>⤵️ new line</b> starts a new line "
+        "(max 3 per line)\n\n"
+        f"<b>Current layout</b>\n{layout_text()}\n\n"
+        "<i>Users see changes the next time they send /start.</i>",
+        InlineKeyboardMarkup(inline_keyboard=rows),
+    )
+
+
+@router.callback_query(F.data == "a:mblay")
+async def cb_mblay(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await render_layout(cb)
+
+
+@router.callback_query(F.data.regexp(r"^a:mbpre:[123]$"))
+async def cb_mbpre(cb: CallbackQuery):
+    n = int(cb.data.split(":")[2])
+    for i, b in enumerate(services.MENU):
+        await db.execute("UPDATE menu_buttons SET newline=:n WHERE id=:i", n=1 if i % n == 0 else 0, i=b["id"])
+    await services.load_menu()
+    await render_layout(cb)
+
+
+@router.callback_query(F.data.regexp(r"^a:mb(up|dn):\d+$"))
+async def cb_mbmove(cb: CallbackQuery):
+    _, kind, bid = cb.data.split(":")
+    await move_menu(int(bid), -1 if kind == "mbup" else 1)
+    await render_layout(cb)
+
+
+@router.callback_query(F.data.regexp(r"^a:mbnl:\d+$"))
+async def cb_mbnl(cb: CallbackQuery):
+    bid = int(cb.data.split(":")[2])
+    items = [dict(b) for b in services.MENU]
+    idx = next((i for i, b in enumerate(items) if b["id"] == bid), None)
+    if idx is None or idx == 0:
+        return await cb.answer()
+    items[idx]["newline"] = 0 if items[idx]["newline"] else 1
+    if max(len(r) for r in services.layout_rows(items, cap=99)) > services.MENU_MAX_PER_LINE:
+        return await cb.answer(f"A line can hold at most {services.MENU_MAX_PER_LINE} buttons.", show_alert=True)
+    await db.execute("UPDATE menu_buttons SET newline=:n WHERE id=:i", n=items[idx]["newline"], i=bid)
+    await services.load_menu()
+    await render_layout(cb)
+
+
+# ---- one button: name / reply / color / delete ----
 async def send_mb_preview(bot: Bot, chat_id: int, b: dict, tg_user):
     """The reply exactly as users get it."""
     u = await services.get_user(tg_user.id)
@@ -1012,13 +1066,16 @@ async def cb_mb(cb: CallbackQuery, state: FSMContext, bot: Bot):
 
 @router.callback_query(F.data.startswith("a:mbstyle:"))
 async def cb_mbstyle(cb: CallbackQuery, bot: Bot):
-    bid = int(cb.data.split(":")[2])
+    parts = cb.data.split(":")
+    bid, from_colors = int(parts[2]), len(parts) > 3  # ':c' suffix = tapped on the Button colors page
     b = await db.fetchone("SELECT style FROM menu_buttons WHERE id=:i", i=bid)
     if b:
         cur = b["style"] if b["style"] in STYLE_CYCLE else ""
         nxt = STYLE_CYCLE[(STYLE_CYCLE.index(cur) + 1) % len(STYLE_CYCLE)]
         await db.execute("UPDATE menu_buttons SET style=:s WHERE id=:i", s=nxt, i=bid)
         await services.load_menu()
+    if from_colors:
+        return await render_styles(cb)
     await render_mb(cb, bot, bid, preview=False)
 
 
@@ -1070,7 +1127,7 @@ async def cb_mbreply(cb: CallbackQuery, state: FSMContext):
         cb,
         "✏️ Send the <b>new reply</b> — <b>text</b>, or a <b>photo with caption</b>.\n"
         "Bold, italic, links and <b>premium emoji</b> are kept automatically (no HTML needed).\n"
-        "🧩 Placeholders: <code>{name} {balance} {refs} {id}</code>",
+        "🧩 Placeholders: <code>{name} {id}</code>",
         back(f"a:mb:{bid}"),
     )
 
@@ -1095,7 +1152,7 @@ async def msg_mbreply(m: Message, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == "a:mbadd")
 async def cb_mbadd(cb: CallbackQuery, state: FSMContext):
     await state.set_state(MenuAdd.name)
-    await show(cb, "➕ <b>New menu button</b>\n\nSend the button <b>name</b>, e.g. <code>New yono app</code>.", back("a:menu"))
+    await show(cb, "➕ <b>New menu button</b>\n\nSend the button <b>name</b>, e.g. <code>New Yono App</code>.", back("a:menu"))
 
 
 @router.message(MenuAdd.name, F.text)
@@ -1119,13 +1176,14 @@ async def msg_mbadd_reply(m: Message, state: FSMContext, bot: Bot):
     text, photo = extract_reply(m)
     pos = int(await db.scalar("SELECT COALESCE(MAX(pos),0) FROM menu_buttons") or 0) + 1
     bid = await db.insert_returning(
-        "INSERT INTO menu_buttons(label, reply, photo, pos) VALUES(:l, :r, :p, :o)",
+        "INSERT INTO menu_buttons(label, reply, photo, pos, newline) VALUES(:l, :r, :p, :o, 1)",
         l=d["label"], r=text or "", p=photo, o=pos,
     )
     await services.load_menu()
     await state.clear()
     await m.answer(
-        f"✅ Button <b>{html.escape(d['label'])}</b> added. Users see it after their next /start.",
+        f"✅ Button <b>{html.escape(d['label'])}</b> added (on its own line — change it in 📐 Layout). "
+        "Users see it after their next /start.",
         reply_markup=back("a:menu"),
     )
     b = await db.fetchone("SELECT * FROM menu_buttons WHERE id=:i", i=bid)
@@ -1137,11 +1195,6 @@ async def msg_mbadd_reply(m: Message, state: FSMContext, bot: Bot):
 STYLE_KEYS = {
     "join_btn": "Join button",
     "check_btn": "Claim button",
-    "btn_balance": "Balance (wallet menu)",
-    "btn_refer": "Refer & Earn (wallet menu)",
-    "btn_bonus": "Bonus (wallet menu)",
-    "btn_withdraw": "Withdrawal (wallet menu)",
-    "btn_upi": "Link UPI (wallet menu)",
 }
 STYLE_CYCLE = ["", "primary", "success", "danger"]
 STYLE_DOT = {"": "⚪", "primary": "🔵", "success": "🟢", "danger": "🔴"}
@@ -1153,14 +1206,17 @@ async def render_styles(cb: CallbackQuery):
         cur = icons.style_of(key) or ""
         # each button wears its own colour, so this page is a live preview
         rows.append([icons.btn(f"{STYLE_DOT[cur]} {label}", cb=f"a:style:{key}", style=cur or None)])
+    for b in services.MENU:  # menu buttons are listed here automatically
+        cur = b["style"] if b["style"] in icons.STYLES else ""
+        rows.append([icons.btn(f"{STYLE_DOT[cur]} {b['label']}"[:60], cb=f"a:mbstyle:{b['id']}:c", style=cur or None)])
     rows.append([InlineKeyboardButton(text="♻️ Reset colors", callback_data="a:styledef")])
     rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:set")])
     await show(
         cb,
         "🎨 <b>Button colors</b>\n\nTap a button to change its color:\n"
         "⚪ default → 🔵 primary → 🟢 success → 🔴 danger\n\n"
-        "Join is 🔵 and Claim is 🟢 by default. Custom menu buttons get their color on their own page "
-        "(Settings → Menu buttons). Menu colors reach users the next time they send /start.",
+        "Join is 🔵 and Claim is 🟢 by default. Your <b>menu buttons</b> appear here automatically "
+        "(new ones too). Menu colors reach users the next time they send /start.",
         InlineKeyboardMarkup(inline_keyboard=rows),
     )
 
@@ -1184,66 +1240,9 @@ async def cb_style(cb: CallbackQuery):
 async def cb_styledef(cb: CallbackQuery):
     for key in STYLE_KEYS:
         await services.reset_setting(f"style:{key}")
+    await db.execute("UPDATE menu_buttons SET style=''")
+    await services.load_menu()
     await render_styles(cb)
-
-
-# ---- numbers ----
-@router.callback_query(F.data == "a:nums")
-async def cb_nums(cb: CallbackQuery, state: FSMContext):
-    await state.clear()
-    b = InlineKeyboardBuilder()
-    for key, (label, unit) in NUMS.items():
-        val = await services.get_setting(key)
-        shown = f"₹{val}" if unit == "₹" else f"{val} {unit}"
-        b.button(text=f"{label}: {shown}", callback_data=f"a:num:{key}")
-    b.button(text="⬅️ Back", callback_data="a:set")
-    b.adjust(1)
-    await show(cb, "💰 <b>Rewards & limits</b>\n\nTap a value to change it.", b.as_markup())
-
-
-@router.callback_query(F.data.startswith("a:num:"))
-async def cb_num(cb: CallbackQuery, state: FSMContext):
-    key = cb.data.split(":")[2]
-    if key not in NUMS:
-        return await cb.answer()
-    await state.set_state(EditNum.value)
-    await state.update_data(key=key)
-    label, unit = NUMS[key]
-    b = InlineKeyboardBuilder()
-    b.button(text=f"♻️ Default ({services.DEFAULTS[key]} {unit})", callback_data=f"a:numdef:{key}")
-    b.button(text="⬅️ Back", callback_data="a:nums")
-    b.adjust(1)
-    await show(
-        cb,
-        f"{label}\n\nCurrent: <b>{await services.get_setting(key)}</b> {unit}\n\nSend the new number:",
-        b.as_markup(),
-    )
-
-
-@router.callback_query(F.data.startswith("a:numdef:"))
-async def cb_numdef(cb: CallbackQuery, state: FSMContext):
-    key = cb.data.split(":")[2]
-    if key in NUMS:
-        await services.reset_setting(key)
-    await cb_nums(cb, state)
-
-
-@router.message(EditNum.value, F.text)
-async def msg_num(m: Message, state: FSMContext):
-    d = await state.get_data()
-    key = d["key"]
-    p = services.to_paise(m.text)
-    if p is None or p < 0:
-        return await m.answer("❌ Send a valid number, e.g. <code>5</code> or <code>2.50</code>")
-    if key == "bonus_hours":
-        if p < 100:
-            return await m.answer("❌ Cooldown must be at least 1 hour.")
-        value = str(p // 100)
-    else:
-        value = services.fmt(p) or "0"
-    await services.set_setting(key, value)
-    await state.clear()
-    await m.answer(f"✅ Updated to <b>{value}</b>", reply_markup=back("a:nums"))
 
 
 # ───────────────────────── users ─────────────────────────
@@ -1255,7 +1254,7 @@ async def cb_users(cb: CallbackQuery, state: FSMContext):
     b.button(text="📥 Export user IDs", callback_data="a:uexp")
     b.button(text="⬅️ Back", callback_data="a:home")
     b.adjust(1)
-    await show(cb, "👥 <b>Users</b>\n\nFind a user to ban, unban or adjust their balance.", b.as_markup())
+    await show(cb, "👥 <b>Users</b>\n\nFind a user to ban or unban.", b.as_markup())
 
 
 @router.callback_query(F.data == "a:uexp")
@@ -1276,23 +1275,18 @@ def user_card(u: dict) -> tuple[str, InlineKeyboardMarkup]:
     name = html.escape(u.get("first_name") or "-")
     uname = f"@{u['username']}" if u.get("username") else "-"
     status = "⛔ banned" if u["banned"] else ("🚫 blocked bot" if u["blocked"] else "✅ active")
-    upi = f"<code>{html.escape(u['upi'])}</code>" if u.get("upi") else "-"
     b = InlineKeyboardBuilder()
     if u["banned"]:
         b.button(text="✅ Unban", callback_data=f"a:unban:{u['id']}")
     else:
         b.button(text="⛔ Ban", callback_data=f"a:ban:{u['id']}")
-    b.button(text="💰 Add / deduct balance", callback_data=f"a:bal:{u['id']}")
     b.button(text="⬅️ Back", callback_data="a:users")
-    b.adjust(2, 1)
+    b.adjust(2)
     text = (
         f"👤 <b>{name}</b>\n"
         f"🆔 <code>{u['id']}</code>\n"
         f"🔗 {uname}\n"
-        f"📌 Status: {status}\n\n"
-        f"💰 Balance: <b>₹{services.fmt(u['balance'])}</b>\n"
-        f"👥 Referrals: <b>{u['refs']}</b>\n"
-        f"🏦 UPI: {upi}"
+        f"📌 Status: {status}"
     )
     return text, b.as_markup()
 
@@ -1320,107 +1314,6 @@ async def cb_ban(cb: CallbackQuery):
     await db.execute("UPDATE users SET banned=:b WHERE id=:i", b=1 if action == "ban" else 0, i=uid)
     text, kb = user_card(await services.get_user(uid))
     await show(cb, text, kb)
-
-
-@router.callback_query(F.data.regexp(r"^a:bal:-?\d+$"))
-async def cb_bal(cb: CallbackQuery, state: FSMContext):
-    uid = int(cb.data.split(":")[2])
-    await state.set_state(AdjustBal.amount)
-    await state.update_data(uid=uid)
-    await show(
-        cb,
-        "💰 <b>Adjust balance</b>\n\nSend an amount in ₹.\n"
-        "Use <code>50</code> to add or <code>-20</code> to deduct.",
-        back("a:users"),
-    )
-
-
-@router.message(AdjustBal.amount, F.text)
-async def msg_bal(m: Message, state: FSMContext, bot: Bot):
-    d = await state.get_data()
-    delta = services.to_paise(m.text)
-    if not delta:
-        return await m.answer("❌ Send a non-zero number like <code>50</code> or <code>-20</code>.")
-    ok = await db.execute(
-        "UPDATE users SET balance=balance+:d WHERE id=:u AND balance+:d>=0", d=delta, u=d["uid"]
-    )
-    if not ok:
-        return await m.answer("❌ That would make the balance negative (or the user doesn't exist).")
-    await state.clear()
-    text, kb = user_card(await services.get_user(d["uid"]))
-    await m.answer("✅ Balance updated.\n\n" + text, reply_markup=kb)
-    try:
-        sign = "+" if delta > 0 else "-"
-        await bot.send_message(d["uid"], f"💰 Your wallet was updated: <b>{sign}₹{services.fmt(abs(delta))}</b>")
-    except TelegramAPIError:
-        pass
-
-
-# ───────────────────────── withdrawals ─────────────────────────
-async def render_withdrawals(cb: CallbackQuery):
-    rows = await db.fetch("SELECT * FROM withdrawals WHERE status='pending' ORDER BY id LIMIT 10")
-    if not rows:
-        return await show(cb, "💸 <b>Withdrawals</b>\n\n✨ No pending requests. All clear!", back())
-    lines = ["💸 <b>Pending withdrawals</b>\n"]
-    b = InlineKeyboardBuilder()
-    for w in rows:
-        lines.append(
-            f"#{w['id']} • <code>{w['user_id']}</code> • <b>₹{services.fmt(w['amount'])}</b>\n"
-            f"    🏦 <code>{html.escape(w['upi'] or '-')}</code>"
-        )
-        b.row(
-            InlineKeyboardButton(text=f"✅ #{w['id']} ₹{services.fmt(w['amount'])}", callback_data=f"w:ok:{w['id']}:l"),
-            InlineKeyboardButton(text=f"❌ #{w['id']}", callback_data=f"w:no:{w['id']}:l"),
-        )
-    b.row(InlineKeyboardButton(text="⬅️ Back", callback_data="a:home"))
-    await show(cb, "\n".join(lines), b.as_markup())
-
-
-@router.callback_query(F.data == "a:wd")
-async def cb_wd(cb: CallbackQuery):
-    await render_withdrawals(cb)
-
-
-@router.callback_query(F.data.regexp(r"^w:(ok|no):\d+(:l)?$"))
-async def cb_wd_action(cb: CallbackQuery, bot: Bot):
-    parts = cb.data.split(":")
-    ok, wid, from_list = parts[1] == "ok", int(parts[2]), len(parts) > 3
-    changed = await db.execute(
-        "UPDATE withdrawals SET status=:s WHERE id=:i AND status='pending'",
-        s="paid" if ok else "rejected", i=wid,
-    )
-    if not changed:
-        if from_list:
-            return await render_withdrawals(cb)
-        return await cb.answer("Already processed.", show_alert=True)
-    w = await db.fetchone("SELECT * FROM withdrawals WHERE id=:i", i=wid)
-    if not ok:
-        await db.execute("UPDATE users SET balance=balance+:a WHERE id=:u", a=w["amount"], u=w["user_id"])
-    try:
-        if ok:
-            await bot.send_message(
-                w["user_id"],
-                "✅ <b>Withdrawal paid!</b>\n\n"
-                f"🆔 Request #{wid}\n💵 Amount: <b>₹{services.fmt(w['amount'])}</b>\n"
-                f"🏦 UPI: <code>{html.escape(w['upi'] or '-')}</code>\n\nThank you for using our bot! 💙",
-            )
-        else:
-            await bot.send_message(
-                w["user_id"],
-                "❌ <b>Withdrawal rejected</b>\n\n"
-                f"🆔 Request #{wid}\n💰 <b>₹{services.fmt(w['amount'])}</b> has been refunded to your wallet.\n"
-                "Please contact support if you have questions.",
-            )
-    except TelegramAPIError:
-        pass
-    if from_list:
-        return await render_withdrawals(cb)
-    mark = "✅ <b>Marked as paid</b>" if ok else "❌ <b>Rejected & refunded</b>"
-    try:
-        await cb.message.edit_text(f"{cb.message.html_text}\n\n{mark} by {html.escape(cb.from_user.full_name)}", reply_markup=None)
-    except TelegramBadRequest:
-        pass
-    await cb.answer("Done")
 
 
 # ───────────────────────── admins (owners only) ─────────────────────────

@@ -24,7 +24,6 @@ async def welcome_text(uid: int) -> str:
 @router.message(StateFilter("*"), CommandStart())
 async def cmd_start(msg: Message, state: FSMContext, bot: Bot):
     await state.clear()
-    await services.credit_referral(bot, msg.from_user.id)
     await services.send_rich(bot, msg.chat.id, "welcome", await welcome_text(msg.from_user.id), main_kb())
 
 
@@ -36,11 +35,9 @@ async def check_cb(cb: CallbackQuery, bot: Bot):
     await services.delete_prompt(bot, uid, cb.message.message_id)
     if missing:
         # no pop-up: just show a fresh join message (+ extra message)
-        unchecked = await services.unchecked_channels()
-        await send_join_prompt(bot, uid, services.merge_channels(missing, unchecked))
+        await send_join_prompt(bot, uid, await services.prompt_channels(missing))
         return await cb.answer()
     await db.execute("UPDATE users SET verified=1 WHERE id=:u", u=uid)
-    await services.credit_referral(bot, uid)
     await services.send_rich(bot, uid, "welcome", await welcome_text(uid), main_kb())
     await cb.answer()
 
