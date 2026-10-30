@@ -43,17 +43,8 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
         )
 
 
-def _referrer(event) -> int | None:
-    """Extract the referrer id from '/start ref_123'."""
-    if isinstance(event, Message) and event.text and event.text.startswith("/start"):
-        parts = event.text.split(maxsplit=1)
-        if len(parts) == 2 and parts[1].startswith("ref_") and parts[1][4:].isdigit():
-            return int(parts[1][4:])
-    return None
-
-
 class GateMiddleware(BaseMiddleware):
-    """Registers users (+referrals), drops banned users, handles bot ON/OFF and force-join."""
+    """Registers users, drops banned users, handles bot ON/OFF and force-join."""
 
     async def __call__(self, handler, event, data):
         user = data.get("event_from_user")
@@ -63,7 +54,7 @@ class GateMiddleware(BaseMiddleware):
         if isinstance(event, Message) and event.chat.type != "private" and user.id not in config.ADMINS:
             return  # ignore groups for non-admins
 
-        is_new = await services.upsert_user(user, _referrer(event))
+        is_new = await services.upsert_user(user)
         if is_new and user.id not in config.ADMINS:
             t = asyncio.create_task(services.notify_new_user(data["bot"], user))
             _bg.add(t)
@@ -99,6 +90,6 @@ class GateMiddleware(BaseMiddleware):
         if not missing and not (unchecked and not (row and row["verified"])):
             return await handler(event, data)
 
-        await send_join_prompt(bot, user.id, services.merge_channels(missing, unchecked))
+        await send_join_prompt(bot, user.id, await services.prompt_channels(missing))
         if isinstance(event, CallbackQuery):
             await event.answer()

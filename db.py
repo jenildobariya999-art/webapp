@@ -28,6 +28,12 @@ CHANNEL_COLUMNS = {
 }
 
 
+# columns added to `menu_buttons`
+MENU_COLUMNS = {
+    "newline": "INTEGER NOT NULL DEFAULT 1",     # 1 = starts a new line, 0 = same line as the previous button
+}
+
+
 def _schema() -> list[str]:
     pg = engine.dialect.name == "postgresql"
     pk = "BIGSERIAL PRIMARY KEY" if pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
@@ -89,7 +95,7 @@ async def init():
     async with engine.begin() as conn:
         for stmt in _schema():
             await conn.execute(text(stmt))
-        for table, wanted in (("users", USER_COLUMNS), ("channels", CHANNEL_COLUMNS)):
+        for table, wanted in (("users", USER_COLUMNS), ("channels", CHANNEL_COLUMNS), ("menu_buttons", MENU_COLUMNS)):
             cols = await conn.run_sync(lambda c, t=table: {x["name"] for x in inspect(c).get_columns(t)})
             for name, ddl in wanted.items():
                 if name not in cols:

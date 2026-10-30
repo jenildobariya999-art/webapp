@@ -3,7 +3,6 @@ import asyncio
 import html
 import logging
 import time
-from decimal import Decimal, InvalidOperation
 
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
@@ -19,33 +18,18 @@ DEFAULTS = {
     "bot_enabled": "1",
     "force_join": "1",
     "auto_approve": "0",
-    "withdraw_on": "1",
-    "join_mode": "all",          # all = must join every channel, any = one is enough
+    "join_mode": "all",          # all = show every channel, not_joined = show only channels the user hasn't joined
     "notify_new_user": "1",      # tell admins when a new user starts the bot
-    "wallet_on": "0",            # show the wallet buttons (Balance, Refer, Bonus, Withdrawal, UPI) in the menu
-    # numbers
-    "refer_reward": "5",
-    "bonus_amount": "2",
-    "bonus_hours": "24",
-    "min_withdraw": "50",
     # button colours: "", "primary" (blue), "success" (green), "danger" (red)
     "style:join_btn": "primary",
     "style:check_btn": "success",
     # button labels (plain text). {title} = channel name, {n} = channel number
     "join_btn": "➕ Join",
     "check_btn": "✅ Claim",
-    "btn_balance": "💰 Balance",
-    "btn_refer": "👥 Refer & Earn",
-    "btn_bonus": "🎁 Bonus",
-    "btn_withdraw": "💸 Withdrawal",
-    "btn_upi": "🏦 Link UPI",
     # texts (HTML / premium emoji allowed)
     "welcome": (
         "🎉 <b>Welcome, {name}!</b>\n\n"
         "You're verified and ready to go 🚀\n\n"
-        "💰 Earn rewards by inviting friends\n"
-        "🎁 Claim your bonus regularly\n"
-        "💸 Withdraw straight to your UPI\n\n"
         "👇 <i>Pick an option from the menu below.</i>"
     ),
     "force_text": (
@@ -59,13 +43,6 @@ DEFAULTS = {
         "🛠 <b>We'll be right back!</b>\n\n"
         "The bot is under maintenance at the moment.\n"
         "Please try again in a little while 🙏"
-    ),
-    "refer_text": (
-        "👥 <b>Refer & Earn</b>\n\n"
-        "Invite your friends and earn <b>₹{reward}</b> for every friend who joins using your link! 🎁\n\n"
-        "🔗 <b>Your personal link</b>\n{link}\n\n"
-        "👤 Total referrals: <b>{refs}</b>\n\n"
-        "<i>Tap the button below to share it.</i>"
     ),
 }
 
@@ -127,11 +104,27 @@ async def send_rich(bot: Bot, chat_id: int, key: str, text: str, reply_markup=No
 MENU: list[dict] = []  # cache, so the keyboard can be built synchronously
 
 DEFAULT_MENU = [
-    ("New yono app",
-     "🎮 <b>New Yono App</b>\n\nThe download link will be shared here very soon. Stay tuned! 🔔"),
-    ("Lucky Gullak | Big Promo code",
-     "🎁 <b>Lucky Gullak — Big Promo Code</b>\n\nYour promo code will be shared here very soon. Stay tuned! 🔔"),
+    # (label, reply, starts a new line?)
+    ("New Yono App",
+     "🎮 <b>New Yono App</b>\n\nThe download link will be shared here very soon. Stay tuned! 🔔", 1),
+    ("Lucky Gullak",
+     "🍀 <b>Lucky Gullak</b>\n\nDetails will be shared here very soon. Stay tuned! 🔔", 1),
+    ("Big Promo Code",
+     "🎁 <b>Big Promo Code</b>\n\nYour promo code will be shared here very soon. Stay tuned! 🔔", 0),  # same line as Lucky Gullak
 ]
+OLD_DEFAULT_LABELS = ["New yono app", "Lucky Gullak | Big Promo code"]  # the previous 2-button default menu
+MENU_MAX_PER_LINE = 3
+
+
+def layout_rows(buttons: list[dict], cap: int = MENU_MAX_PER_LINE) -> list[list[dict]]:
+    """Group menu buttons into lines: a button with newline=1 starts a new line, newline=0 joins the previous one."""
+    rows: list[list[dict]] = []
+    for b in buttons:
+        if not rows or b["newline"] or len(rows[-1]) >= cap:
+            rows.append([b])
+        else:
+            rows[-1].append(b)
+    return rows
 
 
 async def load_menu():
@@ -140,15 +133,27 @@ async def load_menu():
 
 
 async def seed_menu():
-    """First start only: create the two default menu buttons."""
-    if setting("menu_seeded") == "1":
+    """First start: create the 3 default buttons. Upgrade: turn the old 2-button default into the new 3 buttons."""
+    ver = setting("menu_seeded")
+    if ver == "2":
         return
-    if not await db.scalar("SELECT COUNT(*) FROM menu_buttons"):
-        for i, (label, reply) in enumerate(DEFAULT_MENU, 1):
+    rows = await db.fetch("SELECT * FROM menu_buttons ORDER BY pos, id")
+    if not rows and ver != "1":  # brand-new install
+        for i, (label, reply, nl) in enumerate(DEFAULT_MENU, 1):
             await db.execute(
-                "INSERT INTO menu_buttons(label, reply, pos) VALUES(:l, :r, :p)", l=label, r=reply, p=i
+                "INSERT INTO menu_buttons(label, reply, pos, newline) VALUES(:l, :r, :p, :n)",
+                l=label, r=reply, p=i, n=nl,
             )
-    await set_setting("menu_seeded", "1")
+    elif ver == "1" and [r["label"] for r in rows] == OLD_DEFAULT_LABELS:
+        # untouched old default menu -> New Yono App / Lucky Gullak / Big Promo Code (keeps any reply you edited)
+        await db.execute("UPDATE menu_buttons SET label=:l, newline=1 WHERE id=:i", l="New Yono App", i=rows[0]["id"])
+        await db.execute("UPDATE menu_buttons SET label=:l, newline=1 WHERE id=:i", l="Lucky Gullak", i=rows[1]["id"])
+        label, reply, nl = DEFAULT_MENU[2]
+        await db.execute(
+            "INSERT INTO menu_buttons(label, reply, pos, newline) VALUES(:l, :r, :p, :n)",
+            l=label, r=reply, p=3, n=nl,
+        )
+    await set_setting("menu_seeded", "2")
 
 
 async def delete_prompt(bot: Bot, uid: int, prompt_id: int):
@@ -164,63 +169,29 @@ async def delete_prompt(bot: Bot, uid: int, prompt_id: int):
     await db.execute("DELETE FROM prompt_extras WHERE user_id=:u AND prompt_id=:p", u=uid, p=prompt_id)
 
 
-# ── money helpers (balances are stored in paise) ────────────────
-def fmt(p) -> str:
-    p = int(p or 0)
-    sign = "-" if p < 0 else ""
-    p = abs(p)
-    return f"{sign}{p // 100}" + (f".{p % 100:02d}" if p % 100 else "")
-
-
-def to_paise(s: str):
-    try:
-        d = Decimal(str(s).strip().replace("₹", "").replace(",", ""))
-    except InvalidOperation:
-        return None
-    if not d.is_finite():
-        return None
-    return int((d * 100).to_integral_value())
-
-
-async def money_setting(key: str) -> int:
-    return to_paise(await get_setting(key)) or 0
-
-
-async def int_setting(key: str) -> int:
-    try:
-        return int(float(await get_setting(key)))
-    except ValueError:
-        return int(float(DEFAULTS[key]))
-
-
 # ── users ───────────────────────────────────────────────────────
-async def upsert_user(user, ref: int | None = None) -> bool:
-    """Create/update a user. `ref` (referrer id) is stored only when the user is new."""
+async def upsert_user(user) -> bool:
+    """Create/update a user. Returns True the first time we see this user."""
     existed = await db.fetchone("SELECT 1 AS x FROM users WHERE id=:i", i=user.id)
-    referred_by = None
-    if ref and ref != user.id and await db.fetchone("SELECT 1 AS x FROM users WHERE id=:r", r=ref):
-        referred_by = ref
     await db.execute(
-        "INSERT INTO users(id, username, first_name, referred_by) VALUES(:i, :u, :f, :r) "
+        "INSERT INTO users(id, username, first_name) VALUES(:i, :u, :f) "
         "ON CONFLICT(id) DO UPDATE SET username=excluded.username, "
         "first_name=excluded.first_name, blocked=0",
-        i=user.id, u=user.username, f=user.first_name, r=referred_by,
+        i=user.id, u=user.username, f=user.first_name,
     )
-    return existed is None  # True -> first time we see this user
+    return existed is None
 
 
 async def notify_new_user(bot: Bot, user):
     """Tell every admin that someone new started the bot (switchable in Settings)."""
     if setting("notify_new_user") != "1":
         return
-    u = await get_user(user.id)
     total = await db.scalar("SELECT COUNT(*) FROM users")
-    ref = f"\n🔗 Referred by: <code>{u['referred_by']}</code>" if u and u["referred_by"] else ""
     uname = f" (@{user.username})" if user.username else ""
     text = (
         "🆕 <b>New user!</b>\n\n"
         f"👤 {html.escape(user.full_name)}{uname}\n"
-        f"🆔 <code>{user.id}</code>{ref}\n\n"
+        f"🆔 <code>{user.id}</code>\n\n"
         f"👥 Total users: <b>{total}</b>"
     )
     for aid in list(config.ADMINS):
@@ -237,39 +208,15 @@ async def get_user(uid: int):
 
 
 def render(tpl: str, u: dict | None, **extra) -> str:
-    """Fill {placeholders} in admin-editable texts."""
+    """Fill {name} / {id} (and any extra) placeholders in admin-editable texts."""
     vals = {
         "name": html.escape((u or {}).get("first_name") or "friend"),
         "id": str(u["id"]) if u else "",
-        "balance": fmt(u["balance"]) if u else "0",
-        "refs": str(u["refs"]) if u else "0",
     }
     vals.update(extra)
     for k, v in vals.items():
         tpl = tpl.replace("{" + k + "}", str(v))
     return tpl
-
-
-async def credit_referral(bot: Bot, uid: int):
-    """Pay the referrer once, after the new user passed force-join. Safe to call many times."""
-    u = await get_user(uid)
-    if not u or not u["referred_by"] or u["ref_paid"]:
-        return
-    if not await db.execute("UPDATE users SET ref_paid=1 WHERE id=:u AND ref_paid=0", u=uid):
-        return
-    reward = await money_setting("refer_reward")
-    await db.execute(
-        "UPDATE users SET balance=balance+:r, refs=refs+1 WHERE id=:ref", r=reward, ref=u["referred_by"]
-    )
-    try:
-        await bot.send_message(
-            u["referred_by"],
-            "🎉 <b>New referral!</b>\n\n"
-            f"{html.escape(u['first_name'] or 'Someone')} joined using your link.\n"
-            f"💰 <b>+₹{fmt(reward)}</b> added to your wallet.",
-        )
-    except Exception:
-        pass
 
 
 async def load_admins():
@@ -316,10 +263,7 @@ async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> li
     rows = await db.fetch("SELECT chat_id FROM join_requests WHERE user_id=:u", u=user_id)
     pending = {r["chat_id"] for r in rows}
     results = await asyncio.gather(*(_satisfied(bot, ch, user_id, pending) for ch in channels))
-    if setting("join_mode") == "any" and any(results):
-        missing = []  # "any one channel" mode: one joined channel is enough
-    else:
-        missing = [ch for ch, ok in zip(channels, results) if not ok]
+    missing = [ch for ch, ok in zip(channels, results) if not ok]
     if not missing:
         mark_ok(user_id)
     return missing
@@ -333,6 +277,14 @@ async def unchecked_channels() -> list[dict]:
 def merge_channels(*groups) -> list[dict]:
     allc = [c for g in groups for c in g]
     return sorted(allc, key=lambda c: (c["pos"], str(c["added"]), c["chat_id"]))
+
+
+async def prompt_channels(missing: list[dict]) -> list[dict]:
+    """Which channels the force-join message shows.
+    Join Mode 'all' = every channel, 'not_joined' = only the ones the user still has to join (+ display-only ones)."""
+    if setting("join_mode") == "not_joined":
+        return merge_channels(missing, await unchecked_channels())
+    return merge_channels(await db.fetch("SELECT * FROM channels ORDER BY pos, added, chat_id"))
 
 
 def join_url(ch: dict) -> str:
