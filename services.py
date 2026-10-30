@@ -27,6 +27,9 @@ DEFAULTS = {
     "bonus_amount": "2",
     "bonus_hours": "24",
     "min_withdraw": "50",
+    # button colours: "", "primary" (blue), "success" (green), "danger" (red)
+    "style:join_btn": "primary",
+    "style:check_btn": "success",
     # button labels (plain text). {title} = channel name, {n} = channel number
     "join_btn": "➕ Join",
     "check_btn": "✅ Claim",

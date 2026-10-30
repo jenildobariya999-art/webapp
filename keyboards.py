@@ -7,8 +7,12 @@ MENU_KEYS = ("btn_balance", "btn_refer", "btn_bonus", "btn_withdraw", "btn_upi")
 
 
 def _key(key: str) -> KeyboardButton:
-    iid = icons.icon(key)
-    extra = {"icon_custom_emoji_id": iid} if iid else {}
+    iid, st = icons.icon(key), icons.style_of(key)
+    extra = {}
+    if iid:
+        extra["icon_custom_emoji_id"] = iid
+    if st:
+        extra["style"] = st
     return KeyboardButton(text=services.setting(key), **extra)
 
 

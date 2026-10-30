@@ -25,9 +25,10 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
         else:
             label = join_tpl.replace("{title}", ch["title"] or "Channel").replace("{n}", str(i))
             iid = ch["icon"] or icons.icon("join_btn")
-        join_btns.append(icons.btn(label[:60], url=services.join_url(ch), icon_id=iid))
+        join_btns.append(icons.btn(label[:60], url=services.join_url(ch), icon_id=iid, style=icons.style_of("join_btn")))
     rows = [join_btns[i:i + 2] for i in range(0, len(join_btns), 2)]  # 2 Join buttons per line
-    rows.append([icons.btn(services.setting("check_btn")[:60], cb="check", icon_id=icons.icon("check_btn"))])
+    rows.append([icons.btn(services.setting("check_btn")[:60], cb="check",
+                           icon_id=icons.icon("check_btn"), style=icons.style_of("check_btn"))])
     markup = InlineKeyboardMarkup(inline_keyboard=rows)
 
     await services.send_rich(bot, user_id, "force_text", services.setting("force_text"), markup)

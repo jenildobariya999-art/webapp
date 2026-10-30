@@ -27,9 +27,23 @@ async def clear_icon(key: str):
     await services.reset_setting(f"icon:{key}")
 
 
-def btn(text: str, *, cb: str | None = None, url: str | None = None, icon_id: str | None = None) -> InlineKeyboardButton:
-    """Inline button, optionally with a premium-emoji icon."""
-    extra = {"icon_custom_emoji_id": icon_id} if icon_id else {}
+STYLES = ("primary", "success", "danger")  # blue / green / red buttons
+
+
+def style_of(key: str) -> str | None:
+    """Colour chosen in the admin panel for the button `key` (None = Telegram's default look)."""
+    v = services.setting(f"style:{key}")
+    return v if v in STYLES else None
+
+
+def btn(text: str, *, cb: str | None = None, url: str | None = None,
+        icon_id: str | None = None, style: str | None = None) -> InlineKeyboardButton:
+    """Inline button, optionally with a premium-emoji icon and a colour style."""
+    extra = {}
+    if icon_id:
+        extra["icon_custom_emoji_id"] = icon_id
+    if style in STYLES:
+        extra["style"] = style
     return InlineKeyboardButton(text=text, callback_data=cb, url=url, **extra)
 
 
@@ -60,14 +74,15 @@ def split_label(m: Message) -> tuple[str, str | None]:
 # ── safety net: retry without icons if Telegram refuses them ────
 def _has_icons(markup) -> bool:
     try:
-        return "icon_custom_emoji_id" in str(markup.model_dump(exclude_none=True))
+        dumped = str(markup.model_dump(exclude_none=True))
+        return "icon_custom_emoji_id" in dumped or "'style'" in dumped
     except Exception:
         return False
 
 
 def _strip(node):
     if isinstance(node, dict):
-        return {k: _strip(v) for k, v in node.items() if k != "icon_custom_emoji_id"}
+        return {k: _strip(v) for k, v in node.items() if k not in ("icon_custom_emoji_id", "style")}
     if isinstance(node, list):
         return [_strip(x) for x in node]
     return node
@@ -80,7 +95,7 @@ class IconFallback(BaseRequestMiddleware):
         except TelegramBadRequest as e:
             markup = getattr(method, "reply_markup", None)
             if markup is not None and _has_icons(markup):
-                log.warning("Button icon rejected by Telegram (%s) – retrying without icons", e)
+                log.warning("Button icon/style rejected by Telegram (%s) – retrying without them", e)
                 clean = type(markup).model_validate(_strip(markup.model_dump(exclude_none=True)))
                 return await make_request(bot, method.model_copy(update={"reply_markup": clean}))
             raise
