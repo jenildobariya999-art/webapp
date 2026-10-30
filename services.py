@@ -22,6 +22,7 @@ DEFAULTS = {
     "withdraw_on": "1",
     "join_mode": "all",          # all = must join every channel, any = one is enough
     "notify_new_user": "1",      # tell admins when a new user starts the bot
+    "wallet_on": "0",            # show the wallet buttons (Balance, Refer, Bonus, Withdrawal, UPI) in the menu
     # numbers
     "refer_reward": "5",
     "bonus_amount": "2",
@@ -103,19 +104,64 @@ async def reset_setting(key: str):
     _cache.pop(key, None)
 
 
-async def send_rich(bot: Bot, chat_id: int, key: str, text: str, reply_markup=None):
-    """Send `text`; if a photo is attached to `key` (admin set one) send it as a photo with caption."""
-    photo = setting(f"media:{key}")
+async def send_photo_text(bot: Bot, chat_id: int, photo: str | None, text: str, reply_markup=None):
+    """Send `text`, as a photo caption when `photo` is given (falls back to two messages if the caption is too long)."""
     if photo:
         try:
-            return await bot.send_photo(chat_id, photo, caption=text, reply_markup=reply_markup)
+            return await bot.send_photo(chat_id, photo, caption=text or None, reply_markup=reply_markup)
         except TelegramBadRequest as e:  # e.g. caption longer than 1024 chars
             log.info("photo+caption failed (%s) – sending photo and text separately", e)
             try:
                 await bot.send_photo(chat_id, photo)
             except TelegramBadRequest:
                 pass
-    return await bot.send_message(chat_id, text, reply_markup=reply_markup)
+    return await bot.send_message(chat_id, text or "👍", reply_markup=reply_markup)
+
+
+async def send_rich(bot: Bot, chat_id: int, key: str, text: str, reply_markup=None):
+    """Send the text of setting `key`; if the admin attached a photo to it, send it as a photo with caption."""
+    return await send_photo_text(bot, chat_id, setting(f"media:{key}"), text, reply_markup)
+
+
+# ── custom menu buttons (label + reply, managed from the admin panel) ──
+MENU: list[dict] = []  # cache, so the keyboard can be built synchronously
+
+DEFAULT_MENU = [
+    ("New yono app",
+     "🎮 <b>New Yono App</b>\n\nThe download link will be shared here very soon. Stay tuned! 🔔"),
+    ("Lucky Gullak | Big Promo code",
+     "🎁 <b>Lucky Gullak — Big Promo Code</b>\n\nYour promo code will be shared here very soon. Stay tuned! 🔔"),
+]
+
+
+async def load_menu():
+    rows = await db.fetch("SELECT * FROM menu_buttons ORDER BY pos, id")
+    MENU[:] = rows
+
+
+async def seed_menu():
+    """First start only: create the two default menu buttons."""
+    if setting("menu_seeded") == "1":
+        return
+    if not await db.scalar("SELECT COUNT(*) FROM menu_buttons"):
+        for i, (label, reply) in enumerate(DEFAULT_MENU, 1):
+            await db.execute(
+                "INSERT INTO menu_buttons(label, reply, pos) VALUES(:l, :r, :p)", l=label, r=reply, p=i
+            )
+    await set_setting("menu_seeded", "1")
+
+
+async def delete_prompt(bot: Bot, uid: int, prompt_id: int):
+    """Delete ONE force-join message and the extra message that was sent with it (nothing else)."""
+    row = await db.fetchone(
+        "SELECT extra_id FROM prompt_extras WHERE user_id=:u AND prompt_id=:p", u=uid, p=prompt_id
+    )
+    for mid in ([row["extra_id"]] if row else []) + [prompt_id]:
+        try:
+            await bot.delete_message(uid, int(mid))
+        except Exception:
+            pass  # already deleted / too old
+    await db.execute("DELETE FROM prompt_extras WHERE user_id=:u AND prompt_id=:p", u=uid, p=prompt_id)
 
 
 # ── money helpers (balances are stored in paise) ────────────────
@@ -294,16 +340,3 @@ def join_url(ch: dict) -> str:
     if ch.get("request_mode") and ch.get("req_link"):
         return ch["req_link"]
     return ch["link"]
-
-
-async def clear_extra(bot: Bot, uid: int):
-    """Delete the 'extra message' that was sent with the force-join prompt (if any)."""
-    row = await db.fetchone("SELECT extra_msg FROM users WHERE id=:i", i=uid)
-    if not row or not row["extra_msg"]:
-        return
-    for mid in str(row["extra_msg"]).split(","):
-        try:
-            await bot.delete_message(uid, int(mid))
-        except Exception:
-            pass  # already deleted / too old
-    await db.execute("UPDATE users SET extra_msg=NULL WHERE id=:i", i=uid)

@@ -31,12 +31,16 @@ async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
                            icon_id=icons.icon("check_btn"), style=icons.style_of("check_btn"))])
     markup = InlineKeyboardMarkup(inline_keyboard=rows)
 
-    await services.send_rich(bot, user_id, "force_text", services.setting("force_text"), markup)
-    await services.clear_extra(bot, user_id)  # never leave an old extra message behind
+    sent = await services.send_rich(bot, user_id, "force_text", services.setting("force_text"), markup)
     extra = services.setting("force_extra")
     if extra.strip():
-        sent = await services.send_rich(bot, user_id, "force_extra", extra)
-        await db.execute("UPDATE users SET extra_msg=:m WHERE id=:u", m=str(sent.message_id), u=user_id)
+        e = await services.send_rich(bot, user_id, "force_extra", extra)
+        # remember the pair, so pressing Claim on THIS prompt can delete exactly these two messages
+        await db.execute(
+            "INSERT INTO prompt_extras(user_id, prompt_id, extra_id) VALUES(:u, :p, :e) "
+            "ON CONFLICT(user_id, prompt_id) DO UPDATE SET extra_id=excluded.extra_id",
+            u=user_id, p=sent.message_id, e=e.message_id,
+        )
 
 
 def _referrer(event) -> int | None:

@@ -11,13 +11,21 @@ aiogram 3 • Render (webhook) • PostgreSQL (Neon / Render) • SQLite for loc
 | `services.py` | Brain: settings (cached), default texts, money helpers, referral payout, force-join checking, photo+caption sending. |
 | `middleware.py` | Gatekeeper on every message/button: registers users, bans, bot ON/OFF, force-join prompt (photo + extra message + buttons). |
 | `icons.py` | Premium-emoji icon for the Join / Claim / social-link buttons, with automatic fallback if Telegram refuses it. |
-| `keyboards.py` | The 5-button user menu (Balance, Refer & Earn, Bonus, Withdrawal, Link UPI) and the withdrawal approve buttons. |
+| `keyboards.py` | The user menu (custom buttons from the admin panel + optional wallet buttons) and the withdrawal approve buttons. |
 | `handlers/user.py` | `/start`, "I've joined" check, join-request tracking, welcome message. |
-| `handlers/menu.py` | What the 5 menu buttons do (wallet, referral link, bonus, UPI, withdrawal requests). |
+| `handlers/menu.py` | What the menu buttons do: custom buttons send their admin-edited reply; wallet buttons (balance, referral link, bonus, UPI, withdrawal) when the wallet menu is ON. |
 | `handlers/admin.py` | The whole admin panel `/admin`: stats, channels panel, broadcast, users, withdrawals, settings, admins. |
 | `render.yaml` | One-click Render Blueprint (web service + database). |
 | `requirements.txt` | Python packages. |
 | `.env.example` | Template of environment variables for local runs. |
+
+## Menu buttons
+Settings → **Menu buttons**: add / rename / delete buttons and edit the reply each one sends (text, photo, premium emoji, color).
+Defaults: `New yono app` and `Lucky Gullak | Big Promo code`. The wallet buttons can be switched on in Settings → **Wallet menu**.
+
+## Force-join message
+Pressing **Claim** deletes that join message and its extra message. If the user hasn't joined, fresh ones are sent (no pop-up).
+`/start` never deletes anything.
 
 ## Environment variables
 | Name | Meaning |

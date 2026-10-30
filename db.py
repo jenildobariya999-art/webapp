@@ -16,7 +16,6 @@ USER_COLUMNS = {
     "upi": "TEXT",
     "last_bonus": "BIGINT NOT NULL DEFAULT 0",   # unix time of last bonus
     "verified": "INTEGER NOT NULL DEFAULT 0",    # pressed "I've joined" at least once
-    "extra_msg": "TEXT",                         # message id of the extra force-join message (deleted after Claim)
 }
 
 # columns added to `channels` (unchecked = shown as a Join button but membership is NOT verified)
@@ -60,6 +59,20 @@ def _schema() -> list[str]:
         )""",
         """CREATE TABLE IF NOT EXISTS admins(
             user_id BIGINT PRIMARY KEY
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS menu_buttons(
+            id {pk},
+            label TEXT NOT NULL,
+            reply TEXT NOT NULL DEFAULT '',
+            photo TEXT,
+            style TEXT NOT NULL DEFAULT '',
+            pos INTEGER NOT NULL DEFAULT 0
+        )""",
+        """CREATE TABLE IF NOT EXISTS prompt_extras(
+            user_id BIGINT NOT NULL,
+            prompt_id BIGINT NOT NULL,
+            extra_id BIGINT NOT NULL,
+            PRIMARY KEY(user_id, prompt_id)
         )""",
         f"""CREATE TABLE IF NOT EXISTS withdrawals(
             id {pk},

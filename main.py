@@ -29,6 +29,8 @@ async def init_database():
             await db.init()
             await services.load_admins()
             await services.load_settings()
+            await services.seed_menu()
+            await services.load_menu()
             return
         except Exception as e:
             log.warning("Database not ready (attempt %s): %s", attempt, e)
@@ -37,6 +39,8 @@ async def init_database():
     await db.init()  # last try – raise the real error
     await services.load_admins()
     await services.load_settings()
+    await services.seed_menu()
+    await services.load_menu()
 
 
 async def setup_telegram(bot: Bot):
