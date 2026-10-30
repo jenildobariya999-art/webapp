@@ -21,6 +21,9 @@ USER_COLUMNS = {
 # columns added to `channels` (unchecked = shown as a Join button but membership is NOT verified)
 CHANNEL_COLUMNS = {
     "unchecked": "INTEGER NOT NULL DEFAULT 0",
+    "kind": "TEXT NOT NULL DEFAULT 'channel'",   # 'channel' | 'social' (link button only)
+    "pos": "INTEGER NOT NULL DEFAULT 0",         # order in the panel (⬆️ ⬇️)
+    "icon": "TEXT",                              # premium-emoji id for this button (social links)
 }
 
 

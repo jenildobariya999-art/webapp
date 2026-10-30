@@ -10,6 +10,7 @@ from aiohttp import web
 
 import config
 import db
+import icons
 import services
 from handlers import admin, menu, user
 from middleware import GateMiddleware
@@ -27,6 +28,7 @@ async def init_database():
         try:
             await db.init()
             await services.load_admins()
+            await services.load_settings()
             return
         except Exception as e:
             log.warning("Database not ready (attempt %s): %s", attempt, e)
@@ -34,6 +36,7 @@ async def init_database():
             delay = min(delay * 2, 20)
     await db.init()  # last try – raise the real error
     await services.load_admins()
+    await services.load_settings()
 
 
 async def setup_telegram(bot: Bot):
@@ -79,6 +82,7 @@ def build() -> tuple[Bot, Dispatcher]:
         config.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
     )
+    bot.session.middleware(icons.IconFallback())  # retry without premium icons if Telegram refuses them
     dp = Dispatcher()
     gate = GateMiddleware()
     dp.message.outer_middleware(gate)

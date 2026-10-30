@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 
 from aiogram import Bot
 from aiogram.enums import ChatMemberStatus
+from aiogram.exceptions import TelegramBadRequest
 
 import config
 import db
@@ -19,6 +20,7 @@ DEFAULTS = {
     "force_join": "1",
     "auto_approve": "0",
     "withdraw_on": "1",
+    "join_mode": "all",          # all = must join every channel, any = one is enough
     # numbers
     "refer_reward": "5",
     "bonus_amount": "2",
@@ -27,6 +29,11 @@ DEFAULTS = {
     # button labels (plain text). {title} = channel name, {n} = channel number
     "join_btn": "➕ Join",
     "check_btn": "✅ I've joined",
+    "btn_balance": "💰 Balance",
+    "btn_refer": "👥 Refer & Earn",
+    "btn_bonus": "🎁 Bonus",
+    "btn_withdraw": "💸 Withdrawal",
+    "btn_upi": "🏦 Link UPI",
     # texts (HTML / premium emoji allowed)
     "welcome": (
         "🎉 <b>Welcome, {name}!</b>\n\n"
@@ -42,6 +49,7 @@ DEFAULTS = {
         "then tap <b>✅ I've joined</b>.\n\n"
         "📨 <i>For request channels, sending a join request is enough!</i>"
     ),
+    "force_extra": "",           # optional 2nd message sent right after the force-join message
     "off_text": (
         "🛠 <b>We'll be right back!</b>\n\n"
         "The bot is under maintenance at the moment.\n"
@@ -57,10 +65,23 @@ DEFAULTS = {
 }
 
 
-# ── settings ────────────────────────────────────────────────────
+# ── settings (cached in memory; the DB is the source of truth) ───
+_cache: dict[str, str] = {}
+
+
+async def load_settings():
+    rows = await db.fetch("SELECT key, value FROM settings")
+    _cache.clear()
+    _cache.update({r["key"]: r["value"] for r in rows})
+
+
+def setting(key: str) -> str:
+    """Sync read (used for keyboards). Falls back to the built-in default."""
+    return _cache.get(key, DEFAULTS.get(key, ""))
+
+
 async def get_setting(key: str) -> str:
-    row = await db.fetchone("SELECT value FROM settings WHERE key=:k", k=key)
-    return row["value"] if row else DEFAULTS[key]
+    return setting(key)
 
 
 async def set_setting(key: str, value: str):
@@ -69,11 +90,28 @@ async def set_setting(key: str, value: str):
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         k=key, v=value,
     )
+    _cache[key] = value
 
 
 async def reset_setting(key: str):
     """Back to the built-in default."""
     await db.execute("DELETE FROM settings WHERE key=:k", k=key)
+    _cache.pop(key, None)
+
+
+async def send_rich(bot: Bot, chat_id: int, key: str, text: str, reply_markup=None):
+    """Send `text`; if a photo is attached to `key` (admin set one) send it as a photo with caption."""
+    photo = setting(f"media:{key}")
+    if photo:
+        try:
+            return await bot.send_photo(chat_id, photo, caption=text, reply_markup=reply_markup)
+        except TelegramBadRequest as e:  # e.g. caption longer than 1024 chars
+            log.info("photo+caption failed (%s) – sending photo and text separately", e)
+            try:
+                await bot.send_photo(chat_id, photo)
+            except TelegramBadRequest:
+                pass
+    return await bot.send_message(chat_id, text, reply_markup=reply_markup)
 
 
 # ── money helpers (balances are stored in paise) ────────────────
@@ -197,13 +235,16 @@ async def _satisfied(bot: Bot, ch: dict, user_id: int, pending: set[int]) -> boo
 async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> list[dict]:
     if use_cache and _ok_until.get(user_id, 0) > time.monotonic():
         return []
-    channels = await db.fetch("SELECT * FROM channels WHERE unchecked=0 ORDER BY added, chat_id")
+    channels = await db.fetch("SELECT * FROM channels WHERE unchecked=0 ORDER BY pos, added, chat_id")
     if not channels:
         return []
     rows = await db.fetch("SELECT chat_id FROM join_requests WHERE user_id=:u", u=user_id)
     pending = {r["chat_id"] for r in rows}
     results = await asyncio.gather(*(_satisfied(bot, ch, user_id, pending) for ch in channels))
-    missing = [ch for ch, ok in zip(channels, results) if not ok]
+    if setting("join_mode") == "any" and any(results):
+        missing = []  # "any one channel" mode: one joined channel is enough
+    else:
+        missing = [ch for ch, ok in zip(channels, results) if not ok]
     if not missing:
         mark_ok(user_id)
     return missing
@@ -211,9 +252,9 @@ async def missing_channels(bot: Bot, user_id: int, use_cache: bool = True) -> li
 
 async def unchecked_channels() -> list[dict]:
     """Channels that are only displayed (membership is never verified)."""
-    return await db.fetch("SELECT * FROM channels WHERE unchecked=1 ORDER BY added, chat_id")
+    return await db.fetch("SELECT * FROM channels WHERE unchecked=1 ORDER BY pos, added, chat_id")
 
 
 def merge_channels(*groups) -> list[dict]:
     allc = [c for g in groups for c in g]
-    return sorted(allc, key=lambda c: (str(c["added"]), c["chat_id"]))
+    return sorted(allc, key=lambda c: (c["pos"], str(c["added"]), c["chat_id"]))

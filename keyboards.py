@@ -1,20 +1,24 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
-BTN_BALANCE = "💰 Balance"
-BTN_REFER = "👥 Refer & Earn"
-BTN_BONUS = "🎁 Bonus"
-BTN_WITHDRAW = "💸 Withdrawal"
-BTN_UPI = "🏦 Link UPI"
+import icons
+import services
 
-MENU_BUTTONS = {BTN_BALANCE, BTN_REFER, BTN_BONUS, BTN_WITHDRAW, BTN_UPI}
+MENU_KEYS = ("btn_balance", "btn_refer", "btn_bonus", "btn_withdraw", "btn_upi")
+
+
+def _key(key: str) -> KeyboardButton:
+    iid = icons.icon(key)
+    extra = {"icon_custom_emoji_id": iid} if iid else {}
+    return KeyboardButton(text=services.setting(key), **extra)
 
 
 def main_kb() -> ReplyKeyboardMarkup:
+    """The 5-button user menu. Labels and premium icons are editable in the admin panel."""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=BTN_BALANCE), KeyboardButton(text=BTN_REFER)],
-            [KeyboardButton(text=BTN_BONUS), KeyboardButton(text=BTN_WITHDRAW)],
-            [KeyboardButton(text=BTN_UPI)],
+            [_key("btn_balance"), _key("btn_refer")],
+            [_key("btn_bonus"), _key("btn_withdraw")],
+            [_key("btn_upi")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Choose an option 👇",

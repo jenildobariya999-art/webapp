@@ -1,27 +1,36 @@
 import logging
 
 from aiogram import BaseMiddleware, Bot
-from aiogram.types import CallbackQuery, Message
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 import config
 import db
+import icons
 import services
 
 log = logging.getLogger(__name__)
 
 
 async def send_join_prompt(bot: Bot, user_id: int, channels: list[dict]):
-    """Buttons only say 'Join' (label is editable) — the channel type is never shown."""
-    join_tpl = await services.get_setting("join_btn")
-    check_label = await services.get_setting("check_btn")
-    kb = InlineKeyboardBuilder()
+    """Join buttons only say 'Join' (label + premium icon are editable) — the channel type is never shown.
+    The message can carry a photo, and an optional extra message is sent right after it."""
+    join_tpl = services.setting("join_btn")
+    rows = []
     for i, ch in enumerate(channels, 1):
-        label = join_tpl.replace("{title}", ch["title"] or "Channel").replace("{n}", str(i))
-        kb.button(text=label[:60], url=ch["link"])
-    kb.button(text=check_label[:60], callback_data="check")
-    kb.adjust(1)
-    await bot.send_message(user_id, await services.get_setting("force_text"), reply_markup=kb.as_markup())
+        if ch["kind"] == "social":
+            label = ch["title"] or "Link"
+            iid = ch["icon"]
+        else:
+            label = join_tpl.replace("{title}", ch["title"] or "Channel").replace("{n}", str(i))
+            iid = ch["icon"] or icons.icon("join_btn")
+        rows.append([icons.btn(label[:60], url=ch["link"], icon_id=iid)])
+    rows.append([icons.btn(services.setting("check_btn")[:60], cb="check", icon_id=icons.icon("check_btn"))])
+    markup = InlineKeyboardMarkup(inline_keyboard=rows)
+
+    await services.send_rich(bot, user_id, "force_text", services.setting("force_text"), markup)
+    extra = services.setting("force_extra")
+    if extra.strip():
+        await services.send_rich(bot, user_id, "force_extra", extra)
 
 
 def _referrer(event) -> int | None:
