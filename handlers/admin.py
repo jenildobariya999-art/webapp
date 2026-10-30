@@ -48,7 +48,10 @@ router.callback_query.filter(IsAdmin())
 
 class AddChannel(StatesGroup):
     chat = State()
-    mode = State()
+
+
+class EditLink(StatesGroup):
+    link = State()
 
 
 class AddUnchecked(StatesGroup):
@@ -64,10 +67,6 @@ class AddSocial(StatesGroup):
 class ChBroadcast(StatesGroup):
     msg = State()
     confirm = State()
-
-
-class SetIcon(StatesGroup):
-    emoji = State()
 
 
 class Broadcast(StatesGroup):
@@ -109,7 +108,7 @@ async def show(cb: CallbackQuery, text: str, kb: InlineKeyboardMarkup | None = N
 
 
 def back(to: str = "a:home") -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[[icons.pbtn("back", "⬅️", "Back", cb=to)]])
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Back", callback_data=to)]])
 
 
 def menu_kb(user_id: int) -> InlineKeyboardMarkup:
@@ -179,14 +178,33 @@ async def cb_stats(cb: CallbackQuery):
 _USERNAME_RE = re.compile(r"^(?:https?://)?(?:t|telegram)\.me/([A-Za-z][A-Za-z0-9_]{3,31})(?:[/?].*)?$")
 
 
-async def make_link(bot: Bot, chat, request_mode: int) -> str:
-    if request_mode:
-        inv = await bot.create_chat_invite_link(chat.id, name="forcejoin-request", creates_join_request=True)
-        return inv.invite_link
+async def build_links(bot: Bot, chat):
+    """Auto-generate BOTH links for a channel: normal + join-request. Returns (normal, request, warning)."""
+    normal = req = warn = None
+    try:
+        req = (await bot.create_chat_invite_link(
+            chat.id, name="forcejoin-request", creates_join_request=True)).invite_link
+    except TelegramAPIError as e:
+        warn = f"request link: {e}"
     if chat.username:
-        return f"https://t.me/{chat.username}"
-    inv = await bot.create_chat_invite_link(chat.id, name="forcejoin")
-    return inv.invite_link
+        normal = f"https://t.me/{chat.username}"
+    else:
+        try:
+            normal = (await bot.create_chat_invite_link(chat.id, name="forcejoin")).invite_link
+        except TelegramAPIError as e:
+            warn = (warn + "; " if warn else "") + f"normal link: {e}"
+    return normal, req, warn
+
+
+def normalize_link(t: str) -> str | None:
+    t = t.strip()
+    if re.fullmatch(r"@[A-Za-z][A-Za-z0-9_]{3,31}", t):
+        return "https://t.me/" + t[1:]
+    if t.startswith(("http://", "https://", "tg://")):
+        return t
+    if t.startswith(("t.me/", "telegram.me/")):
+        return "https://" + t
+    return None
 
 
 async def ordered_channels() -> list[dict]:
@@ -207,6 +225,10 @@ def ch_label(ch: dict) -> str:
     return (mark + name)[:16]
 
 
+def pb(emoji: str, text: str, cb: str) -> InlineKeyboardButton:
+    return InlineKeyboardButton(text=f"{emoji} {text}".strip(), callback_data=cb)
+
+
 async def move_channel(cid: int, delta: int):
     ids = [r["chat_id"] for r in await ordered_channels()]
     if cid in ids:
@@ -224,27 +246,26 @@ async def render_channels(cb: CallbackQuery):
     for ch in rows:
         cid = ch["chat_id"]
         kb.append([
-            InlineKeyboardButton(text=ch_label(ch), callback_data=f"a:chinfo:{cid}"),
-            icons.pbtn("del", "❌", cb=f"a:chdel:{cid}"),
-            icons.pbtn("up", "⬆️", cb=f"a:chup:{cid}"),
-            icons.pbtn("down", "⬇️", cb=f"a:chdn:{cid}"),
-            icons.pbtn("view", "👀", cb=f"a:chview:{cid}"),
+            InlineKeyboardButton(text=ch_label(ch), callback_data=f"a:chlink:{cid}"),
+            pb("❌", "", f"a:chdel:{cid}"),
+            pb("⬆️", "", f"a:chup:{cid}"),
+            pb("⬇️", "", f"a:chdn:{cid}"),
+            pb("👀", "", f"a:chview:{cid}"),
         ])
     any_mode = services.setting("join_mode") == "any"
     kb += [
-        [icons.pbtn("add", "➕", "Add Channel", cb="a:chadd")],
-        [icons.pbtn("social", "➕", "Add Social Link", cb="a:chaddsoc")],
-        [icons.pbtn("unc", "➕", "Add Uncheck Channel", cb="a:chaddu")],
-        [icons.pbtn("stats", "📊", "How many users joined?", cb="a:chstats")],
-        [icons.pbtn("cbc", "📡", "Channel Broadcast", cb="a:chbc")],
-        [icons.pbtn("mode", "🎛", f"Join Mode: {'Any One Channel' if any_mode else 'All Channels'}", cb="a:joinmode")],
-        [icons.pbtn("back", "⬅️", "Back", cb="a:home")],
+        [pb("➕", "Add Channel", "a:chadd")],
+        [pb("➕", "Add Social Link", "a:chaddsoc")],
+        [pb("➕", "Add Uncheck Channel", "a:chaddu")],
+        [pb("📡", "Channel Broadcast", "a:chbc")],
+        [pb("🎛", f"Join Mode: {'Any One Channel' if any_mode else 'All Channels'}", "a:joinmode")],
+        [pb("⬅️", "Back", "a:home")],
     ]
     await show(
         cb,
         "📢 <b>Force-join channels</b>\n\n"
-        "Tap the name for details • ❌ delete • ⬆️⬇️ reorder • 👀 open\n"
-        "📨 request channel  •  ☑️ unchecked  •  🔗 social link\n\n"
+        "Tap a <b>name</b> to change its link • ❌ delete • ⬆️⬇️ reorder • 👀 details\n"
+        "📨 request mode  •  ☑️ unchecked  •  🔗 social link\n\n"
         f"🎛 <b>Join mode:</b> {'users must join <u>any one</u> channel' if any_mode else 'users must join <u>all</u> channels'}\n"
         f"Total: <b>{len(rows)}</b>",
         InlineKeyboardMarkup(inline_keyboard=kb),
@@ -255,14 +276,6 @@ async def render_channels(cb: CallbackQuery):
 async def cb_channels(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     await render_channels(cb)
-
-
-@router.callback_query(F.data.startswith("a:chinfo:"))
-async def cb_chinfo(cb: CallbackQuery):
-    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=int(cb.data.split(":")[2]))
-    if not ch:
-        return await cb.answer("Not found", show_alert=True)
-    await cb.answer(f"{ch['title']}\n{ch['link']}"[:190], show_alert=True)
 
 
 @router.callback_query(F.data.startswith("a:chdel:"))
@@ -288,6 +301,93 @@ async def cb_joinmode(cb: CallbackQuery):
     await render_channels(cb)
 
 
+# ---- tap on a channel name: see + change its link(s) ----
+def two_links(ch: dict) -> bool:
+    """Real, verified channels carry two auto-generated links (normal + request)."""
+    return ch["kind"] == "channel" and ch["chat_id"] < 0 and not ch["unchecked"]
+
+
+async def render_link_editor(cb: CallbackQuery, cid: int):
+    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
+    if not ch:
+        return await render_channels(cb)
+    title = html.escape(ch["title"] or str(cid))
+    rows = []
+    if two_links(ch):
+        req_on = bool(ch["request_mode"])
+        text = (
+            f"🔗 <b>{title}</b>\n\n"
+            f"📢 <b>Normal link</b>{'' if req_on else '  ✅ in use'}\n{html.escape(ch['link'])}\n\n"
+            f"📨 <b>Request link</b>{'  ✅ in use' if req_on else ''}\n{html.escape(ch['req_link'] or '—')}\n\n"
+            "Tap a button to replace a link, or auto-generate fresh ones.\n"
+            "<i>Switch which one users get from 👀 details.</i>"
+        )
+        rows.append([InlineKeyboardButton(text="✏️ Normal link", callback_data=f"a:chedit:{cid}:link"),
+                     InlineKeyboardButton(text="✏️ Request link", callback_data=f"a:chedit:{cid}:req")])
+        rows.append([InlineKeyboardButton(text="♻️ Auto-generate both", callback_data=f"a:chregen:{cid}")])
+    else:
+        text = f"🔗 <b>{title}</b>\n\nCurrent link:\n{html.escape(ch['link'])}\n\nTap the button to replace it."
+        rows.append([InlineKeyboardButton(text="✏️ Change link", callback_data=f"a:chedit:{cid}:link")])
+    rows.append([pb("⬅️", "Back", "a:ch")])
+    await show(cb, text, InlineKeyboardMarkup(inline_keyboard=rows))
+
+
+@router.callback_query(F.data.regexp(r"^a:chlink:-?\d+$"))
+async def cb_chlink(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await render_link_editor(cb, int(cb.data.split(":")[2]))
+
+
+@router.callback_query(F.data.regexp(r"^a:chedit:-?\d+:(link|req)$"))
+async def cb_chedit(cb: CallbackQuery, state: FSMContext):
+    _, _, cid, which = cb.data.split(":")
+    await state.set_state(EditLink.link)
+    await state.update_data(cid=int(cid), which=which)
+    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=int(cid))
+    cur = (ch["req_link"] if which == "req" else ch["link"]) if ch else ""
+    await show(
+        cb,
+        f"✏️ <b>New {'request ' if which == 'req' else ''}link</b>\n\n"
+        f"Current:\n{html.escape(cur or '—')}\n\n"
+        "Send the new link (<code>https://t.me/…</code> or <code>@username</code>).",
+        back(f"a:chlink:{cid}"),
+    )
+
+
+@router.message(EditLink.link, F.text)
+async def msg_editlink(m: Message, state: FSMContext):
+    d = await state.get_data()
+    link = normalize_link(m.text)
+    if not link:
+        return await m.answer("❌ Send a valid link, e.g. <code>https://t.me/+AbCd…</code> or <code>@username</code>")
+    col = "req_link" if d["which"] == "req" else "link"  # fixed whitelist, never user input
+    await db.execute(f"UPDATE channels SET {col}=:l WHERE chat_id=:c", l=link, c=d["cid"])
+    services.invalidate()
+    await state.clear()
+    await m.answer("✅ <b>Link updated.</b>", reply_markup=back(f"a:chlink:{d['cid']}"))
+
+
+@router.callback_query(F.data.regexp(r"^a:chregen:-?\d+$"))
+async def cb_chregen(cb: CallbackQuery, bot: Bot):
+    cid = int(cb.data.split(":")[2])
+    ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
+    if not ch:
+        return await cb.answer("Not found", show_alert=True)
+    try:
+        chat = await bot.get_chat(cid)
+    except TelegramAPIError as e:
+        return await cb.answer(f"Failed: {e}"[:190], show_alert=True)
+    normal, req, warn = await build_links(bot, chat)
+    if not normal and not req:
+        return await cb.answer(f"❌ {warn}"[:190], show_alert=True)
+    await db.execute(
+        "UPDATE channels SET link=:l, req_link=:r WHERE chat_id=:c",
+        l=normal or ch["link"], r=req or ch["req_link"], c=cid,
+    )
+    services.invalidate()
+    await render_link_editor(cb, cid)
+
+
 # ---- 👀 channel details ----
 async def render_channel_view(cb: CallbackQuery, bot: Bot, cid: int):
     ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
@@ -298,31 +398,33 @@ async def render_channel_view(cb: CallbackQuery, bot: Bot, cid: int):
     elif ch["unchecked"]:
         typ = "☑️ Unchecked (display only)"
     elif ch["request_mode"]:
-        typ = "📨 Join request"
+        typ = "📨 Request mode (users get the request link)"
     else:
-        typ = "📢 Normal"
+        typ = "📢 Normal mode (users get the normal link)"
     text = (
         f"👀 <b>{html.escape(ch['title'] or '-')}</b>\n\n"
-        f"🆔 <code>{cid}</code>\n📌 Type: {typ}\n🔗 {html.escape(ch['link'])}"
+        f"🆔 <code>{cid}</code>\n📌 Type: {typ}\n🔗 {html.escape(services.join_url(ch))}"
     )
     if cid < 0:
         try:
             text += f"\n👥 Members: <b>{await bot.get_chat_member_count(cid)}</b>"
         except TelegramAPIError:
             text += "\n👥 Members: <i>n/a</i>"
-    if ch["request_mode"]:
         pend = await db.scalar("SELECT COUNT(*) FROM join_requests WHERE chat_id=:c", c=cid)
-        text += f"\n📨 Pending requests stored: <b>{pend}</b>"
-    rows = []
-    if ch["kind"] == "channel" and cid < 0:
+        if pend:
+            text += f"\n📨 Pending join requests: <b>{pend}</b>"
+    rows = [[InlineKeyboardButton(text="🔗 Links", callback_data=f"a:chlink:{cid}")]]
+    if two_links(ch) or (ch["kind"] == "channel" and cid < 0):
         line = []
         if not ch["unchecked"]:
-            line.append(InlineKeyboardButton(text="🔄 Switch mode", callback_data=f"a:chmode:{cid}"))
+            line.append(InlineKeyboardButton(
+                text="📢 Use normal link" if ch["request_mode"] else "📨 Use request link",
+                callback_data=f"a:chmode:{cid}"))
         line.append(InlineKeyboardButton(
             text="☑️ Uncheck" if not ch["unchecked"] else "✅ Check", callback_data=f"a:chchk:{cid}"))
         rows.append(line)
     rows.append([InlineKeyboardButton(text="🗑 Delete", callback_data=f"a:chdel:{cid}")])
-    rows.append([icons.pbtn("back", "⬅️", "Back", cb="a:ch")])
+    rows.append([pb("⬅️", "Back", "a:ch")])
     await show(cb, text, InlineKeyboardMarkup(inline_keyboard=rows))
 
 
@@ -333,19 +435,21 @@ async def cb_chview(cb: CallbackQuery, bot: Bot):
 
 @router.callback_query(F.data.startswith("a:chmode:"))
 async def cb_chmode(cb: CallbackQuery, bot: Bot):
+    """Switch which of the two links users receive (both already exist)."""
     cid = int(cb.data.split(":")[2])
     ch = await db.fetchone("SELECT * FROM channels WHERE chat_id=:c", c=cid)
     if not ch:
         return await cb.answer("Not found", show_alert=True)
     new = 0 if ch["request_mode"] else 1
-    try:
-        chat = await bot.get_chat(cid)
-        link = await make_link(bot, chat, new)
-    except TelegramAPIError as e:
-        return await cb.answer(f"Failed: {e}"[:190], show_alert=True)
-    await db.execute("UPDATE channels SET request_mode=:m, link=:l WHERE chat_id=:c", m=new, l=link, c=cid)
-    if not new:
-        await db.execute("DELETE FROM join_requests WHERE chat_id=:c", c=cid)
+    if new and not ch["req_link"]:
+        try:
+            _, req, warn = await build_links(bot, await bot.get_chat(cid))
+        except TelegramAPIError as e:
+            return await cb.answer(f"Failed: {e}"[:190], show_alert=True)
+        if not req:
+            return await cb.answer(f"❌ Couldn't create a request link. {warn}"[:190], show_alert=True)
+        await db.execute("UPDATE channels SET req_link=:r WHERE chat_id=:c", r=req, c=cid)
+    await db.execute("UPDATE channels SET request_mode=:m WHERE chat_id=:c", m=new, c=cid)
     services.invalidate()
     await render_channel_view(cb, bot, cid)
 
@@ -366,45 +470,10 @@ async def cb_chchk(cb: CallbackQuery, bot: Bot):
             return await cb.answer("❌ To check a channel the bot must be an admin there.", show_alert=True)
         await db.execute("UPDATE channels SET unchecked=0 WHERE chat_id=:c", c=cid)
     else:
-        await db.execute("UPDATE channels SET unchecked=1, request_mode=0 WHERE chat_id=:c", c=cid)
-        await db.execute("DELETE FROM join_requests WHERE chat_id=:c", c=cid)
+        await db.execute("UPDATE channels SET unchecked=1 WHERE chat_id=:c", c=cid)
         await db.execute("UPDATE users SET verified=0")  # show it to everyone once
     services.invalidate()
     await render_channel_view(cb, bot, cid)
-
-
-# ---- 📊 how many users joined ----
-@router.callback_query(F.data == "a:chstats")
-async def cb_chstats(cb: CallbackQuery, bot: Bot):
-    rows = await ordered_channels()
-    total = await db.scalar("SELECT COUNT(*) FROM users")
-    verified = await db.scalar("SELECT COUNT(*) FROM users WHERE verified=1")
-
-    async def one(ch: dict) -> str:
-        cid, title = ch["chat_id"], html.escape(ch["title"] or str(ch["chat_id"]))
-        if ch["kind"] == "social":
-            return f"🔗 <b>{title}</b> — link only"
-        members = "—"
-        if cid < 0:
-            try:
-                members = str(await bot.get_chat_member_count(cid))
-            except TelegramAPIError:
-                members = "n/a"
-        mark = "☑️" if ch["unchecked"] else ("📨" if ch["request_mode"] else "📢")
-        line = f"{mark} <b>{title}</b>\n      👥 Members: <b>{members}</b>"
-        if ch["request_mode"]:
-            pend = await db.scalar("SELECT COUNT(*) FROM join_requests WHERE chat_id=:c", c=cid)
-            line += f"  •  📨 Pending: <b>{pend}</b>"
-        return line
-
-    lines = await asyncio.gather(*(one(c) for c in rows)) if rows else []
-    await show(
-        cb,
-        "📊 <b>How many users joined?</b>\n\n"
-        f"👥 Bot users: <b>{total}</b>\n✅ Passed force-join: <b>{verified}</b>\n\n"
-        + ("\n".join(lines) if lines else "<i>No channels added yet.</i>"),
-        back("a:ch"),
-    )
 
 
 # ---- 📡 channel broadcast (post into your channels) ----
@@ -459,16 +528,16 @@ async def cb_chbcgo(cb: CallbackQuery, state: FSMContext, bot: Bot):
     await show(cb, text, back("a:ch"))
 
 
-# ---- ➕ add a normal / request channel ----
+# ---- ➕ add a channel: only username / ID, both links are generated automatically ----
 @router.callback_query(F.data == "a:chadd")
 async def cb_chadd(cb: CallbackQuery, state: FSMContext):
     await state.set_state(AddChannel.chat)
     await show(
         cb,
         "➕ <b>Add a channel</b>\n\nSend the channel <b>@username</b> or numeric <b>ID</b> "
-        "(e.g. <code>-1001234567890</code>) — or simply <b>forward any post</b> from it.\n\n"
-        "⚠️ The bot must already be an <b>admin</b> there "
-        "(with “Invite users via link” for request channels).",
+        "(e.g. <code>-1001234567890</code>) — or forward any post from it.\n\n"
+        "⚠️ The bot must be an <b>admin</b> there (with “Invite users via link”).\n"
+        "✨ The bot creates the <b>normal link</b> and the <b>request link</b> automatically.",
         back("a:ch"),
     )
 
@@ -497,42 +566,32 @@ async def msg_chadd(m: Message, state: FSMContext, bot: Bot):
         )
     if me.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
         return await m.answer("❌ The bot is not an admin in that chat. Promote it and send again.")
-    await state.update_data(chat_id=chat.id, title=chat.title or str(chat.id))
-    await state.set_state(AddChannel.mode)
-    b = InlineKeyboardBuilder()
-    b.button(text="📢 Normal join", callback_data="a:mode:0")
-    b.button(text="📨 Join request", callback_data="a:mode:1")
-    b.button(text="❌ Cancel", callback_data="a:ch")
-    b.adjust(2, 1)
-    await m.answer(
-        f"Channel: <b>{html.escape(chat.title or '')}</b>\nChoose how users must join:",
-        reply_markup=b.as_markup(),
-    )
 
-
-@router.callback_query(AddChannel.mode, F.data.startswith("a:mode:"))
-async def cb_chmode_pick(cb: CallbackQuery, state: FSMContext, bot: Bot):
-    mode = int(cb.data.split(":")[2])
-    d = await state.get_data()
-    try:
-        chat = await bot.get_chat(d["chat_id"])
-        link = await make_link(bot, chat, mode)
-    except TelegramAPIError as e:
-        await state.clear()
-        return await show(
-            cb, f"❌ Couldn't create the invite link: {html.escape(str(e))}\n"
-                "Give the bot the “Invite users via link” permission.", back("a:ch"),
+    normal, req, warn = await build_links(bot, chat)
+    if not normal and not req:
+        return await m.answer(
+            f"❌ Couldn't create invite links: {html.escape(warn or '')}\n"
+            "Give the bot the “Invite users via link” permission and try again."
         )
+    title = chat.title or str(chat.id)
     await db.execute(
-        "INSERT INTO channels(chat_id, title, link, request_mode, unchecked, kind, pos) "
-        "VALUES(:c, :t, :l, :m, 0, 'channel', :p) "
+        "INSERT INTO channels(chat_id, title, link, req_link, request_mode, unchecked, kind, pos) "
+        "VALUES(:c, :t, :l, :r, 0, 0, 'channel', :p) "
         "ON CONFLICT(chat_id) DO UPDATE SET title=excluded.title, link=excluded.link, "
-        "request_mode=excluded.request_mode, unchecked=0, kind='channel'",
-        c=d["chat_id"], t=d["title"], l=link, m=mode, p=await next_pos(),
+        "req_link=excluded.req_link, unchecked=0, kind='channel'",
+        c=chat.id, t=title, l=normal or req, r=req, p=await next_pos(),
     )
     services.invalidate()
     await state.clear()
-    await show(cb, f"✅ Added <b>{html.escape(d['title'])}</b>", back("a:ch"))
+    text = (
+        f"✅ Added <b>{html.escape(title)}</b>\n\n"
+        f"📢 Normal link:\n{html.escape(normal or '—')}\n\n"
+        f"📨 Request link:\n{html.escape(req or '—')}\n\n"
+        "Users get the normal link by default. Open 👀 on the channel to switch to the request link."
+    )
+    if warn:
+        text += f"\n\n⚠️ {html.escape(warn)}"
+    await m.answer(text, reply_markup=back("a:ch"))
 
 
 # ---- ☑️ unchecked channel / 🔗 social link (display-only buttons) ----
@@ -671,6 +730,7 @@ TOGGLES = {
     "force_join": "🔒 Force join",
     "auto_approve": "📨 Auto-approve requests",
     "withdraw_on": "💸 Withdrawals",
+    "notify_new_user": "🔔 New-user alerts",
 }
 TEXTS = {
     "welcome": "👋 Welcome message",
@@ -678,17 +738,11 @@ TEXTS = {
     "force_extra": "➕ Extra message (after force-join)",
     "off_text": "🛠 Maintenance message",
     "refer_text": "👥 Refer & Earn message",
+    "join_btn": "🔘 Join button",
+    "check_btn": "🔘 Claim button",
 }
-BUTTONS = {
-    "join_btn": "Join button",
-    "check_btn": "“I've joined” button",
-    "btn_balance": "Balance button",
-    "btn_refer": "Refer & Earn button",
-    "btn_bonus": "Bonus button",
-    "btn_withdraw": "Withdrawal button",
-    "btn_upi": "Link UPI button",
-}
-LABELS = {**TEXTS, **BUTTONS}
+BTN_KEYS = {"join_btn", "check_btn"}  # short button labels (plain text, optional premium-emoji icon)
+LABELS = TEXTS
 MEDIA_KEYS = {"welcome", "force_text", "force_extra"}  # these can carry a photo
 NUMS = {
     "refer_reward": ("👥 Referral reward", "₹"),
@@ -714,15 +768,14 @@ async def render_settings(cb: CallbackQuery):
         on = services.setting(key) == "1"
         b.button(text=f"{label}: {'ON ✅' if on else 'OFF ❌'}", callback_data=f"a:tog:{key}")
     b.button(text="✏️ Texts", callback_data="a:txts")
-    b.button(text="🔘 Buttons", callback_data="a:btns")
-    b.button(text="🎨 Panel icons", callback_data="a:icons")
     b.button(text="💰 Rewards & limits", callback_data="a:nums")
     b.button(text="⬅️ Back", callback_data="a:home")
-    b.adjust(1, 1, 1, 1, 2, 2, 1)
+    b.adjust(1, 1, 1, 1, 1, 2, 1)
     await show(
         cb,
         "⚙️ <b>Settings</b>\n\nTap a switch to turn it ON/OFF.\n"
-        "🤖 <b>Bot OFF</b> shows the maintenance message to all users (admins can still use it).",
+        "🤖 <b>Bot OFF</b> shows the maintenance message to all users (admins can still use it).\n"
+        "🔔 <b>New-user alerts</b> message every admin when someone starts the bot.",
         b.as_markup(),
     )
 
@@ -743,46 +796,30 @@ async def cb_toggle(cb: CallbackQuery):
     await render_settings(cb)
 
 
-# ---- texts & buttons lists ----
+# ---- texts (messages + Join / Claim button labels) ----
 @router.callback_query(F.data == "a:txts")
 async def cb_texts(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     b = InlineKeyboardBuilder()
     for key, label in TEXTS.items():
-        mark = "📷 " if services.setting(f"media:{key}") else ""
+        mark = "📷 " if services.setting(f"media:{key}") else ("💎 " if icons.icon(key) else "")
         b.button(text=mark + label, callback_data=f"a:txt:{key}")
     b.button(text="⬅️ Back", callback_data="a:set")
     b.adjust(1)
     await show(
         cb,
-        "✏️ <b>Edit texts</b>\n\nPick a message. Send the new text <b>formatted in Telegram</b> "
+        "✏️ <b>Edit texts</b>\n\nPick a message or button. Send the new text <b>formatted in Telegram</b> "
         "(bold, italic, links, <b>premium emoji</b>) — it's detected automatically, <u>no HTML needed</u>.\n\n"
         "📷 Force-join, welcome and extra messages also accept a <b>photo with caption</b>.\n"
+        "🔘 <b>Join / Claim</b> buttons: change their label (a premium emoji in it becomes the button icon).\n"
         "You always get a live preview, and ♻️ <b>Reset to default</b> restores the original.",
-        b.as_markup(),
-    )
-
-
-@router.callback_query(F.data == "a:btns")
-async def cb_btns(cb: CallbackQuery, state: FSMContext):
-    await state.clear()
-    b = InlineKeyboardBuilder()
-    for key, label in BUTTONS.items():
-        mark = "💎 " if icons.icon(key) else ""
-        b.button(text=f"{mark}{label}", callback_data=f"a:txt:{key}")
-    b.button(text="⬅️ Back", callback_data="a:set")
-    b.adjust(1)
-    await show(
-        cb,
-        "🔘 <b>Button labels</b>\n\nChange what users see on the Join / I've joined / menu buttons.\n"
-        "💎 = has a premium-emoji icon. To add one, include a <b>premium emoji</b> in the label you send.",
         b.as_markup(),
     )
 
 
 async def send_preview(bot: Bot, chat_id: int, key: str, tg_user):
     """Show it exactly as users will see it (rendered, never raw HTML)."""
-    if key in BUTTONS:
+    if key in BTN_KEYS:
         label = services.setting(key)
         iid = icons.icon(key)
         if key == "join_btn":
@@ -820,14 +857,13 @@ async def cb_txt(cb: CallbackQuery, state: FSMContext, bot: Bot):
         return await cb.answer()
     await state.set_state(EditText.value)
     await state.update_data(key=key)
-    is_btn = key in BUTTONS
     rows = [[InlineKeyboardButton(text="♻️ Reset to default", callback_data=f"a:txtdef:{key}")]]
     if services.setting(f"media:{key}"):
         rows.append([InlineKeyboardButton(text="🗑 Remove photo", callback_data=f"a:txtnophoto:{key}")])
-    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:btns" if is_btn else "a:txts")])
-    if is_btn:
+    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:txts")])
+    if key in BTN_KEYS:
         how = ("✍️ Send the new label.\n💎 Include a <b>premium emoji</b> and it becomes the button icon "
-               "(without one, any icon is removed). Menu-button changes reach users on their next /start.")
+               "(without one, any icon is removed).")
     elif key in MEDIA_KEYS:
         how = "✍️ Send the new message — <b>text</b>, or a <b>photo with caption</b>."
     else:
@@ -848,11 +884,10 @@ async def cb_txtdef(cb: CallbackQuery, state: FSMContext, bot: Bot):
         return await cb.answer()
     await services.reset_setting(key)
     await services.reset_setting(f"media:{key}")
-    if key in BUTTONS:
+    if key in BTN_KEYS:
         await icons.clear_icon(key)
     await state.clear()
-    await show(cb, f"♻️ <b>{LABELS[key]}</b> was reset to the default.\n\n👇 Preview:",
-               back("a:btns" if key in BUTTONS else "a:txts"))
+    await show(cb, f"♻️ <b>{LABELS[key]}</b> was reset to the default.\n\n👇 Preview:", back("a:txts"))
     await send_preview(bot, cb.message.chat.id, key, cb.from_user)
 
 
@@ -869,7 +904,7 @@ async def cb_txtnophoto(cb: CallbackQuery, state: FSMContext, bot: Bot):
 async def msg_txt(m: Message, state: FSMContext, bot: Bot):
     d = await state.get_data()
     key = d["key"]
-    if key in BUTTONS:
+    if key in BTN_KEYS:
         label, iid = icons.split_label(m)
         if not label:
             return await m.answer("❌ Please include some text (not only an emoji).")
@@ -881,7 +916,7 @@ async def msg_txt(m: Message, state: FSMContext, bot: Bot):
     else:
         await services.set_setting(key, m.html_text)  # entities (bold, links, premium emoji…) -> HTML automatically
     await state.clear()
-    await m.answer("✅ <b>Saved!</b> This is how it looks:", reply_markup=back("a:btns" if key in BUTTONS else "a:txts"))
+    await m.answer("✅ <b>Saved!</b> This is how it looks:", reply_markup=back("a:txts"))
     await send_preview(bot, m.chat.id, key, m.from_user)
 
 
@@ -897,54 +932,6 @@ async def msg_txt_photo(m: Message, state: FSMContext, bot: Bot):
     await state.clear()
     await m.answer("✅ <b>Saved!</b> This is how it looks:", reply_markup=back("a:txts"))
     await send_preview(bot, m.chat.id, key, m.from_user)
-
-
-# ---- 🎨 panel icons (premium emoji on admin-panel buttons) ----
-@router.callback_query(F.data == "a:icons")
-async def cb_icons(cb: CallbackQuery, state: FSMContext):
-    await state.clear()
-    b = InlineKeyboardBuilder()
-    for key, label in icons.PANEL_ICONS.items():
-        b.button(text=f"{'💎' if icons.icon(key) else '▫️'} {label}", callback_data=f"a:icon:{key}")
-    b.button(text="⬅️ Back", callback_data="a:set")
-    b.adjust(2)
-    await show(
-        cb,
-        "🎨 <b>Panel icons</b>\n\nGive the channel-panel buttons premium-emoji icons.\n"
-        "💎 = icon set. Tap a button, then send a message containing a <b>premium emoji</b>.",
-        b.as_markup(),
-    )
-
-
-@router.callback_query(F.data.startswith("a:icon:"))
-async def cb_icon(cb: CallbackQuery, state: FSMContext):
-    key = cb.data.split(":")[2]
-    if key not in icons.PANEL_ICONS:
-        return await cb.answer()
-    await state.set_state(SetIcon.emoji)
-    await state.update_data(key=key)
-    rows = []
-    if icons.icon(key):
-        rows.append([InlineKeyboardButton(text="🗑 Remove icon", callback_data=f"a:icondel:{key}")])
-    rows.append([InlineKeyboardButton(text="⬅️ Back", callback_data="a:icons")])
-    await show(cb, f"🎨 <b>{icons.PANEL_ICONS[key]}</b>\n\nSend a message containing <b>one premium emoji</b>.", rows_kb(rows))
-
-
-@router.callback_query(F.data.startswith("a:icondel:"))
-async def cb_icondel(cb: CallbackQuery, state: FSMContext):
-    await icons.clear_icon(cb.data.split(":")[2])
-    await cb_icons(cb, state)
-
-
-@router.message(SetIcon.emoji)
-async def msg_icon(m: Message, state: FSMContext):
-    ids = icons.custom_emoji_ids(m)
-    if not ids:
-        return await m.answer("❌ I couldn't find a premium emoji in that message. Send one (needs Telegram Premium).")
-    d = await state.get_data()
-    await icons.set_icon(d["key"], ids[0])
-    await state.clear()
-    await m.answer("✅ Icon saved. Open the channel panel to see it.", reply_markup=back("a:icons"))
 
 
 # ---- numbers ----

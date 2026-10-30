@@ -49,7 +49,6 @@ async def on_join_request(req: ChatJoinRequest):
     ch = await db.fetchone("SELECT chat_id FROM channels WHERE chat_id=:c", c=req.chat.id)
     if not ch:
         return
-    await services.upsert_user(req.from_user)
     await db.execute(
         "INSERT INTO join_requests(user_id, chat_id) VALUES(:u, :c) ON CONFLICT DO NOTHING",
         u=req.from_user.id, c=req.chat.id,
