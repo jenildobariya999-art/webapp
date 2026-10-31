@@ -1,44 +1,47 @@
-# Telegram Force-Join Bot (with custom menu)
+# BotHub – run many Telegram bots from one dashboard
 
-aiogram 3 • Render (webhook) • PostgreSQL (Neon / Render) • SQLite for local testing
+One service, many bots. Each bot keeps its own users, channels, menu and settings.
+Add a bot by pasting its token in the web dashboard – no redeploy.
 
-## Features
-- **Force join** – many channels: normal, **join-request** (pending request counts) and **☑️ unchecked** (shown as a Join button, never verified), plus 🔗 social links.
-- Both links (normal + request) are generated automatically when you add a channel; tap a channel name to replace its link.
-- **Join Mode**: *Show All Channels* or *Not Joined Only*.
-- Join buttons are 2 per line; **Claim** re-checks, deletes the old join + extra message and shows fresh ones (no pop-up).
-- Join message / extra message / welcome support **photo + caption + premium emoji**.
-- **Custom menu buttons**: name, reply (text / photo / premium emoji), color and **layout** (1, 2 or 3 per line) – all from the admin panel.
-- **Button colors** (primary / success / danger) for Join, Claim and every menu button.
-- **Admin panel** (`/admin`): stats, channels, channel broadcast, user broadcast, users (ban/unban), settings, menu buttons, admins.
-- New-user alerts to admins (ON/OFF).
+## What you get
+**Web dashboard** (`https://your-app.onrender.com`)
+- Overview of every bot: users, active, blocked, new in 24 h, 7-day signup chart, online status
+- Add a new bot (token) · pause / resume · delete (with all data)
+- Bot-wise user list with search, filters and pagination · channel list
+- **Broadcast** to one bot, several bots or **all bots** at once (text, photo, link button, `{name}`), live progress, stop button
+- **Export** users to CSV – everything, or per bot (all / active / blocked / banned)
 
-## What each file does
+**Inside every bot** (`/admin` for your ADMIN_IDS)
+- Force-join: normal, join-request and unchecked channels, social links, auto-generated links, Join Mode
+- Join message with photo, extra message, 2 Join buttons per line, Claim button (colors, premium emoji)
+- Custom menu buttons: name, reply (text/photo/premium emoji), color, layout (1–3 per line)
+- Broadcast to the bot's users · ban/unban · channel broadcast · new-user alerts · texts editor
+
+## Files
 | File | Job |
 |---|---|
-| `main.py` | Starts everything: web server (Render), webhook / polling, DB init, router wiring. Retries if Telegram or the DB is slow. |
-| `config.py` | Reads environment variables (`BOT_TOKEN`, `ADMIN_IDS`, `DATABASE_URL`, webhook URL). |
-| `db.py` | Database layer (SQLite/PostgreSQL), creates tables and auto-adds new columns on old databases. |
-| `services.py` | Brain: cached settings, default texts, menu buttons + layout, force-join checking, photo+caption sending. |
-| `middleware.py` | Gatekeeper on every message/button: registers users, bans, bot ON/OFF, force-join message. |
-| `icons.py` | Premium-emoji icon + color style for buttons, with automatic fallback if Telegram refuses them. |
-| `keyboards.py` | Builds the user menu from the buttons and layout set in the admin panel. |
-| `handlers/user.py` | `/start`, Claim button, join-request tracking, welcome message. |
-| `handlers/menu.py` | Sends the admin-set reply when a user taps a menu button. |
-| `handlers/admin.py` | The whole admin panel `/admin`. |
-| `render.yaml` | One-click Render Blueprint (web service + database). |
-| `requirements.txt` | Python packages. |
-| `.env.example` | Template of environment variables for local runs. |
+| `main.py` | Starts the web server, loads every bot from the database, webhooks, add/pause/delete bots |
+| `core.py` | Config, database (SQLite/PostgreSQL), per-bot settings & menu, force-join logic, helpers |
+| `bot.py` | Everything inside a bot: gatekeeper, user handlers, menu replies, `/admin` panel |
+| `dashboard.py` | The web dashboard: login, API, broadcast engine, CSV export and the page itself |
+| `render.yaml` | One-click Render setup (web service + database) |
+| `requirements.txt`, `.env.example`, `.gitignore` | Packages, env template, ignore list |
 
 ## Environment variables
 | Name | Meaning |
 |---|---|
-| `BOT_TOKEN` | token from @BotFather |
-| `ADMIN_IDS` | owner Telegram IDs, comma separated |
-| `DATABASE_URL` | PostgreSQL URL (Neon/Supabase/Render). Empty = local SQLite |
-| `WEBHOOK_URL` | optional; Render sets `RENDER_EXTERNAL_URL` automatically |
+| `DASHBOARD_PASSWORD` | **Required.** Login password of the web dashboard |
+| `ADMIN_IDS` | Your Telegram user id(s) – admins of every bot |
+| `BOT_TOKEN` | Optional first bot (existing single-bot installs keep working and their data is copied automatically) |
+| `DATABASE_URL` | PostgreSQL URL (Neon / Render). Empty = local SQLite |
+| `SECRET_KEY` | Random string for login cookies and webhook secrets (Render generates it) |
 
-## Run locally / Termux
-    pip install aiogram aiohttp SQLAlchemy aiosqlite python-dotenv
-    cp .env.example .env   # fill BOT_TOKEN + ADMIN_IDS
-    python main.py
+## Deploy on Render
+1. Push this folder to GitHub → Render → **New → Blueprint** → pick the repo.
+2. Fill `DASHBOARD_PASSWORD`, `ADMIN_IDS` (and optionally `BOT_TOKEN`).
+3. Open the service URL → sign in → **Add bot**.
+
+## Notes
+- Bot tokens are stored in your database – keep `DATABASE_URL` secret.
+- Multiple bots need the **webhook** mode (Render). Locally (no public URL) the bots that exist at start use long polling; restart after adding one.
+- Render's free plan sleeps when idle – ping `/health` every 5–10 min (UptimeRobot) so bots answer fast.
