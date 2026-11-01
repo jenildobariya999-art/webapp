@@ -6,142 +6,156 @@
 <title>Rewards</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --navy:#0f172a; --sky1:#3dbcf8; --sky2:#aee3ff; --sky3:#d9f1ff;
-  --yellow:#facc15; --orange:#fb923c; --blue:#38bdf8; --green:#22c55e; --red:#ef4444;
-  --brown:#b45309; --cream:#fff7cc;
+  --bg:#07050f; --card1:#1a1336; --card2:#110c26;
+  --gold1:#fff3b0; --gold2:#facc15; --gold3:#d4a017; --gold4:#7a5a0c;
+  --line:rgba(250,204,21,.28); --line2:rgba(250,204,21,.55);
+  --txt:#f4f1ff; --mut:#a79fc9;
+  --green:#10b981; --red:#ef4444; --violet:#6366f1; --orange:#f97316;
+  --disp:'Oswald','Arial Narrow','Impact',sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
+html{background:#07050f}
 body{
-  font-family:'Fredoka',system-ui,sans-serif; font-weight:600; color:var(--navy);
-  background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 55%,var(--sky3) 100%);
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-weight:500; color:var(--txt);
+  background:
+    radial-gradient(900px 520px at 50% -8%,#3a1a6e 0%,rgba(58,26,110,0) 62%),
+    radial-gradient(700px 480px at 100% 32%,rgba(250,204,21,.10),rgba(250,204,21,0) 60%),
+    linear-gradient(180deg,#0b0718,#07050f);
   background-attachment:fixed; min-height:100vh;
 }
-.wrap{max-width:520px;margin:0 auto;padding:14px 14px 120px}
-.display{font-family:'Lilita One','Fredoka',sans-serif;font-weight:400;letter-spacing:.3px}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='10' y='42' font-size='30' fill='%23facc15'%3E%E2%99%A0%3C/text%3E%3Ctext x='70' y='64' font-size='30' fill='%23facc15'%3E%E2%99%A5%3C/text%3E%3Ctext x='22' y='108' font-size='30' fill='%23facc15'%3E%E2%99%A6%3C/text%3E%3Ctext x='82' y='116' font-size='30' fill='%23facc15'%3E%E2%99%A3%3C/text%3E%3C/svg%3E");
+}
+.wrap{max-width:520px;margin:0 auto;padding:16px 14px 118px;position:relative;z-index:1}
+.display{font-family:var(--disp);font-weight:600;letter-spacing:.6px}
 
 /* header */
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.logo{width:56px;height:56px;border-radius:16px;border:3px solid var(--navy);background:#0b5d2e;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;
-  font-family:'Lilita One';color:var(--yellow);font-size:15px;line-height:1;text-align:center}
+.logo{width:46px;height:46px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-family:var(--disp);font-weight:700;font-size:17px;color:#2b1a00;
+  background:linear-gradient(135deg,#fff3b0,#d4a017);box-shadow:0 0 0 2px var(--line2),0 6px 18px rgba(250,204,21,.25)}
 .logo img{width:100%;height:100%;object-fit:cover}
-.brand-title{font-family:'Lilita One';font-size:27px;line-height:.95;color:var(--navy);text-transform:uppercase;
-  text-shadow:2px 2px 0 #fff, -1px -1px 0 #fff;word-break:break-word}
-.hello{display:flex;align-items:center;gap:8px;background:#fff;border:4px solid var(--navy);border-radius:999px;
-  box-shadow:0 4px 0 var(--navy);padding:6px 12px 6px 6px;max-width:48%;min-width:0}
-.avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--navy);background:#1e3a5f;color:#fff;
-  display:flex;align-items:center;justify-content:center;font-family:'Lilita One';overflow:hidden;flex:none}
+.brand-title{font-family:var(--disp);font-weight:700;font-size:21px;line-height:1.05;letter-spacing:1.2px;text-transform:uppercase;word-break:break-word;
+  background:linear-gradient(180deg,#fff3b0,#facc15 55%,#b8860b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.hello{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px 5px 5px;max-width:48%;min-width:0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp);font-weight:600;overflow:hidden;flex:none;box-shadow:0 0 0 2px var(--line2)}
 .avatar img{width:100%;height:100%;object-fit:cover}
-.hello-t{min-width:0;line-height:1.05}
-.hello-t small{display:block;color:#0369a1;font-size:13px;font-weight:700}
-.hello-t b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hello-t{min-width:0;line-height:1.1}
+.hello-t small{display:block;color:var(--mut);font-size:11px;font-weight:600;letter-spacing:.4px}
+.hello-t b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* cards */
-.card{background:#fff;border:4px solid var(--navy);border-radius:28px;box-shadow:0 8px 0 var(--navy);padding:16px;margin-bottom:24px}
-.card.gold{background:linear-gradient(135deg,#fde68a,#facc15 60%,#f5c40d);text-align:center}
-.card.cream{background:linear-gradient(180deg,#fff7cc,#fff3b0);border-color:var(--brown);box-shadow:0 8px 0 var(--brown);text-align:center}
-.label{font-family:'Lilita One';font-size:17px;color:#7c4a03;letter-spacing:.5px;text-transform:uppercase}
-.amount{font-family:'Lilita One';font-size:64px;line-height:1.05;color:var(--navy);margin:2px 0 10px;text-shadow:2px 2px 0 #fff}
-.dashed{border:3px dashed var(--navy);border-radius:18px;background:#fff6cf;padding:10px 12px;font-size:16px;font-weight:700;line-height:1.25}
+.card{position:relative;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 12px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);padding:16px;margin-bottom:16px}
+.card.gold{text-align:center;overflow:hidden;border:1px solid transparent;
+  background:linear-gradient(#1a1233,#120b26) padding-box,linear-gradient(135deg,#fff3b0,#d4a017 45%,#7a5a0c) border-box;
+  box-shadow:0 14px 34px rgba(0,0,0,.5),0 0 28px rgba(250,204,21,.12)}
+.card.gold:after{content:"777";position:absolute;right:10px;bottom:-14px;font-family:var(--disp);font-weight:700;font-size:84px;letter-spacing:4px;color:rgba(250,204,21,.07);pointer-events:none}
+.card.cream{background:linear-gradient(180deg,#1d1538,#140e2b);text-align:center}
+.label{font-family:var(--disp);font-weight:500;font-size:13px;letter-spacing:2.4px;color:var(--gold2);text-transform:uppercase;opacity:.9}
+.amount{font-family:var(--disp);font-weight:700;font-size:58px;line-height:1.1;margin:2px 0 10px;
+  background:linear-gradient(180deg,#fff7cc,#facc15 55%,#c98f0a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(250,204,21,.28))}
+.dashed{border:1px dashed var(--line2);border-radius:12px;background:rgba(250,204,21,.06);padding:9px 12px;font-size:13px;font-weight:600;line-height:1.3;color:#e8dfb8}
 .center{text-align:center}
-.h2{font-family:'Lilita One';font-size:19px;text-align:center;margin:0 0 12px}
-.sect-title{font-family:'Lilita One';font-size:21px;text-align:center;margin:-6px 0 14px;text-shadow:1px 1px 0 #fff}
+.h2{font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin:0 0 12px;color:#fff}
+.sect-title{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:2.2px;text-transform:uppercase;color:var(--gold2);margin:4px 2px 14px}
+.sect-title:before,.sect-title:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(250,204,21,0),rgba(250,204,21,.5))}
+.sect-title:after{background:linear-gradient(90deg,rgba(250,204,21,.5),rgba(250,204,21,0))}
 
 /* inputs + buttons */
-.input{width:100%;border:4px solid var(--navy);border-radius:20px;padding:14px 16px;font:700 18px 'Fredoka',sans-serif;
-  color:var(--navy);background:#f1f5f9;text-transform:uppercase;outline:none;margin-bottom:14px}
-.input::placeholder{color:#64748b}
-.input.num{text-align:center;text-transform:none;font-size:22px}
-.btn{display:block;width:100%;border:4px solid var(--navy);border-radius:22px;box-shadow:0 6px 0 var(--navy);
-  font-family:'Lilita One';font-size:21px;letter-spacing:.4px;text-transform:uppercase;padding:13px 10px;color:var(--navy);
-  cursor:pointer;transition:transform .06s,box-shadow .06s;margin:0 0 6px}
-.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--navy)}
-.btn[disabled]{opacity:.55;pointer-events:none}
-.b-yellow{background:var(--yellow);color:#7c4a03}
-.b-orange{background:var(--orange);color:#fff}
-.b-blue{background:var(--blue);color:#0c4a6e}
-.b-green{background:var(--green);color:#fff}
-.b-sm{display:inline-block;width:auto;font-size:16px;padding:8px 14px;border-radius:16px;box-shadow:0 4px 0 var(--navy);margin:0}
+.input{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font:600 16px 'Inter',sans-serif;letter-spacing:.5px;
+  color:#fff;background:#0b0820;text-transform:uppercase;outline:none;margin-bottom:12px;transition:border-color .15s,box-shadow .15s}
+.input::placeholder{color:#6f6896;text-transform:none;letter-spacing:0}
+.input:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(250,204,21,.15)}
+.input.num{text-align:center;text-transform:none;font-family:var(--disp);font-size:22px;letter-spacing:1px}
+.btn{display:block;width:100%;border:0;border-radius:14px;font-family:var(--disp);font-weight:600;font-size:17px;letter-spacing:1.4px;text-transform:uppercase;
+  padding:14px 10px;color:#2b1a00;cursor:pointer;transition:transform .08s,filter .15s;margin:0 0 10px;
+  background:linear-gradient(180deg,#fde047,#f59e0b);box-shadow:0 8px 20px rgba(245,158,11,.28),inset 0 1px 0 rgba(255,255,255,.55)}
+.btn:last-child{margin-bottom:0}
+.btn:active{transform:translateY(1px);filter:brightness(.95)}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.b-yellow{background:linear-gradient(180deg,#fde047,#f59e0b);color:#2b1a00}
+.b-green{background:linear-gradient(180deg,#34d399,#059669);color:#fff;box-shadow:0 8px 20px rgba(16,185,129,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+.b-blue{background:linear-gradient(180deg,#818cf8,#4338ca);color:#fff;box-shadow:0 8px 20px rgba(99,102,241,.3),inset 0 1px 0 rgba(255,255,255,.3)}
+.b-orange{background:linear-gradient(180deg,#fb923c,#dc2626);color:#fff;box-shadow:0 8px 20px rgba(239,68,68,.28),inset 0 1px 0 rgba(255,255,255,.3)}
+.b-sm{display:inline-block;width:auto;font-size:14px;padding:9px 14px;border-radius:12px;margin:0;letter-spacing:1px}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.btnrow .btn{margin:0;font-size:15px;padding:13px 6px}
 
-/* verification */
-.v-title{font-family:'Lilita One';font-size:38px;line-height:1.02;color:var(--brown);margin:6px 0 10px;text-transform:uppercase}
-.v-sub{font-size:19px;font-weight:700;color:#7c2d12;margin:0 0 6px;line-height:1.2}
-.v-sub2{font-size:17px;font-weight:600;color:var(--brown);margin:0 0 16px}
-.ch{background:#fff;border:4px solid var(--navy);border-radius:26px;box-shadow:0 6px 0 var(--navy);padding:14px 12px 10px;margin-bottom:18px;text-align:left}
-.ch-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.ch-name{font-size:19px;font-weight:700;min-width:0;word-break:break-word}
-.badge{flex:none;border:3px solid var(--navy);border-radius:999px;padding:3px 12px;font-size:16px;font-weight:700}
-.badge.ok{background:#dcfce7;color:#15803d}
-.badge.no{background:#fee2e2;color:#b91c1c}
-
-/* compact join page */
-.vcard{background:#fff;border:4px solid var(--navy);border-radius:26px;box-shadow:0 7px 0 var(--navy);padding:14px 12px 12px;margin-bottom:22px;position:relative;overflow:hidden}
-.vcard:before{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,#fde68a 0%,rgba(253,230,138,0) 70%);pointer-events:none}
-.vhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;position:relative}
-.vico{width:44px;height:44px;border-radius:14px;background:var(--yellow);border:3px solid var(--navy);box-shadow:0 3px 0 var(--navy);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
-.vtit{font-family:'Lilita One';font-size:21px;line-height:1.05;text-transform:uppercase;color:var(--navy)}
-.vsub{font-size:13px;color:#475569;font-weight:600;line-height:1.2;margin-top:2px}
-.vpill{margin-left:auto;flex:none;border:3px solid var(--navy);border-radius:999px;background:#fff6cf;padding:2px 11px;font-family:'Lilita One';font-size:16px}
-.prog{height:14px;border:3px solid var(--navy);border-radius:999px;background:#e2e8f0;overflow:hidden;margin:0 0 12px}
-.prog i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#86efac);border-radius:999px;transition:width .5s}
-.vrow{display:flex;align-items:center;gap:10px;padding:7px 8px;border:3px solid var(--navy);border-radius:18px;background:#f8fafc;margin-bottom:8px}
-.vrow.done{background:#f0fdf4;border-color:#15803d}
-.vav{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Lilita One';color:#fff;border:2px solid var(--navy);flex:none;font-size:17px}
-.vmid{flex:1;min-width:0;line-height:1.1}
-.vmid b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vmid small{font-size:12px;font-weight:700;color:#64748b}
-.vrow.done .vmid small{color:#15803d}
-.vgo{flex:none;border:3px solid var(--navy);border-radius:14px;box-shadow:0 3px 0 var(--navy);padding:7px 14px;font-family:'Lilita One';font-size:15px;text-transform:uppercase;cursor:pointer;margin:0 0 3px}
-.vgo:active{transform:translateY(2px);box-shadow:0 1px 0 var(--navy)}
-.vgo[disabled]{opacity:.5;pointer-events:none}
-.vgo.blue{background:var(--blue);color:#0c4a6e}
-.vgo.orange{background:var(--orange);color:#fff}
-.vtick{flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;border:3px solid var(--navy);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
-.vhint{font-size:12px;color:#64748b;font-weight:600;text-align:center;margin:2px 0 10px}
+/* verification (compact join page) */
+.vcard{position:relative;background:linear-gradient(180deg,var(--card1),var(--card2));border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 12px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);padding:14px 12px 14px;margin-bottom:16px;overflow:hidden}
+.vcard:before{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(250,204,21,.22) 0%,rgba(250,204,21,0) 70%);pointer-events:none}
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:12px;position:relative}
+.vico{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#fff3b0,#d4a017);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;box-shadow:0 0 0 2px var(--line2)}
+.vtit{font-family:var(--disp);font-weight:700;font-size:19px;line-height:1.05;letter-spacing:1.4px;text-transform:uppercase;color:#fff}
+.vsub{font-size:12px;color:var(--mut);font-weight:500;line-height:1.25;margin-top:3px}
+.vpill{margin-left:auto;flex:none;border:1px solid var(--line2);border-radius:999px;background:rgba(250,204,21,.1);color:var(--gold2);padding:2px 11px;font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:1px}
+.prog{height:8px;border-radius:999px;background:#0b0820;border:1px solid var(--line);overflow:hidden;margin:0 0 12px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#facc15,#34d399);border-radius:999px;transition:width .5s}
+.vrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.03);margin-bottom:8px}
+.vrow.done{background:rgba(16,185,129,.09);border-color:rgba(16,185,129,.55)}
+.vav{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;color:#fff;flex:none;font-size:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.vmid{flex:1;min-width:0;line-height:1.15}
+.vmid b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vmid small{font-size:11px;font-weight:600;color:var(--mut)}
+.vrow.done .vmid small{color:#34d399}
+.vgo{flex:none;border:0;border-radius:10px;padding:8px 16px;font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;color:#fff;margin:0}
+.vgo:active{transform:translateY(1px)}
+.vgo[disabled]{opacity:.45;pointer-events:none}
+.vgo.blue{background:linear-gradient(180deg,#818cf8,#4338ca);box-shadow:0 4px 12px rgba(99,102,241,.35)}
+.vgo.orange{background:linear-gradient(180deg,#fb923c,#dc2626);box-shadow:0 4px 12px rgba(239,68,68,.35)}
+.vtick{flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(180deg,#34d399,#059669);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 0 12px rgba(16,185,129,.45)}
+.vhint{font-size:11px;color:var(--mut);font-weight:500;text-align:center;margin:4px 0 12px}
 
 /* wd */
-.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.chip{border:4px solid var(--navy);border-radius:16px;box-shadow:0 4px 0 var(--navy);background:#eef2f7;
-  font-family:'Lilita One';font-size:22px;padding:10px 0;text-align:center;cursor:pointer}
-.chip.sel{background:var(--yellow)}
-.chip:active{transform:translateY(3px);box-shadow:0 1px 0 var(--navy)}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.chip{border:1px solid var(--line);border-radius:12px;background:#0b0820;font-family:var(--disp);font-weight:600;font-size:20px;letter-spacing:1px;padding:10px 0;text-align:center;cursor:pointer;color:#fff;transition:all .15s}
+.chip.sel{background:linear-gradient(180deg,#fde047,#f59e0b);color:#2b1a00;border-color:transparent;box-shadow:0 6px 16px rgba(245,158,11,.3)}
+.chip:active{transform:translateY(1px)}
 .uid-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.uid-lab{font-size:14px;color:#475569;font-weight:700;text-transform:uppercase}
-.uid-val{font-family:'Lilita One';font-size:30px;word-break:break-all;line-height:1.1}
-.note{font-size:14px;color:#0369a1;font-weight:700;text-align:center;margin-top:4px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:2px dashed #cbd5e1;padding:10px 0}
+.uid-lab{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:1.6px}
+.uid-val{font-family:var(--disp);font-weight:600;font-size:28px;letter-spacing:2px;word-break:break-all;line-height:1.15;color:var(--gold2)}
+.note{font-size:12px;color:#c9b26b;font-weight:600;text-align:center;margin-top:8px;line-height:1.35}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0}
 .row:last-child{border-bottom:0}
-.row small{display:block;color:#64748b;font-weight:600}
-.pill{border:3px solid var(--navy);border-radius:999px;padding:2px 10px;font-size:14px;font-weight:700;text-transform:capitalize}
-.pill.paid{background:#dcfce7;color:#15803d}.pill.pending{background:#fef9c3;color:#a16207}.pill.rejected{background:#fee2e2;color:#b91c1c}
-.empty{color:#64748b;text-align:center;padding:12px 0;font-weight:700}
-.rules{text-align:left;font-size:16px;line-height:1.3;font-weight:600;color:#7c2d12}
-.rules h3{margin:0 0 8px;font-family:'Lilita One';font-weight:400;font-size:19px;color:var(--brown)}
-.rules p{margin:0 0 8px}
-.codebox{border:4px dashed var(--green);background:#f0fdf4;color:#15803d;border-radius:22px;
-  font-family:'Lilita One';font-size:36px;text-align:center;padding:14px 8px;margin-bottom:14px;word-break:break-all;user-select:all}
+.row small{display:block;color:var(--mut);font-weight:500}
+.pill{border:1px solid;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.pill.paid{background:rgba(16,185,129,.14);color:#34d399;border-color:rgba(16,185,129,.55)}
+.pill.pending{background:rgba(250,204,21,.12);color:#facc15;border-color:rgba(250,204,21,.5)}
+.pill.rejected{background:rgba(239,68,68,.14);color:#f87171;border-color:rgba(239,68,68,.55)}
+.empty{color:var(--mut);text-align:center;padding:12px 0;font-weight:500;font-size:14px}
+.rules{text-align:left;font-size:13px;line-height:1.45;font-weight:500;color:#d9d2f3}
+.rules h3{margin:0 0 10px;font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold2)}
+.rules p{margin:0 0 8px;padding-left:2px}
+.codebox{border:1px dashed var(--gold2);background:rgba(250,204,21,.07);color:var(--gold2);border-radius:14px;
+  font-family:var(--disp);font-weight:700;font-size:34px;letter-spacing:5px;text-align:center;padding:14px 8px;margin-bottom:12px;word-break:break-all;user-select:all;
+  text-shadow:0 0 16px rgba(250,204,21,.35)}
 
 /* nav */
-.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(92vw,500px);background:#fff;
-  border:4px solid var(--navy);border-radius:28px;box-shadow:0 6px 0 var(--navy);display:flex;padding:8px;gap:8px;z-index:20}
-.nav button{flex:1;border:0;background:transparent;border-radius:20px;padding:12px 6px;font-family:'Lilita One';font-size:20px;
-  color:#64748b;text-transform:uppercase;cursor:pointer}
-.nav button.on{background:var(--yellow);color:#7c4a03;box-shadow:inset 0 0 0 3px var(--navy)}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(92vw,500px);background:rgba(13,10,31,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line2);border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.6);display:flex;padding:6px;gap:6px;z-index:20}
+.nav button{flex:1;border:0;background:transparent;border-radius:14px;padding:12px 6px;font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:1.6px;color:var(--mut);text-transform:uppercase;cursor:pointer}
+.nav button.on{background:linear-gradient(180deg,#fde047,#f59e0b);color:#2b1a00;box-shadow:0 6px 16px rgba(245,158,11,.3)}
 
 /* misc */
-.toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
-  background:var(--navy);color:#fff;border-radius:16px;padding:12px 18px;font-weight:700;font-size:16px;z-index:60;
-  max-width:88vw;text-align:center;transition:.25s}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:#150f2e;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 18px;font-weight:600;font-size:14px;z-index:60;
+  max-width:88vw;text-align:center;transition:.25s;box-shadow:0 10px 26px rgba(0,0,0,.55)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal{position:fixed;inset:0;background:rgba(4,2,12,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
 .modal .card{width:100%;max-width:420px;margin:0}
-.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
-.spin{width:54px;height:54px;border:6px solid #fff;border-top-color:var(--navy);border-radius:50%;animation:sp .8s linear infinite}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;color:var(--mut)}
+.spin{width:46px;height:46px;border:4px solid rgba(250,204,21,.2);border-top-color:var(--gold2);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hide{display:none!important}
 </style>
@@ -150,7 +164,7 @@ body{
 <div class="wrap">
   <div class="top" id="top">
     <div class="brand">
-      <div class="logo" id="logo">🎁</div>
+      <div class="logo" id="logo">♠</div>
       <div class="brand-title" id="brandTitle"></div>
     </div>
     <div class="hello">
@@ -158,7 +172,7 @@ body{
       <div class="hello-t"><small id="greet">Hello</small><b id="uname">User</b></div>
     </div>
   </div>
-  <div id="view"><div class="loader"><div class="spin"></div><div class="display" style="font-size:22px">Loading...</div></div></div>
+  <div id="view"><div class="loader"><div class="spin"></div><div class="display" style="font-size:16px;letter-spacing:2px">LOADING...</div></div></div>
 </div>
 
 <div class="nav hide" id="nav">
@@ -170,7 +184,7 @@ body{
 <script>
 (function () {
   var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-  try { tg && tg.ready(); tg && tg.expand(); tg && tg.setHeaderColor('#1e293b'); } catch (e) {}
+  try { tg && tg.ready(); tg && tg.expand(); tg && tg.setHeaderColor('#0b0818'); tg && tg.setBackgroundColor && tg.setBackgroundColor('#07050f'); } catch (e) {}
 
   // ---------- read link params (api is LAST on purpose, it contains ? and =) ----------
   var raw = location.search || '';
@@ -192,6 +206,7 @@ body{
   var via = 'direct';     // which route works: direct | proxy
 
   var $ = function (id) { return document.getElementById(id); };
+  var money = function (n) { return '₹' + (Number(n) || 0).toFixed(2); };
   var inr = function (n) { n = Number(n) || 0; return '₹' + (Math.round(n * 100) / 100).toString(); };
 
   // safe element builder (no innerHTML with server data)
@@ -222,7 +237,7 @@ body{
     var hr = new Date().getHours();
     $('greet').textContent = hr < 12 ? 'Good Morning' : hr < 17 ? 'Good Afternoon' : 'Good Evening';
     var name = u ? ((u.first_name || '') + (u.last_name ? ' ' + u.last_name : '')).trim() : 'User';
-    $('uname').textContent = (name || 'User') + ' !!!';
+    $('uname').textContent = (name || 'User');
     var av = $('avatar');
     if (u && u.photo_url) {
       var im = h('img', { src: u.photo_url, alt: '' });
@@ -310,7 +325,7 @@ body{
   // ---------- header branding from state ----------
   function initials(t) {
     var w = String(t || '').trim().split(/\s+/).filter(Boolean);
-    if (!w.length) return '🎁';
+    if (!w.length) return '♠';
     return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase();
   }
   function applyBranding() {
@@ -336,10 +351,10 @@ body{
   function showMessage(text, icon, detail) {
     view = 'msg'; setNav(false);
     mount(h('div', { class: 'card cream' },
-      h('div', { class: 'display', style: 'font-size:46px', text: icon || '⚠️' }),
+      h('div', { class: 'display', style: 'font-size:44px', text: icon || '⚠️' }),
       h('div', { class: 'v-sub', text: text }),
-      detail ? h('div', { style: 'font-size:12px;color:#92400e;word-break:break-all;margin:0 0 12px;opacity:.85', text: detail }) : null,
-      h('button', { class: 'btn b-yellow', onclick: function () { boot(); } }, 'Try again 🔄')
+      detail ? h('div', { style: 'font-size:11px;color:#c9b26b;word-break:break-all;margin:0 0 12px;opacity:.9', text: detail }) : null,
+      h('button', { class: 'btn b-yellow', onclick: function () { boot(); } }, 'Try again')
     ));
   }
 
@@ -391,7 +406,7 @@ body{
       ));
     });
     card.appendChild(h('div', { class: 'vhint', text: 'Already joined? Just tap Verify.' }));
-    card.appendChild(h('button', { class: 'btn b-yellow', id: 'startBtn', onclick: onStart }, 'Verify & Continue ✅'));
+    card.appendChild(h('button', { class: 'btn b-yellow', id: 'startBtn', onclick: onStart }, 'Verify & Continue'));
     mount(card);
   }
   function openLink(url) {
@@ -427,10 +442,10 @@ body{
       : 'Invite friends and earn cash 🎁';
     box.appendChild(h('div', { class: 'card gold' },
       h('div', { class: 'label', text: '💰 Total Wallet Balance' }),
-      h('div', { class: 'amount', text: inr(S.balance) }),
+      h('div', { class: 'amount', text: money(S.balance) }),
       h('div', { class: 'dashed', text: note })
     ));
-    box.appendChild(h('div', { class: 'sect-title', text: 'Earn Coins By Invite your Friends !! 🚀' }));
+    box.appendChild(h('div', { class: 'sect-title', text: 'Invite & Earn' }));
 
     // apply code
     // referrer (code owner) and referee (code user) can get DIFFERENT amounts
@@ -441,37 +456,40 @@ body{
     var referrerOk = referrerTxt !== '0' && referrerTxt !== '';
     var earn = referee;
     if (S.applied) {
-      box.appendChild(h('div', { class: 'card center' }, h('div', { class: 'h2', text: '✅ Friend refer code already applied' })));
+      box.appendChild(h('div', { class: 'card center' }, h('div', { class: 'h2', text: '✅ Refer code applied' })));
     } else {
       var inp = h('input', { class: 'input', id: 'codeIn', placeholder: 'ENTER REFER CODE (E.G. ' + (S.refer_code || 'REF123ABC') .slice(0, 3) + '...)', maxlength: '24', autocomplete: 'off' });
       var ab = h('button', { class: 'btn b-yellow', onclick: async function () {
         var code = (inp.value || '').trim();
         if (!code) return toast('Enter a refer code first');
         await act(ab, 'apply', { code: code });
-      } }, 'Apply Code 🚀');
+      } }, 'Apply Code');
       box.appendChild(h('div', { class: 'card' },
-        h('div', { class: 'h2', text: 'Enter your Friend Refer Code' + (earn > 0 ? ' and earn ' + earn + 'rs instant ⚡' : ' ⚡') }),
+        h('div', { class: 'h2', text: 'Have a refer code?' + (earn > 0 ? ' Get ₹' + earn + ' instantly' : '') }),
         inp, ab));
     }
 
     // my code
     var code = S.refer_code || '';
-    var shareTxt = '🎁 Join and earn free cash! Use my refer code: ' + code;
-    var shareUrl = S.bot_username ? 'https://t.me/' + S.bot_username : '';
+    var botLink = S.bot_username ? 'https://t.me/' + S.bot_username : '';
+    var shareMsg = '🎰 ' + (S.title || 'Rewards') + '\n💰 Join and win real cash rewards!\n🎁 Use my refer code: ' + code + (botLink ? '\n👉 ' + botLink : '');
     box.appendChild(h('div', { class: 'card' },
-      h('div', { class: 'h2', text: 'Here is your Refer Code 👇' }),
+      h('div', { class: 'h2', text: 'Your Refer Code' }),
       h('div', { class: 'codebox', text: code }),
-      h('button', { class: 'btn b-blue', onclick: function () { copy(code); } }, '📋 Copy Code'),
+      h('div', { class: 'btnrow' },
+        h('button', { class: 'btn b-blue', onclick: function () { copy(code, 'Code'); } }, 'Copy Code'),
+        h('button', { class: 'btn b-blue', onclick: function () { copy(botLink || shareMsg, botLink ? 'Bot link' : 'Message'); } }, 'Copy Link')
+      ),
       h('button', { class: 'btn b-green', onclick: function () {
-        var u = 'https://t.me/share/url?url=' + encodeURIComponent(shareUrl || ' ') + '&text=' + encodeURIComponent(shareTxt);
-        openLink(u);
-      } }, '📤 Share')
+        // the whole message (code + bot link) travels in ONE parameter, so the link is always in the shared text
+        openLink('https://t.me/share/url?url=' + encodeURIComponent(shareMsg));
+      } }, 'Share With Friends')
     ));
 
     // history
     var rc = Number(S.ref_count) || 0;
     var hist = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📊 Referral History' }));
-    if (rc > 0) hist.appendChild(h('div', { class: 'center display', style: 'font-size:26px', text: rc + ' friend' + (rc > 1 ? 's' : '') + ' invited ✅' }));
+    if (rc > 0) hist.appendChild(h('div', { class: 'center display', style: 'font-size:24px;color:#facc15', text: rc + ' friend' + (rc > 1 ? 's' : '') + ' invited ✅' }));
     else hist.appendChild(h('div', { class: 'empty', text: 'No referrals yet. Invite friends to earn!' }));
     var rl = S.referrals || [];
     rl.slice(0, 30).forEach(function (r) {
@@ -481,7 +499,7 @@ body{
       ));
     });
     if (rc > rl.length && rl.length) hist.appendChild(h('div', { class: 'note', text: '+ ' + (rc - rl.length) + ' more' }));
-    if ((Number(S.ref_earned) || 0) > 0) hist.appendChild(h('div', { class: 'note', style: 'font-size:16px', text: '💰 Earned from referrals: ' + inr(S.ref_earned) }));
+    if ((Number(S.ref_earned) || 0) > 0) hist.appendChild(h('div', { class: 'note', style: 'font-size:14px', text: '💰 Earned from referrals: ' + inr(S.ref_earned) }));
     if (S.min_refs > 0) hist.appendChild(h('div', { class: 'note', text: 'Need ' + S.min_refs + ' referral' + (S.min_refs > 1 ? 's' : '') + ' to withdraw (you have ' + rc + ')' }));
     box.appendChild(hist);
 
@@ -509,7 +527,7 @@ body{
     var box = h('div');
     box.appendChild(h('div', { class: 'card gold' },
       h('div', { class: 'label', text: '💰 Available Redeem Balance' }),
-      h('div', { class: 'amount', style: 'margin-bottom:0', text: inr(S.balance) })
+      h('div', { class: 'amount', style: 'margin-bottom:0', text: money(S.balance) })
     ));
 
     box.appendChild(h('div', { class: 'card' },
@@ -538,11 +556,11 @@ body{
       if (!(v > 0)) return toast('Enter a valid amount');
       if (!S.payout_id) return toast('Add your payout ID first');
       await act(wb, 'withdraw', { amount: v });
-    } }, 'Withdraw Cash Now 🚀');
+    } }, 'Withdraw Now');
     if (S.withdraw_on === false) wb.setAttribute('disabled', 'disabled');
 
     box.appendChild(h('div', { class: 'card' },
-      h('div', { class: 'h2', text: 'Enter Amount to Withdraw 💸' }),
+      h('div', { class: 'h2', text: 'Withdraw Amount' }),
       chips, amtIn, wb,
       h('div', { class: 'note', text: S.withdraw_on !== false ? '⚡ Min: ' + inr(S.min) + (S.max > 0 ? ' | Max: ' + inr(S.max) : '') + ' per transaction' : '⛔ Withdrawals are currently turned off' })
     ));
@@ -598,8 +616,8 @@ body{
     route();
   }
 
-  function copy(text) {
-    function ok() { toast('Copied: ' + text); }
+  function copy(text, label) {
+    function ok() { toast(label ? label + ' copied ✅' : 'Copied: ' + text); }
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, fallback); return; }
     } catch (e) {}
@@ -617,7 +635,7 @@ body{
 
   // ---------- boot ----------
   async function boot() {
-    $('view').innerHTML = '<div class="loader"><div class="spin"></div><div class="display" style="font-size:22px">Loading...</div></div>';
+    $('view').innerHTML = '<div class="loader"><div class="spin"></div><div class="display" style="font-size:16px;letter-spacing:2px">LOADING...</div></div>';
     $('nav').classList.add('hide');
     var r = await call('init');
     if (!r.ok) return showMessage(r.error || 'Could not load the app.', r.code === 'banned' ? '🚫' : '⚠️', r.detail);
