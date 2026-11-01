@@ -1,0 +1,170 @@
+/* ===== Cartoon sky theme (matches screenshots) ===== */
+:root{
+  --navy:#111a2e;
+  --sky-top:#38bdf8;
+  --sky-bot:#bae6fd;
+  --yellow:#facc15;
+  --yellow-text:#7a4a0c;
+  --green:#4ade80;
+  --green-soft:#86efac;
+  --green-text:#14532d;
+  --blue:#0284c7;
+  --red:#fb7185;
+  --orange:#d97706;
+  --white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{
+  font-family:'Baloo 2','Inter',system-ui,sans-serif;
+  color:var(--navy);
+  background:linear-gradient(180deg,var(--sky-top) 0%,#7dd3fc 45%,var(--sky-bot) 100%) fixed;
+  user-select:none;-webkit-user-select:none;
+  padding:14px 14px 28px;
+  max-width:560px;margin:0 auto;
+}
+.particles{display:none}
+
+/* ---------- Header (user chip) ---------- */
+.header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--white);border:3px solid var(--navy);border-radius:999px;
+  box-shadow:0 5px 0 var(--navy);padding:6px 10px 6px 6px;margin-bottom:18px;
+}
+.user-profile{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar-container{
+  width:40px;height:40px;border-radius:50%;flex:none;
+  background:var(--yellow);border:3px solid var(--navy);
+  display:grid;place-items:center;font-weight:800;font-size:18px;overflow:hidden;
+}
+.avatar-container img{width:100%;height:100%;object-fit:cover}
+.text-info h3{font-size:15px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.text-info p{font-size:12px;font-weight:600;color:var(--blue);line-height:1.1}
+.status-pill{
+  display:flex;align-items:center;gap:6px;flex:none;
+  font-size:12px;font-weight:800;letter-spacing:.3px;
+  padding:5px 12px;border-radius:999px;border:3px solid var(--navy);
+}
+.status-pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill-blue{background:#e0f2fe;color:var(--blue)}
+.pill-green{background:var(--green-soft);color:var(--green-text)}
+.pill-red{background:#fecdd3;color:#9f1239}
+.pill-orange{background:#fde68a;color:var(--yellow-text)}
+.pill-blue .dot{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+
+/* ---------- Banner + intro ---------- */
+.banner{
+  font-family:'Inter',sans-serif;font-weight:800;text-align:center;
+  font-size:clamp(24px,7.4vw,34px);line-height:1.2;text-transform:uppercase;
+  color:var(--yellow-text);background:var(--yellow);
+  border:5px solid var(--navy);border-radius:60px;
+  box-shadow:0 10px 0 var(--navy);padding:22px 20px;margin-bottom:34px;
+}
+.intro h2{
+  text-align:center;font-size:clamp(25px,7.6vw,34px);font-weight:800;line-height:1.25;
+  color:var(--navy);text-shadow:2px 2px 0 #fff,3px 3px 0 rgba(255,255,255,.6);
+  margin-bottom:6px;
+}
+.intro p{
+  text-align:center;font-size:clamp(17px,5vw,21px);font-weight:700;line-height:1.3;
+  color:var(--blue);
+}
+
+/* ---------- Views ---------- */
+.main-wrapper{margin-top:28px}
+.auth-container{display:block}
+.view-section{display:none;flex-direction:column;align-items:center;text-align:center}
+.view-section.active,.view-section.show{display:flex}
+
+/* round icon */
+.icon-wrapper,.network-scan{
+  position:relative;width:150px;height:150px;border-radius:50%;
+  border:6px solid var(--navy);box-shadow:0 8px 0 var(--navy);
+  display:grid;place-items:center;margin:10px auto 30px;
+  background:var(--white);font-size:56px;
+}
+.icon-wrapper.success{background:var(--green)}
+.icon-wrapper.error{background:var(--red);color:var(--navy)}
+.icon-wrapper.info{background:#7dd3fc;color:var(--navy)}
+.icon-wrapper i{color:var(--navy)}
+
+/* scanning graphic */
+.scan-grid,.node,.scan-line{display:none}
+.network-scan::before{
+  content:"";position:absolute;inset:8px;border-radius:50%;
+  border:8px dashed var(--blue);animation:spin 6s linear infinite;
+}
+.node-center{position:relative;color:var(--blue);font-size:60px;z-index:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* animated check */
+.check-svg{width:100px;height:100px}
+.check-circle{fill:none;stroke:none}
+.check-mark{
+  fill:none;stroke:var(--navy);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:48;stroke-dashoffset:48;animation:draw .5s .15s ease forwards;
+}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* status pill = the h1 of every view */
+.view-section h1{
+  width:100%;font-size:clamp(20px,6vw,26px);font-weight:800;line-height:1.2;
+  padding:18px 16px;border:5px solid var(--navy);border-radius:40px;
+  box-shadow:0 8px 0 var(--navy);background:var(--white);color:var(--blue);
+}
+.view-section h1.text-success{background:var(--green-soft);color:var(--green-text)}
+.view-section h1.text-error{background:#fecdd3;color:#9f1239}
+.view-section h1.text-info-h{background:#e0f2fe;color:var(--blue)}
+.desc{margin-top:16px;font-size:17px;font-weight:700;line-height:1.3;color:var(--navy)}
+
+/* hide old scan extras */
+.scan-status,.progress-container{display:none}
+
+/* ---------- Buttons ---------- */
+.action-bar{width:100%;margin-top:22px}
+.btn{
+  width:100%;font-family:inherit;font-size:20px;font-weight:800;color:var(--navy);
+  padding:14px 18px;border:5px solid var(--navy);border-radius:999px;
+  box-shadow:0 7px 0 var(--navy);cursor:pointer;transition:transform .08s,box-shadow .08s;
+}
+.btn:active{transform:translateY(5px);box-shadow:0 2px 0 var(--navy)}
+.btn.success{background:var(--green)}
+.btn.danger{background:var(--red)}
+.btn.primary{background:var(--yellow)}
+
+/* ---------- Security rules card ---------- */
+.rules{
+  margin-top:34px;background:var(--white);
+  border:5px solid var(--navy);border-radius:44px;
+  box-shadow:0 10px 0 var(--navy);padding:24px 26px 20px;
+}
+.rules h4{
+  display:flex;align-items:center;gap:12px;color:var(--orange);
+  font-size:24px;font-weight:800;text-transform:uppercase;margin-bottom:12px;
+}
+.rules h4 .warn{
+  width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;
+  display:grid;place-items:center;font-size:18px;font-weight:800;
+}
+.rules ul{list-style:none}
+.rules li{
+  position:relative;padding-left:40px;margin:14px 0;
+  font-size:19px;font-weight:700;line-height:1.3;color:var(--navy);
+}
+.rules li::before{
+  content:"";position:absolute;left:2px;top:7px;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:5px solid var(--blue);box-shadow:0 0 0 3px var(--navy);
+}
+
+/* ---------- Footer ---------- */
+.footer{text-align:center;margin-top:26px;font-size:14px;font-weight:700}
+.footer a{color:var(--navy);text-decoration:none;opacity:.7}
+
+/* ---------- Auto-off: stop motion once a result is showing ---------- */
+body.done .network-scan::before,
+body.done .pill-blue .dot{animation:none}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
