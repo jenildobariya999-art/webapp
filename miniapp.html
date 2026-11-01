@@ -274,9 +274,14 @@ body{
 
   function route() {
     if (!S) return;
-    if (!S.all_joined) return renderVerify();
+    if (needsVerify()) return renderVerify();
     if (view === 'withdraw') return renderWithdraw();
     return renderHome();
+  }
+
+  // no channels configured => skip verification, go straight to Home
+  function needsVerify() {
+    return !!S && (S.channels || []).length > 0 && !S.all_joined;
   }
 
   // ----- verification -----
@@ -320,14 +325,14 @@ body{
     var r = await call('init'); busy = false;
     if (!r.ok) { toast(r.error || 'Error'); return renderVerify(); }
     S = r; applyBranding();
-    if (!S.all_joined) { toast('Join all pending channels first ❌'); return renderVerify(); }
+    if (needsVerify()) { toast('Join all pending channels first ❌'); return renderVerify(); }
     view = 'home'; route();
   }
   // re-check when user comes back from joining
   document.addEventListener('visibilitychange', async function () {
     if (document.visibilityState !== 'visible' || view !== 'verify' || busy || !S) return;
     var r = await call('init');
-    if (r && r.ok) { S = r; if (S.all_joined) { toast('All joined ✅'); view = 'home'; } route(); }
+    if (r && r.ok) { S = r; if (!needsVerify()) { toast('All joined ✅'); view = 'home'; } route(); }
   });
 
   // ----- home -----
@@ -507,8 +512,8 @@ body{
     }
   }
 
-  $('nHome').addEventListener('click', function () { if (S && S.all_joined) { view = 'home'; renderHome(); } });
-  $('nWd').addEventListener('click', function () { if (S && S.all_joined) { renderWithdraw(); } });
+  $('nHome').addEventListener('click', function () { if (S && !needsVerify()) { view = 'home'; renderHome(); } });
+  $('nWd').addEventListener('click', function () { if (S && !needsVerify()) { renderWithdraw(); } });
 
   // ---------- boot ----------
   async function boot() {
@@ -517,7 +522,7 @@ body{
     var r = await call('init');
     if (!r.ok) return showMessage(r.error || 'Could not load the app.', r.code === 'banned' ? '🚫' : '⚠️');
     S = r; applyBranding();
-    view = S.all_joined ? 'home' : 'verify';
+    view = needsVerify() ? 'verify' : 'home';
     route();
   }
   boot();
