@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@800&display=swap');
+
+/* ===== style3.css — screenshot design, ONE screen, no scroll ===== */
+:root{
+  --navy:#111a2e; --yellow:#facc15; --yellow-text:#7a4a0c;
+  --green:#4ade80; --green-soft:#86efac; --green-text:#14532d;
+  --blue:#0284c7; --red:#fb7185; --orange:#d97706;
+  --vh:100vh;
+}
+@supports (height:100dvh){ :root{ --vh:var(--tg-viewport-stable-height,100dvh); } }
+/* 1 unit = 1dp on a 360x700 screen; shrinks to fit ANY screen, so nothing scrolls */
+:root{ --u:min(calc(100vw / 360), calc(var(--vh) / 700)); }
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:linear-gradient(180deg,#38bdf8 0%,#7dd3fc 45%,#bae6fd 100%) fixed}
+html,body{height:var(--vh);overflow:hidden;overscroll-behavior:none}
+body{
+  font-family:'Baloo 2',system-ui,sans-serif;color:var(--navy);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:calc(10*var(--u));
+  user-select:none;-webkit-user-select:none;
+}
+body>.banner,body>.intro,body>.main-wrapper,body>.rules,body>.footer{width:calc(340*var(--u))}
+.header,.particles{display:none}   /* screenshot has no header; script.js still works with it */
+
+/* ---------- Banner ---------- */
+.banner{
+  font-family:'Inter',sans-serif;font-weight:800;text-align:center;text-transform:uppercase;
+  font-size:calc(22*var(--u));line-height:1.2;color:var(--yellow-text);background:var(--yellow);
+  border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(40*var(--u));
+  box-shadow:0 calc(7*var(--u)) 0 var(--navy);padding:calc(12*var(--u)) calc(14*var(--u));
+}
+
+/* ---------- Intro ---------- */
+.intro{text-align:center}
+.intro h2{
+  font-size:calc(23*var(--u));font-weight:800;line-height:1.2;
+  text-shadow:calc(1.5*var(--u)) calc(1.5*var(--u)) 0 #fff;margin-bottom:calc(3*var(--u));
+}
+.intro p{font-size:calc(15*var(--u));font-weight:700;line-height:1.25;color:var(--blue)}
+
+/* ---------- Stage (fixed height so layout never jumps) ---------- */
+.main-wrapper{height:calc(262*var(--u));display:flex;align-items:center;justify-content:center}
+.auth-container{width:100%}
+.view-section{display:none;width:100%;flex-direction:column;align-items:center;text-align:center}
+/* visible if script.js uses any common way of showing a view */
+.view-section.active,.view-section.show,.view-section.visible,.view-section.current,
+.view-section.is-active,.view-section.shown,.view-section.fb-on,
+.view-section[style*="display: block"],.view-section[style*="display:block"],
+.view-section[style*="display: flex"],.view-section[style*="display:flex"]{display:flex}
+.view-section[hidden]{display:none!important}
+
+/* round icon */
+.icon-wrapper,.network-scan{
+  position:relative;width:calc(88*var(--u));height:calc(88*var(--u));border-radius:50%;
+  border:calc(5*var(--u)) solid var(--navy);box-shadow:0 calc(6*var(--u)) 0 var(--navy);
+  display:grid;place-items:center;margin:0 auto calc(16*var(--u));
+  background:#fff;font-size:calc(38*var(--u));
+}
+.icon-wrapper.success{background:var(--green)}
+.icon-wrapper.error{background:var(--red)}
+.icon-wrapper.info{background:#7dd3fc}
+.icon-wrapper i{color:var(--navy)}
+
+.scan-grid,.node,.scan-line{display:none}
+.network-scan::before{
+  content:"";position:absolute;inset:calc(5*var(--u));border-radius:50%;
+  border:calc(6*var(--u)) dashed var(--blue);animation:spin 6s linear infinite;
+}
+.node-center{position:relative;color:var(--blue);font-size:calc(40*var(--u));z-index:1}
+.node-center i{color:var(--blue)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.check-svg{width:calc(56*var(--u));height:calc(56*var(--u))}
+.check-circle{fill:none;stroke:none}
+.check-mark{
+  fill:none;stroke:var(--navy);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:48;stroke-dashoffset:48;animation:draw .5s .1s ease forwards;
+}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* status pill (h1) */
+.view-section h1{
+  width:100%;font-size:calc(21*var(--u));font-weight:800;line-height:1.2;
+  padding:calc(10*var(--u)) calc(10*var(--u));
+  border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(30*var(--u));
+  box-shadow:0 calc(6*var(--u)) 0 var(--navy);background:#fff;color:var(--blue);
+}
+.view-section h1.text-success{background:var(--green-soft);color:var(--green-text)}
+.view-section h1.text-error{background:#fecdd3;color:#9f1239}
+.view-section h1.text-info-h{background:#e0f2fe;color:var(--blue)}
+.desc{margin-top:calc(10*var(--u));font-size:calc(14.5*var(--u));font-weight:700;line-height:1.2}
+.scan-status,.progress-container{display:none}
+
+/* ---------- Buttons ---------- */
+.action-bar{width:100%;margin-top:calc(12*var(--u))}
+.btn{
+  width:100%;height:calc(42*var(--u));font-family:inherit;font-size:calc(18*var(--u));font-weight:800;
+  color:var(--navy);border:calc(3.5*var(--u)) solid var(--navy);border-radius:999px;
+  box-shadow:0 calc(5*var(--u)) 0 var(--navy);cursor:pointer;
+}
+.btn:active{transform:translateY(calc(4*var(--u)));box-shadow:0 calc(1*var(--u)) 0 var(--navy)}
+.btn.success{background:var(--green)}
+.btn.danger{background:var(--red)}
+.btn.primary{background:var(--yellow)}
+
+/* ---------- Security rules ---------- */
+.rules{
+  background:#fff;border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(32*var(--u));
+  box-shadow:0 calc(7*var(--u)) 0 var(--navy);padding:calc(12*var(--u)) calc(16*var(--u)) calc(8*var(--u));
+}
+.rules h4{
+  display:flex;align-items:center;gap:calc(10*var(--u));color:var(--orange);
+  font-size:calc(19*var(--u));font-weight:800;text-transform:uppercase;margin-bottom:calc(4*var(--u));
+}
+.rules h4 .warn{
+  width:calc(24*var(--u));height:calc(24*var(--u));border-radius:50%;background:var(--orange);color:#fff;
+  display:grid;place-items:center;font-size:calc(15*var(--u));font-weight:800;
+}
+.rules ul{list-style:none}
+.rules li{
+  position:relative;padding-left:calc(30*var(--u));margin:calc(6*var(--u)) 0;
+  font-size:calc(14.5*var(--u));font-weight:700;line-height:1.2;
+}
+.rules li::before{
+  content:"";position:absolute;left:calc(3*var(--u));top:calc(4*var(--u));
+  width:calc(10*var(--u));height:calc(10*var(--u));border-radius:50%;
+  background:#fff;border:calc(3.5*var(--u)) solid var(--blue);box-shadow:0 0 0 calc(2*var(--u)) var(--navy);
+}
+
+.footer{text-align:center;font-size:calc(11*var(--u));font-weight:700}
+.footer a{color:var(--navy);text-decoration:none;opacity:.65}
+
+/* Auto-off: stop animations once result is showing */
+body.done .network-scan::before{animation:none}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}

@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Secure Verification | Jenil</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style2.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style3.css">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
@@ -139,6 +138,39 @@
 </div>
 
 <script>
+/* Result fix: if script.js shows views in a way the CSS can't see, drive the view from the header status */
+(function () {
+  const ids = {scanning:'view-scanning', success:'view-success', failed:'view-failed', already:'view-already', critical:'view-critical'};
+  const views = Object.values(ids).map(id => document.getElementById(id));
+  const shown = el => getComputedStyle(el).display !== 'none';
+  let scriptWorks = false;
+
+  function pick() {
+    const t = ((document.getElementById('headerStatusText') || {}).textContent || '').toUpperCase();
+    const b = (document.getElementById('headerBadge') || {}).className || '';
+    if (/ALREADY|USED|DUPLICATE/.test(t)) return 'already';
+    if (/FAIL|DENIED|BLOCK|BAN|REJECT|VPN|CLONE|INVALID/.test(t)) return 'failed';
+    if (/ERROR|CRITICAL|EXPIRED/.test(t)) return 'critical';
+    if (/VERIFIED|SUCCESS|GRANTED|SAFE|APPROVED|PASS|CLEAN/.test(t)) return 'success';
+    if (/SCAN|CHECK|VERIFYING|WAIT|LOAD/.test(t)) return 'scanning';
+    if (/pill-green/.test(b)) return 'success';
+    if (/pill-red/.test(b)) return 'failed';
+    return 'scanning';
+  }
+  function sync() {
+    if (scriptWorks) return;
+    if (views.some(v => v && shown(v) && !v.classList.contains('fb-on'))) {
+      scriptWorks = true; views.forEach(v => v && v.classList.remove('fb-on')); return;
+    }
+    const want = ids[pick()];
+    views.forEach(v => v && v.classList.toggle('fb-on', v.id === want));
+  }
+  setTimeout(() => setInterval(sync, 300), 800);
+  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.expand) Telegram.WebApp.expand();
+})();
+</script>
+
+<script>
 /* Auto off after result: stop the scan animation, then close the Mini App */
 (function () {
   const AUTO_CLOSE_MS = 4000;          // set to 0 to disable auto-close
@@ -184,5 +216,4 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 </body>
-  </html>
-  
+</html>
