@@ -102,8 +102,12 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add(
 async function call(action, extra) {
   if (DEMO) return demo(action, extra || {});
   const body = JSON.stringify(Object.assign({ uid: UID, sig: SIG, action }, extra || {}));
-  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-  const j = await r.json();
+  let r;
+  try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
+  catch (e) { throw new Error('BLOCKED (likely CORS): ' + e.message + ' | API=' + API.slice(0, 60)); }
+  const raw = await r.text();
+  let j;
+  try { j = JSON.parse(raw); } catch (e) { throw new Error('HTTP ' + r.status + ' not JSON: ' + raw.slice(0, 120)); }
   if (j && j.result && !j.ok && j.ok !== false) return j.result;   // tolerate wrapped responses
   return j;
 }
@@ -123,7 +127,11 @@ async function run(action, extra, okMsg) {
     if (!j.ok) { toast(j.error || 'Something went wrong'); if (j.code === 'auth' || j.code === 'disabled' || j.code === 'no_user') fatal(j.error); return null; }
     S = j; if (j.message || okMsg) toast(j.message || okMsg);
     render(); return j;
-  } catch (e) { toast('Network error. Try again.'); return null; }
+  } catch (e) {
+    toast('Network error. Try again.');
+    if (!S) $('app').innerHTML = '<div class="card" style="word-break:break-all;font-size:13px"><h3>⚠️ Connection problem</h3>' + esc(e.message) + '</div>';
+    return null;
+  }
   finally { busy = false; }
 }
 function fatal(msg) { $('app').innerHTML = '<div class="card" style="text-align:center"><h3>⚠️ ' + esc(msg) + '</h3></div>'; $('nav').classList.add('hide'); }
