@@ -102,7 +102,7 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add(
 async function call(action, extra) {
   if (DEMO) return demo(action, extra || {});
   const body = JSON.stringify(Object.assign({ uid: UID, sig: SIG, action }, extra || {}));
-  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body });
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   const j = await r.json();
   if (j && j.result && !j.ok && j.ok !== false) return j.result;   // tolerate wrapped responses
   return j;
