@@ -3,49 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#6d28d9">
+    <meta name="theme-color" content="#12041f">
     <title>All Yono Promo Codes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 /* ==========================================================================
-   Yono Verify — "Sky Candy" theme, single screen, no scrolling.
-   The whole page lives in .stage, which JS scales to fit any screen.
+   Royal Casino theme — gold plates, marquee bulbs, roulette scanner.
+   Single screen, no scrolling: .stage is auto-scaled by JS if needed.
    ========================================================================== */
 :root {
-  --navy: #1e1b4b;
-  --sky-1: #a78bfa;
-  --sky-3: #ddd6fe;
-  --yellow: #facc15;
-  --brown: #581c87;
-  --green: #4ade80;
-  --mint: #86efac;
-  --green-ink: #14532d;
-  --red: #f87171;
-  --red-soft: #fecaca;
-  --red-ink: #991b1b;
-  --blue-ink: #fef08a;
-  --blue-deep: #4c1d95;
-  --orange: #db2777;
+  --ink: #12041f;
+  --gold-1: #fff3b0;
+  --gold-2: #f9c935;
+  --gold-3: #d99a06;
+  --gold-edge: #5a3a00;
+  --gold-grad: linear-gradient(180deg, #fff3b0 0%, #f9c935 40%, #d99a06 75%, #a86f00 100%);
   --bw: 4px;
-  --lift: 7px;
-  --font-display: 'Baloo 2', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --lift: 6px;
+  --font-sign: 'Bungee', 'Impact', 'Arial Black', sans-serif;
+  --font-display: 'Baloo 2', 'Segoe UI', system-ui, sans-serif;
   --pop: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;                       /* never scroll */
-  background: #d946ef;
-}
+html, body { width: 100%; height: 100%; overflow: hidden; background: #12041f; }
 
 body {
   position: fixed; inset: 0;
   font-family: var(--font-display);
-  color: var(--navy);
+  color: #fff;
   overscroll-behavior: none;
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
@@ -53,25 +42,42 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Casino carpet + spotlights */
 body::before {
-  content: ''; position: fixed; inset: 0; z-index: -2;
+  content: ''; position: fixed; inset: 0; z-index: -3;
   background:
-    radial-gradient(60% 40% at 85% 6%, rgba(255,255,255,.28), transparent 70%),
-    radial-gradient(50% 35% at 10% 60%, rgba(255,255,255,.2), transparent 70%),
-    linear-gradient(180deg, #6d28d9 0%, #9333ea 30%, #d946ef 62%, #f472b6 86%, #fda4af 100%);
+    radial-gradient(70% 42% at 50% 0%, rgba(249,201,53,.30), transparent 72%),
+    radial-gradient(60% 40% at 0% 100%, rgba(225,29,72,.38), transparent 70%),
+    radial-gradient(60% 40% at 100% 88%, rgba(124,58,237,.42), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(249,201,53,.05) 0 2px, transparent 2px 28px),
+    repeating-linear-gradient(-45deg, rgba(249,201,53,.05) 0 2px, transparent 2px 28px),
+    linear-gradient(180deg, #230a3b 0%, #15052a 55%, #0b0214 100%);
 }
 
-:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 3px; }
 
-/* Bubbles (created by script.js) */
+/* Glitter (created by script.js) */
 .particles { position: fixed; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
-.particle { position: absolute; border-radius: 50%; background: rgba(255,255,255,.75); opacity: .35; animation: floatP 9s ease-in-out infinite; }
-@keyframes floatP { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-22px); } }
+.particle {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, #fff3b0, #f9c935 60%, transparent 70%);
+  opacity: .55; animation: floatP 7s ease-in-out infinite;
+}
+@keyframes floatP { 0%,100% { transform: translateY(0) scale(1); opacity: .25; } 50% { transform: translateY(-22px) scale(1.25); opacity: .7; } }
 
-/* The old top header is kept in the DOM (script.js writes to it) but not shown, as in the screenshot */
+/* Faint casino icons in the background */
+.deco { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; }
+.deco i { position: absolute; color: var(--gold-2); opacity: .11; font-size: clamp(46px, 10vw, 120px); animation: bob 7s ease-in-out infinite; }
+.deco .d1 { top: 6%;  left: 4%;  transform: rotate(-18deg); }
+.deco .d2 { bottom: 8%; left: 5%; transform: rotate(14deg); animation-delay: 1.5s; }
+.deco .d3 { top: 10%; right: 5%; transform: rotate(16deg); animation-delay: 3s; }
+.deco .d4 { bottom: 10%; right: 5%; transform: rotate(-12deg); animation-delay: 4.5s; }
+@keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -14px; } }
+
+/* Old header stays in the DOM for script.js but is not shown */
 .header { display: none; }
 
-/* ---------- Stage: centred and auto-scaled to the screen ---------- */
+/* ---------- Stage ---------- */
 .viewport {
   position: fixed; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -85,26 +91,35 @@ body::before {
   transform-origin: center center;
 }
 
-/* ---------- Banner (bot name) ---------- */
+/* ---------- Marquee banner (bot name) ---------- */
 .hero-banner {
+  position: relative;
   width: 100%;
-  padding: 12px 18px 10px;
+  padding: 15px 16px 13px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
   text-align: center;
-  background: var(--yellow);
-  border: var(--bw) solid var(--navy);
-  border-radius: 44px;
-  box-shadow: inset 0 5px 0 rgba(255,255,255,.35), 0 9px 0 var(--navy);
-  font-weight: 800;
-  font-size: clamp(22px, 6.4vw, 34px);
-  line-height: 1.1;
-  letter-spacing: .4px;
+  background: linear-gradient(180deg, #fff3b0 0%, #f9c935 45%, #d99a06 100%);
+  border: var(--bw) solid var(--gold-edge);
+  border-radius: 30px;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.7), inset 0 -4px 0 rgba(120,70,0,.3), 0 var(--lift) 0 var(--gold-edge), 0 0 34px rgba(249,201,53,.55);
+  font-family: var(--font-sign);
+  font-size: clamp(17px, 5vw, 28px);
+  line-height: 1.15;
+  letter-spacing: .3px;
   text-transform: uppercase;
-  color: var(--brown);
+  color: #4a0d1b;
+  text-shadow: 0 1px 0 rgba(255,255,255,.6);
   overflow-wrap: anywhere;
 }
-.hero-banner .star { display: inline-block; animation: twinkle 2.6s ease-in-out infinite; }
-.hero-banner .star:last-child { animation-delay: 1.3s; }
-@keyframes twinkle { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(10deg) scale(1.18); } }
+.hero-banner::before {       /* marquee bulbs */
+  content: ''; position: absolute; inset: 5px; border-radius: 24px; pointer-events: none;
+  border: 3px dotted #fff;
+  animation: bulbs 1s steps(1) infinite;
+}
+@keyframes bulbs { 50% { border-color: #e11d48; } }
+.hero-banner i { flex-shrink: 0; font-size: .9em; color: #a1122d; animation: twinkle 2.6s ease-in-out infinite; }
+.hero-banner i:last-child { animation-delay: 1.3s; }
+@keyframes twinkle { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(10deg) scale(1.2); } }
 
 /* ---------- Intro ---------- */
 .intro { margin-top: clamp(14px, 2.6vh, 26px); text-align: center; }
@@ -112,123 +127,152 @@ body::before {
   font-weight: 800;
   font-size: clamp(21px, 5.9vw, 32px);
   line-height: 1.18;
-  letter-spacing: -.3px;
   color: #fff;
-  text-shadow: 3px 3px 0 var(--navy);
+  text-shadow: 0 2px 0 #000, 0 0 18px rgba(249,201,53,.55);
 }
 .intro-sub {
   margin-top: 6px;
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(14px, 4vw, 18px);
   line-height: 1.3;
-  color: var(--blue-ink);
-  text-shadow: 1px 1px 0 var(--navy);
+  color: #ffd98a;
+  text-shadow: 0 1px 0 #000;
 }
 
-/* ---------- Views: all stacked in one grid cell so height never jumps ---------- */
+/* ---------- Views (stacked in one grid cell: height never jumps) ---------- */
 .views { width: 100%; margin-top: clamp(12px, 2.4vh, 22px); display: grid; }
 
 .view-section {
-  grid-area: 1 / 1;
-  display: flex; flex-direction: column; align-items: center; align-self: start;
+  grid-area: 1 / 1; align-self: start;
+  display: flex; flex-direction: column; align-items: center;
   width: 100%; text-align: center;
   visibility: hidden; opacity: 0; pointer-events: none;
 }
 .view-section.active { visibility: visible; opacity: 1; pointer-events: auto; animation: viewPop .5s var(--pop) both; }
-@keyframes viewPop { from { transform: translateY(14px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes viewPop { from { transform: translateY(14px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
 
-/* ---------- Round badge ---------- */
+/* ---------- Gold-rimmed coin badge ---------- */
 .icon-wrapper, .network-scan {
+  --fill: radial-gradient(circle at 35% 30%, #86efac, #16a34a 72%);
   width: clamp(76px, 12.5vh, 108px); height: clamp(76px, 12.5vh, 108px);
   margin: 0 0 clamp(14px, 2.4vh, 24px);
   position: relative;
   display: grid; place-items: center;
-  border-radius: 50%;
-  border: var(--bw) solid var(--navy);
-  box-shadow: 0 var(--lift) 0 var(--navy);
+  border: 6px solid transparent; border-radius: 50%;
+  background: var(--fill) padding-box, var(--gold-grad) border-box;
+  box-shadow: 0 var(--lift) 0 var(--gold-edge), 0 0 30px rgba(249,201,53,.5);
 }
-.icon-wrapper i { font-size: clamp(32px, 5.4vh, 44px); color: var(--navy); }
-.icon-wrapper.success { background: var(--green); animation: badgePop .6s var(--pop) both; }
-.icon-wrapper.error   { background: var(--red); }
-.icon-wrapper.info    { background: var(--sky-1); }
+.icon-wrapper.success { animation: badgePop .6s var(--pop) both; }
+.icon-wrapper.error   { --fill: radial-gradient(circle at 35% 30%, #fda4af, #be123c 72%); }
+.icon-wrapper.info    { --fill: radial-gradient(circle at 35% 30%, #c4b5fd, #6d28d9 72%); }
+.icon-wrapper i { font-size: clamp(32px, 5.4vh, 44px); color: #fff; filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); }
 .icon-wrapper.error i { animation: wiggle 1.2s ease-in-out .4s 2; }
 @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
 @keyframes badgePop { from { transform: scale(.6); } to { transform: scale(1); } }
 
-.check-svg { width: 68%; height: 68%; }
+.check-svg { width: 68%; height: 68%; filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); }
 .check-circle { fill: none; stroke: none; }
-.check-mark { fill: none; stroke: var(--navy); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 36; stroke-dashoffset: 36; animation: drawCheck .5s ease-out .25s forwards; }
+.check-mark { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 36; stroke-dashoffset: 36; animation: drawCheck .5s ease-out .25s forwards; }
 @keyframes drawCheck { to { stroke-dashoffset: 0; } }
 
-.network-scan { background: #fff; }
-.scan-ring { position: absolute; inset: 8px; border-radius: 50%; border: 5px dashed var(--sky-1); animation: spin 7s linear infinite; }
+/* Roulette-wheel scanner */
+.network-scan { --fill: radial-gradient(circle at 50% 40%, #2b0f45, #12041f); }
+.scan-ring {
+  position: absolute; inset: 3px; border-radius: 50%;
+  background: repeating-conic-gradient(#e11d48 0 18deg, #0b0214 18deg 36deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 8px));
+  animation: spin 3.5s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
-.phone { position: relative; z-index: 1; width: 27px; height: 45px; border: 6px solid #7c3aed; border-radius: 8px; background: #fff; overflow: hidden; }
-.phone::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--sky-1); animation: phoneScan 1.5s ease-in-out infinite alternate; }
-@keyframes phoneScan { from { transform: translateY(-2px); } to { transform: translateY(30px); } }
+.phone { position: relative; z-index: 1; width: 25px; height: 42px; border: 5px solid var(--gold-2); border-radius: 8px; background: #12041f; overflow: hidden; }
+.phone::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: #67e8f9; box-shadow: 0 0 8px #67e8f9; animation: phoneScan 1.4s ease-in-out infinite alternate; }
+@keyframes phoneScan { from { transform: translateY(-2px); } to { transform: translateY(28px); } }
 
-/* ---------- Status box ---------- */
+/* ---------- Slot-display status panel ---------- */
 .view-section h1 {
   width: 100%;
-  padding: 12px 18px 10px;
+  padding: 12px 16px 10px;
   font-weight: 800;
   font-size: clamp(19px, 5.4vw, 26px);
   line-height: 1.2;
-  background: #fff; color: #7c3aed;
-  border: var(--bw) solid var(--navy);
-  border-radius: 32px;
-  box-shadow: inset 0 4px 0 rgba(255,255,255,.5), 0 var(--lift) 0 var(--navy);
+  color: var(--gold-1);
+  text-shadow: 0 0 12px rgba(249,201,53,.7);
+  background: linear-gradient(180deg, #2c1049, #12041f) padding-box, var(--gold-grad) border-box;
+  border: var(--bw) solid transparent;
+  border-radius: 20px;
+  box-shadow: inset 0 0 20px rgba(249,201,53,.16), 0 var(--lift) 0 var(--gold-edge), 0 0 24px rgba(249,201,53,.25);
 }
-.view-section h1.text-success { background: var(--mint);     color: var(--green-ink); }
-.view-section h1.text-error   { background: var(--red-soft); color: var(--red-ink); }
-.view-section h1.text-info-h  { background: var(--sky-3);    color: var(--blue-deep); }
+.view-section h1 i { margin-left: 6px; font-size: .85em; }
+#view-scanning h1 { animation: neon 1.5s ease-in-out infinite; }
+@keyframes neon { 0%,100% { opacity: 1; } 50% { opacity: .78; } }
+.view-section h1.text-success { color: #86efac; text-shadow: 0 0 14px rgba(34,197,94,.85); }
+.view-section h1.text-error   { color: #fda4af; text-shadow: 0 0 14px rgba(244,63,94,.85); }
+.view-section h1.text-info-h  { color: #c4b5fd; text-shadow: 0 0 14px rgba(139,92,246,.85); }
 
-p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #fff; text-shadow: 1px 1px 0 var(--navy); }
+p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #f3e8ff; text-shadow: 0 1px 0 #000; }
 
 /* ---------- Progress ---------- */
-.progress-container { width: 100%; height: 18px; margin-top: 18px; overflow: hidden; background: #fff; border: 3px solid var(--navy); border-radius: 999px; box-shadow: 0 4px 0 var(--navy); }
-.progress-bar { width: 0%; height: 100%; border-radius: 999px; background: repeating-linear-gradient(-45deg, #a78bfa 0 12px, #8b5cf6 12px 24px); background-size: 34px 100%; animation: stripes .7s linear infinite; transition: width .3s; }
+.progress-container { width: 100%; height: 18px; margin-top: 18px; overflow: hidden; background: #0b0214; border: 3px solid var(--gold-3); border-radius: 999px; box-shadow: 0 4px 0 var(--gold-edge), 0 0 16px rgba(249,201,53,.3); }
+.progress-bar { width: 0%; height: 100%; border-radius: 999px; background: repeating-linear-gradient(-45deg, #f9c935 0 12px, #d99a06 12px 24px); background-size: 34px 100%; animation: stripes .7s linear infinite; transition: width .3s; }
 @keyframes stripes { to { background-position: 34px 0; } }
 
 /* ---------- Buttons ---------- */
 .action-bar { position: relative; width: 100%; max-width: 420px; margin-top: 16px; display: flex; flex-direction: column; align-items: center; }
 .btn {
-  --bg: var(--green);
-  width: 100%; max-width: 420px;
-  padding: 13px 22px 11px;
-  border: var(--bw) solid var(--navy); border-radius: 999px;
-  background: var(--bg); color: var(--navy);
-  font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1; letter-spacing: .8px; text-transform: uppercase;
-  box-shadow: inset 0 4px 0 rgba(255,255,255,.4), 0 var(--lift) 0 var(--navy);
+  --c1: #4ade80; --c2: #15803d;
+  position: relative; overflow: hidden;
+  width: 100%;
+  padding: 14px 22px 12px;
+  border: var(--bw) solid transparent; border-radius: 999px;
+  background: linear-gradient(180deg, var(--c1), var(--c2)) padding-box, var(--gold-grad) border-box;
+  color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.4);
+  font-family: var(--font-sign); font-size: 16px; line-height: 1; letter-spacing: 1px; text-transform: uppercase;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.4), 0 var(--lift) 0 var(--gold-edge), 0 0 24px rgba(249,201,53,.35);
   cursor: pointer;
   transition: transform .12s, box-shadow .12s, filter .2s;
 }
+.btn::after { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform: skewX(-20deg); animation: shine 2.8s ease-in-out infinite; pointer-events: none; }
+@keyframes shine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
 .btn + .btn { margin-top: 16px; }
-.btn:hover  { filter: brightness(1.06); transform: translateY(-2px); }
-.btn:active { transform: translateY(5px); box-shadow: inset 0 4px 0 rgba(255,255,255,.4), 0 2px 0 var(--navy); transition-duration: .05s; }
+.btn:hover  { filter: brightness(1.08); transform: translateY(-2px); }
+.btn:active { transform: translateY(5px); box-shadow: inset 0 3px 0 rgba(255,255,255,.4), 0 1px 0 var(--gold-edge); transition-duration: .05s; }
 .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-.btn.success { --bg: var(--green); }
-.btn.danger  { --bg: var(--red); }
-.btn.primary { --bg: var(--sky-1); }
+.btn.success { --c1: #4ade80; --c2: #15803d; }
+.btn.danger  { --c1: #fb7185; --c2: #be123c; }
+.btn.primary { --c1: #a78bfa; --c2: #6d28d9; }
 
-.auto-note { position: absolute; top: -14px; right: -4px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 3px solid var(--navy); box-shadow: 0 3px 0 var(--navy); font-weight: 800; font-size: 16px; line-height: 1; color: var(--brown); pointer-events: none; }
+/* Auto-close countdown: gold chip on the button corner (no layout shift) */
+.auto-note {
+  position: absolute; top: -14px; right: -4px; z-index: 2;
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--gold-grad); border: 3px solid var(--gold-edge);
+  box-shadow: 0 3px 0 var(--gold-edge);
+  font-family: var(--font-sign); font-size: 15px; line-height: 1; color: #4a0d1b; pointer-events: none;
+}
 
 /* ---------- Rules ---------- */
-.rules-card { width: 100%; margin-top: clamp(14px, 2.8vh, 24px); padding: 16px 18px 16px 20px; background: #fff; border: var(--bw) solid var(--navy); border-radius: 36px; box-shadow: 0 9px 0 var(--navy); }
-.rules-head { display: flex; align-items: center; gap: 12px; padding-left: 4px; font-weight: 800; font-size: 20px; line-height: 1; text-transform: uppercase; color: var(--orange); }
-.rules-head i { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--orange); color: #fff; font-style: normal; font-size: 19px; }
+.rules-card {
+  width: 100%; margin-top: clamp(14px, 2.8vh, 24px);
+  padding: 16px 18px 16px 20px;
+  background: linear-gradient(180deg, #26093d, #12041f) padding-box, var(--gold-grad) border-box;
+  border: var(--bw) solid transparent; border-radius: 26px;
+  box-shadow: 0 var(--lift) 0 var(--gold-edge), 0 0 26px rgba(249,201,53,.22);
+}
+.rules-head { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 2px dashed rgba(249,201,53,.35); font-family: var(--font-sign); font-size: 17px; line-height: 1; letter-spacing: .6px; text-transform: uppercase; color: var(--gold-2); text-shadow: 0 0 12px rgba(249,201,53,.5); }
+.rules-head i { font-size: 20px; color: var(--gold-2); }
 .rules-list { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
-.rules-list li { position: relative; padding-left: 38px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #1e293b; }
-.rules-list li::before { content: ''; position: absolute; left: 4px; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: #a855f7; border: 4px solid var(--navy); }
+.rules-list li { position: relative; padding-left: 32px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #f3e8ff; }
+.rules-list li::before { content: ''; position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, #f9c935 55%, #b07a00); border: 2px solid var(--gold-edge); box-shadow: inset 0 0 0 3px rgba(255,255,255,.18); }
 
 /* ---------- Footer ---------- */
-.footer { margin-top: 12px; text-align: center; font-weight: 700; font-size: 13px; color: #fff; }
-.footer a { color: #fff; text-decoration: none; border-bottom: 2px solid rgba(255,255,255,.45); text-shadow: 1px 1px 0 var(--navy); }
+.footer { margin-top: 12px; text-align: center; font-weight: 700; font-size: 13px; color: #d8b4fe; }
+.footer a { color: var(--gold-2); text-decoration: none; border-bottom: 2px solid rgba(249,201,53,.4); }
 @media (max-height: 720px) { .footer { display: none; } }
 
 @media (min-width: 768px) {
   .stage { width: 560px; }
-  .hero-banner { font-size: 36px; }
+  .hero-banner { font-size: 30px; }
   .intro-title { font-size: 33px; }
   .intro-sub { font-size: 19px; }
 }
@@ -238,6 +282,8 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
   .check-mark { stroke-dashoffset: 0; }
 }
 </style>
+
+
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
@@ -250,7 +296,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
     }
 
     tg.ready();
-    try { tg.expand(); tg.setHeaderColor('#6d28d9'); tg.setBackgroundColor('#6d28d9'); } catch (e) {}
+    try { tg.expand(); tg.setHeaderColor('#12041f'); tg.setBackgroundColor('#12041f'); } catch (e) {}
 
     const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
 
@@ -280,10 +326,11 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
         document.addEventListener('selectstart', e => e.preventDefault());
         document.addEventListener('dragstart', e => e.preventDefault());
     </script>
+
 </head>
 <body>
 
-<!-- Kept for script.js (hidden by CSS, as in the screenshot) -->
+<!-- Kept for script.js (hidden by CSS) -->
 <header class="header">
   <div class="user-profile">
     <div class="avatar-container" id="avatarBox">U</div>
@@ -300,12 +347,21 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
 
 <div class="particles" id="particles"></div>
 
+<div class="deco" aria-hidden="true">
+  <i class="fa-solid fa-dice d1"></i>
+  <i class="fa-solid fa-coins d2"></i>
+  <i class="fa-solid fa-gem d3"></i>
+  <i class="fa-solid fa-crown d4"></i>
+</div>
+
 <div class="viewport">
   <div class="stage" id="stage">
 
     <!-- Banner: bot name is filled in automatically -->
     <div class="hero-banner">
-      <span class="star">⭐</span> <span id="botName">All Yono Promo Codes</span> <span class="star">⭐</span>
+      <i class="fa-solid fa-crown"></i>
+      <span id="botName">All Yono Promo Codes</span>
+      <i class="fa-solid fa-crown"></i>
     </div>
 
     <div class="intro">
@@ -318,7 +374,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
       <!-- Error screen -->
       <div class="view-section" id="view-critical">
         <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
-        <h1 class="text-error">Error Occurred ⚠️</h1>
+        <h1 class="text-error">Error Occurred <i class="fa-solid fa-triangle-exclamation"></i></h1>
         <p class="desc">User ID Not Found or Session Expired.</p>
         <div class="action-bar">
           <button class="btn danger" onclick="window.location.reload()">CLOSE &amp; RETRY</button>
@@ -331,7 +387,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
           <span class="scan-ring"></span>
           <span class="phone"></span>
         </div>
-        <h1>Scanning device hardware... 🔍</h1>
+        <h1>Scanning device hardware... <i class="fa-solid fa-magnifying-glass"></i></h1>
         <div class="progress-container">
           <div class="progress-bar" id="scanBar"></div>
         </div>
@@ -339,8 +395,8 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
 
       <!-- Failed screen -->
       <div class="view-section" id="view-failed">
-        <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
-        <h1 class="text-error">Verification Failed ❌</h1>
+        <div class="icon-wrapper error"><i class="fas fa-circle-xmark"></i></div>
+        <h1 class="text-error">Verification Failed <i class="fa-solid fa-circle-xmark"></i></h1>
         <p class="desc" id="failedMsg">We encountered an issue during verification.</p>
         <div class="action-bar">
           <button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button>
@@ -355,7 +411,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
             <path class="check-mark" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
           </svg>
         </div>
-        <h1 class="text-success">Device Verified Successfully! 🎉</h1>
+        <h1 class="text-success">Device Verified Successfully! <i class="fa-solid fa-trophy"></i></h1>
         <div class="action-bar">
           <button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button>
         </div>
@@ -364,7 +420,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
       <!-- Already verified screen -->
       <div class="view-section" id="view-already">
         <div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div>
-        <h1 class="text-info-h">Already Verified 🛡️</h1>
+        <h1 class="text-info-h">Already Verified <i class="fa-solid fa-shield-halved"></i></h1>
         <p class="desc">This device has already been used on other device.</p>
         <div class="action-bar">
           <button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button>
@@ -374,7 +430,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
     </div>
 
     <div class="rules-card">
-      <div class="rules-head"><i>!</i> Security Rules</div>
+      <div class="rules-head"><i class="fa-solid fa-triangle-exclamation"></i> Security Rules</div>
       <ul class="rules-list">
         <li>1 Device = 1 Account: Multiple IDs on the same device will be auto-banned.</li>
         <li>No App Cloners: Parallel Space or Dual apps fail immediately.</li>
@@ -510,7 +566,7 @@ document.addEventListener('keydown', function(e) {
             left--;
             if (left > 0) { render(); return; }
             clearInterval(timer);
-            note.textContent = '✓';
+            note.textContent = '0';
             btn.click();
             setTimeout(function () { try { window.Telegram.WebApp.close(); } catch (e) {} }, 3000);
         }, 1000);
