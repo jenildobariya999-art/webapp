@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#38bdf8">
+    <meta name="theme-color" content="#6d28d9">
     <title>All Yono Promo Codes</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,20 +14,20 @@
    The whole page lives in .stage, which JS scales to fit any screen.
    ========================================================================== */
 :root {
-  --navy: #0f172a;
-  --sky-1: #38bdf8;
-  --sky-3: #bae6fd;
+  --navy: #1e1b4b;
+  --sky-1: #a78bfa;
+  --sky-3: #ddd6fe;
   --yellow: #facc15;
-  --brown: #78350f;
+  --brown: #581c87;
   --green: #4ade80;
   --mint: #86efac;
   --green-ink: #14532d;
   --red: #f87171;
   --red-soft: #fecaca;
   --red-ink: #991b1b;
-  --blue-ink: #0369a1;
-  --blue-deep: #075985;
-  --orange: #d97706;
+  --blue-ink: #fef08a;
+  --blue-deep: #4c1d95;
+  --orange: #db2777;
   --bw: 4px;
   --lift: 7px;
   --font-display: 'Baloo 2', 'Nunito', 'Segoe UI', system-ui, sans-serif;
@@ -39,7 +39,7 @@
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;                       /* never scroll */
-  background: #9ddcfc;
+  background: #d946ef;
 }
 
 body {
@@ -56,9 +56,9 @@ body {
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -2;
   background:
-    radial-gradient(60% 40% at 85% 8%, rgba(255,255,255,.35), transparent 70%),
-    radial-gradient(50% 35% at 10% 55%, rgba(255,255,255,.28), transparent 70%),
-    linear-gradient(180deg, #38bdf8 0%, #6ccbfa 35%, #9ddcfc 70%, #bfe7fd 100%);
+    radial-gradient(60% 40% at 85% 6%, rgba(255,255,255,.28), transparent 70%),
+    radial-gradient(50% 35% at 10% 60%, rgba(255,255,255,.2), transparent 70%),
+    linear-gradient(180deg, #6d28d9 0%, #9333ea 30%, #d946ef 62%, #f472b6 86%, #fda4af 100%);
 }
 
 :focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
@@ -88,7 +88,7 @@ body::before {
 /* ---------- Banner (bot name) ---------- */
 .hero-banner {
   width: 100%;
-  padding: 14px 20px 12px;
+  padding: 12px 18px 10px;
   text-align: center;
   background: var(--yellow);
   border: var(--bw) solid var(--navy);
@@ -107,14 +107,14 @@ body::before {
 @keyframes twinkle { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(10deg) scale(1.18); } }
 
 /* ---------- Intro ---------- */
-.intro { margin-top: 26px; text-align: center; }
+.intro { margin-top: clamp(14px, 2.6vh, 26px); text-align: center; }
 .intro-title {
   font-weight: 800;
   font-size: clamp(21px, 5.9vw, 32px);
   line-height: 1.18;
   letter-spacing: -.3px;
-  color: #0b1220;
-  text-shadow: 2px 2px 0 #fff, 3px 3px 0 rgba(255,255,255,.6);
+  color: #fff;
+  text-shadow: 3px 3px 0 var(--navy);
 }
 .intro-sub {
   margin-top: 6px;
@@ -122,10 +122,11 @@ body::before {
   font-size: clamp(14px, 4vw, 18px);
   line-height: 1.3;
   color: var(--blue-ink);
+  text-shadow: 1px 1px 0 var(--navy);
 }
 
 /* ---------- Views: all stacked in one grid cell so height never jumps ---------- */
-.views { width: 100%; margin-top: 22px; display: grid; }
+.views { width: 100%; margin-top: clamp(12px, 2.4vh, 22px); display: grid; }
 
 .view-section {
   grid-area: 1 / 1;
@@ -138,15 +139,15 @@ body::before {
 
 /* ---------- Round badge ---------- */
 .icon-wrapper, .network-scan {
-  width: 104px; height: 104px;
-  margin: 0 0 24px;
+  width: clamp(76px, 12.5vh, 108px); height: clamp(76px, 12.5vh, 108px);
+  margin: 0 0 clamp(14px, 2.4vh, 24px);
   position: relative;
   display: grid; place-items: center;
   border-radius: 50%;
   border: var(--bw) solid var(--navy);
   box-shadow: 0 var(--lift) 0 var(--navy);
 }
-.icon-wrapper i { font-size: 42px; color: var(--navy); }
+.icon-wrapper i { font-size: clamp(32px, 5.4vh, 44px); color: var(--navy); }
 .icon-wrapper.success { background: var(--green); animation: badgePop .6s var(--pop) both; }
 .icon-wrapper.error   { background: var(--red); }
 .icon-wrapper.info    { background: var(--sky-1); }
@@ -154,7 +155,7 @@ body::before {
 @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
 @keyframes badgePop { from { transform: scale(.6); } to { transform: scale(1); } }
 
-.check-svg { width: 70px; height: 70px; }
+.check-svg { width: 68%; height: 68%; }
 .check-circle { fill: none; stroke: none; }
 .check-mark { fill: none; stroke: var(--navy); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 36; stroke-dashoffset: 36; animation: drawCheck .5s ease-out .25s forwards; }
 @keyframes drawCheck { to { stroke-dashoffset: 0; } }
@@ -162,7 +163,7 @@ body::before {
 .network-scan { background: #fff; }
 .scan-ring { position: absolute; inset: 8px; border-radius: 50%; border: 5px dashed var(--sky-1); animation: spin 7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.phone { position: relative; z-index: 1; width: 27px; height: 45px; border: 6px solid #0284c7; border-radius: 8px; background: #fff; overflow: hidden; }
+.phone { position: relative; z-index: 1; width: 27px; height: 45px; border: 6px solid #7c3aed; border-radius: 8px; background: #fff; overflow: hidden; }
 .phone::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--sky-1); animation: phoneScan 1.5s ease-in-out infinite alternate; }
 @keyframes phoneScan { from { transform: translateY(-2px); } to { transform: translateY(30px); } }
 
@@ -173,7 +174,7 @@ body::before {
   font-weight: 800;
   font-size: clamp(19px, 5.4vw, 26px);
   line-height: 1.2;
-  background: #fff; color: #0284c7;
+  background: #fff; color: #7c3aed;
   border: var(--bw) solid var(--navy);
   border-radius: 32px;
   box-shadow: inset 0 4px 0 rgba(255,255,255,.5), 0 var(--lift) 0 var(--navy);
@@ -182,15 +183,15 @@ body::before {
 .view-section h1.text-error   { background: var(--red-soft); color: var(--red-ink); }
 .view-section h1.text-info-h  { background: var(--sky-3);    color: var(--blue-deep); }
 
-p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; line-height: 1.3; color: var(--blue-deep); }
+p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #fff; text-shadow: 1px 1px 0 var(--navy); }
 
 /* ---------- Progress ---------- */
 .progress-container { width: 100%; height: 18px; margin-top: 18px; overflow: hidden; background: #fff; border: 3px solid var(--navy); border-radius: 999px; box-shadow: 0 4px 0 var(--navy); }
-.progress-bar { width: 0%; height: 100%; border-radius: 999px; background: repeating-linear-gradient(-45deg, #38bdf8 0 12px, #0ea5e9 12px 24px); background-size: 34px 100%; animation: stripes .7s linear infinite; transition: width .3s; }
+.progress-bar { width: 0%; height: 100%; border-radius: 999px; background: repeating-linear-gradient(-45deg, #a78bfa 0 12px, #8b5cf6 12px 24px); background-size: 34px 100%; animation: stripes .7s linear infinite; transition: width .3s; }
 @keyframes stripes { to { background-position: 34px 0; } }
 
 /* ---------- Buttons ---------- */
-.action-bar { width: 100%; margin-top: 16px; display: flex; flex-direction: column; align-items: center; }
+.action-bar { position: relative; width: 100%; max-width: 420px; margin-top: 16px; display: flex; flex-direction: column; align-items: center; }
 .btn {
   --bg: var(--green);
   width: 100%; max-width: 420px;
@@ -210,19 +211,20 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
 .btn.danger  { --bg: var(--red); }
 .btn.primary { --bg: var(--sky-1); }
 
-.auto-note { margin-top: 14px; font-weight: 800; font-size: 14px; color: var(--blue-deep); }
+.auto-note { position: absolute; top: -14px; right: -4px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); border: 3px solid var(--navy); box-shadow: 0 3px 0 var(--navy); font-weight: 800; font-size: 16px; line-height: 1; color: var(--brown); pointer-events: none; }
 
 /* ---------- Rules ---------- */
-.rules-card { width: 100%; margin-top: 24px; padding: 16px 18px 16px 20px; background: #fff; border: var(--bw) solid var(--navy); border-radius: 36px; box-shadow: 0 9px 0 var(--navy); }
+.rules-card { width: 100%; margin-top: clamp(14px, 2.8vh, 24px); padding: 16px 18px 16px 20px; background: #fff; border: var(--bw) solid var(--navy); border-radius: 36px; box-shadow: 0 9px 0 var(--navy); }
 .rules-head { display: flex; align-items: center; gap: 12px; padding-left: 4px; font-weight: 800; font-size: 20px; line-height: 1; text-transform: uppercase; color: var(--orange); }
 .rules-head i { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--orange); color: #fff; font-style: normal; font-size: 19px; }
 .rules-list { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
 .rules-list li { position: relative; padding-left: 38px; font-weight: 700; font-size: 15px; line-height: 1.3; color: #1e293b; }
-.rules-list li::before { content: ''; position: absolute; left: 4px; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: #0ea5e9; border: 4px solid var(--navy); }
+.rules-list li::before { content: ''; position: absolute; left: 4px; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: #a855f7; border: 4px solid var(--navy); }
 
 /* ---------- Footer ---------- */
-.footer { margin-top: 18px; text-align: center; font-weight: 700; font-size: 13px; }
-.footer a { color: var(--navy); text-decoration: none; border-bottom: 2px solid rgba(15,23,42,.25); }
+.footer { margin-top: 12px; text-align: center; font-weight: 700; font-size: 13px; color: #fff; }
+.footer a { color: #fff; text-decoration: none; border-bottom: 2px solid rgba(255,255,255,.45); text-shadow: 1px 1px 0 var(--navy); }
+@media (max-height: 720px) { .footer { display: none; } }
 
 @media (min-width: 768px) {
   .stage { width: 560px; }
@@ -248,7 +250,7 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
     }
 
     tg.ready();
-    try { tg.expand(); tg.setHeaderColor('#38bdf8'); tg.setBackgroundColor('#38bdf8'); } catch (e) {}
+    try { tg.expand(); tg.setHeaderColor('#6d28d9'); tg.setBackgroundColor('#6d28d9'); } catch (e) {}
 
     const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
 
@@ -432,14 +434,14 @@ p.desc { max-width: 420px; margin-top: 16px; font-weight: 700; font-size: 15px; 
 <script>
 (function () {
     const stage = document.getElementById('stage');
-    const MIN_SCALE = 0.4;
+    const MIN_SCALE = 0.5;
 
     function fit() {
         const w = stage.offsetWidth, h = stage.offsetHeight;
         const vv = window.visualViewport;
         const vw = (vv && vv.width) || window.innerWidth;
         const vh = (vv && vv.height) || window.innerHeight;
-        const s = Math.max(MIN_SCALE, Math.min(1, (vh - 24) / h, (vw - 12) / w));
+        const s = Math.max(MIN_SCALE, Math.min(1, (vh - 16) / h, (vw - 12) / w));
         stage.style.setProperty('--s', s.toFixed(3));
     }
 
@@ -494,10 +496,11 @@ document.addEventListener('keydown', function(e) {
 
         const note = document.createElement('p');
         note.className = 'auto-note';
+        note.title = 'Closing automatically';
         btn.parentNode.appendChild(note);
 
         let left = AUTO_CLOSE_SECONDS;
-        const render = () => { note.textContent = 'Closing automatically in ' + left + 's…'; };
+        const render = () => { note.textContent = left; };
         render();
 
         const stop = () => { clearInterval(timer); note.remove(); };
@@ -507,7 +510,7 @@ document.addEventListener('keydown', function(e) {
             left--;
             if (left > 0) { render(); return; }
             clearInterval(timer);
-            note.textContent = 'Closing…';
+            note.textContent = '✓';
             btn.click();
             setTimeout(function () { try { window.Telegram.WebApp.close(); } catch (e) {} }, 3000);
         }, 1000);
