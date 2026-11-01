@@ -92,6 +92,7 @@ body::before{
 .icon-wrapper.success{background:var(--green)}
 .icon-wrapper.error{background:var(--red)}
 .icon-wrapper.info{background:#7dd3fc}
+.icon-wrapper.warn{background:var(--yellow)}
 .icon-wrapper i{color:var(--navy)}
 
 .network-scan::before{
@@ -119,6 +120,7 @@ h1{
 }
 h1.text-success{background:var(--green-soft);color:var(--green-text)}
 h1.text-error{background:#fecdd3;color:#9f1239}
+h1.text-warn{background:#fef08a;color:var(--yellow-text)}
 h1.text-info-h{background:#e0f2fe;color:var(--blue)}
 p.desc,.desc{margin-top:calc(10*var(--u));font-size:calc(14.5*var(--u));font-weight:700;line-height:1.2;color:var(--navy)}
 
@@ -136,7 +138,8 @@ p.desc,.desc{margin-top:calc(10*var(--u));font-size:calc(14.5*var(--u));font-wei
 .btn:disabled{opacity:.5}
 .btn.success{background:var(--green)}
 .btn.danger{background:var(--red)}
-.btn.primary{background:var(--yellow)}
+.btn.primary{background:#7dd3fc}
+.btn.warn{background:var(--yellow)}
 
 /* ---------- 5) Security rules card  (= the old .footer box) ---------- */
 .footer{

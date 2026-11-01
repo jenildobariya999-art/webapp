@@ -4,36 +4,219 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Secure Verification | Jenil</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style2.css">
-
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
 (function () {
     const tg = window.Telegram && window.Telegram.WebApp;
-    if (!tg) { console.error("Telegram WebApp SDK not found"); return; }
+
+    if (!tg) {
+        console.error("Telegram WebApp SDK not found");
+        return;
+    }
+
     tg.ready();
+
     const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-    if (!user || !user.id) { console.error("Telegram User ID not found"); return; }
+
+    if (!user || !user.id) {
+        console.error("Telegram User ID not found");
+        return;
+    }
+
     const userId = String(user.id);
+
+    // Show Telegram User ID
     const idElement = document.getElementById("userIdDisplay");
-    if (idElement) { idElement.textContent = userId; }
+    if (idElement) {
+        idElement.textContent = userId;
+    }
+
+    // Make User ID available to other JS files
     window.telegramUserId = userId;
+})();
+    </script>
+
+    <script>
+/* ==========================================================================
+   RESULT PAGE LOGIC  (bot is NOT changed)
+   The bot's /onWebhook reads: { fingerprint, botusername, status, attempt, message }.
+   This page listens to the same data (the page's own requests/responses) and shows:
+     status == "success"  -> Device Verified
+     attempt == true      -> Already Verified
+     status == "failed"   -> Same Device Detected (bot still lets user in)
+     anything else        -> Verification Failed
+   Preview without the bot:  ?demo=success | already | same | failed | error
+   ========================================================================== */
+(function () {
+  var AUTO_CLOSE_SECONDS = 5;      // 0 = never auto-close
+  var TIMEOUT_SECONDS    = 45;     // no result at all -> show "Verification Failed"
+
+  var VIEWS = { scanning:'view-scanning', success:'view-success', already:'view-already',
+                same:'view-same', failed:'view-failed', critical:'view-critical' };
+  var current = null, locked = false, timer = null, ready = false, pending = null;
+
+  function kind(res) {
+    var status = String((res && res.status) || '').toLowerCase().trim();
+    var attempt = !!(res && res.attempt);
+    if (status === 'success') return 'success';
+    if (attempt) return 'already';
+    if (status === 'failed') return 'same';
+    return 'failed';
+  }
+  function looksLikeResult(o) {
+    return o && typeof o === 'object' && !Array.isArray(o) &&
+           ('fingerprint' in o) && (('status' in o) || ('attempt' in o));
+  }
+  function tryParse(t) {
+    if (t == null) return null;
+    try {
+      if (typeof t === 'string') {
+        var s = t.trim();
+        if (s[0] === '{') return JSON.parse(s);
+        if (s.indexOf('=') > -1) { var o = {}; new URLSearchParams(s).forEach(function (v, k) { o[k] = v; }); return o; }
+      } else if (t instanceof URLSearchParams) {
+        var o2 = {}; t.forEach(function (v, k) { o2[k] = v; }); return o2;
+      } else if (typeof FormData !== 'undefined' && t instanceof FormData) {
+        var o3 = {}; t.forEach(function (v, k) { o3[k] = v; }); return o3;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function offer(o) {
+    if (!looksLikeResult(o)) return;
+    if (o.attempt === 'true') o.attempt = true;
+    if (o.attempt === 'false') o.attempt = false;
+    handle(o);
+  }
+
+  /* ---- listen to requests/responses (fetch, XHR, sendBeacon) ---- */
+  if (window.fetch) {
+    var _fetch = window.fetch;
+    window.fetch = function (input, init) {
+      try { offer(tryParse(init && init.body)); } catch (e) {}
+      return _fetch.apply(this, arguments).then(function (resp) {
+        try { resp.clone().text().then(function (t) { offer(tryParse(t)); }).catch(function () {}); } catch (e) {}
+        return resp;
+      });
+    };
+  }
+  var _open = XMLHttpRequest.prototype.open, _send = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function () { return _open.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function (body) {
+    try { offer(tryParse(body)); } catch (e) {}
+    this.addEventListener('load', function () {
+      try { offer(tryParse(this.responseType === '' || this.responseType === 'text' ? this.responseText : null)); } catch (e) {}
+    });
+    return _send.apply(this, arguments);
+  };
+  if (navigator.sendBeacon) {
+    var _beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url, data) {
+      try {
+        if (typeof Blob !== 'undefined' && data instanceof Blob) data.text().then(function (t) { offer(tryParse(t)); });
+        else offer(tryParse(data));
+      } catch (e) {}
+      return _beacon(url, data);
+    };
+  }
+
+  /* ---- show a result ---- */
+  function handle(res) {
+    if (locked) return;
+    locked = true;
+    clearTimeout(timer);
+    var k = kind(res);
+    var msg = String((res && res.message) || '').trim();
+    pending = { k: k, msg: msg };
+    if (ready) render();
+  }
+  function setView(k) {
+    current = k;
+    Object.keys(VIEWS).forEach(function (key) {
+      var el = document.getElementById(VIEWS[key]);
+      if (el) el.classList.toggle('active', key === k);
+    });
+    var badge = document.getElementById('headerBadge'), txt = document.getElementById('headerStatusText');
+    if (badge && txt) {
+      var map = { success:['pill-green','VERIFIED'], already:['pill-green','VERIFIED'], same:['pill-orange','SAME DEVICE'],
+                  failed:['pill-red','FAILED'], critical:['pill-red','ERROR'], scanning:['pill-blue','SCANNING'] };
+      var m = map[k] || map.scanning;
+      badge.className = 'status-pill ' + m[0]; txt.textContent = m[1];
+    }
+    document.body.classList.toggle('done', k !== 'scanning');
+  }
+  function closeApp() {
+    try { window.Telegram.WebApp.close(); } catch (e) { try { window.close(); } catch (e2) {} }
+  }
+  function render() {
+    if (!pending) return;
+    var k = pending.k, msg = pending.msg;
+    if (msg) {
+      var f = document.getElementById('failedMsg'), s = document.getElementById('sameMsg');
+      if (k === 'failed' && f) f.textContent = msg;
+      if (k === 'same' && s) s.textContent = msg;
+    }
+    setView(k);
+    var btnId = { success:'btnSuccessClose', already:'btnAlreadyClose', same:'btnSameClose', failed:'btnFailClose' }[k];
+    var btn = btnId && document.getElementById(btnId);
+    if (btn && !btn.__wired) { btn.__wired = true; btn.addEventListener('click', closeApp); }
+    if (btn && AUTO_CLOSE_SECONDS > 0 && k !== 'failed') {
+      var left = AUTO_CLOSE_SECONDS, base = btn.textContent.replace(/\s*\(\d+\)\s*$/, '').trim();
+      (function tick() {
+        btn.textContent = base + ' (' + left + ')';
+        if (left-- <= 0) { closeApp(); return; }
+        setTimeout(tick, 1000);
+      })();
+    }
+  }
+
+  /* keep the result on screen even if another script switches views afterwards */
+  function guard() {
+    var box = document.querySelector('.auth-container');
+    if (!box) return;
+    new MutationObserver(function () {
+      if (!locked || !pending || ready === false) return;
+      var el = document.getElementById(VIEWS[pending.k]);
+      var others = document.querySelectorAll('.view-section.active');
+      var bad = !el || !el.classList.contains('active') || others.length !== 1;
+      if (bad) setView(pending.k);
+    }).observe(box, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    ready = true; guard();
+    var demo = new URLSearchParams(location.search).get('demo');
+    if (demo) {
+      var d = { success:{ fingerprint:'demo', status:'success' }, already:{ fingerprint:'demo', attempt:true },
+                same:{ fingerprint:'demo', status:'failed' }, failed:{ fingerprint:'demo', status:'error' } }[demo];
+      if (demo === 'error') { locked = true; pending = { k:'critical', msg:'' }; render(); return; }
+      if (d) { handle(d); return; }
+    }
+    if (pending) render();
+    timer = setTimeout(function () {
+      if (!locked) { locked = true; pending = { k:'failed', msg:'No response received. Please close and try again.' }; render(); }
+    }, TIMEOUT_SECONDS * 1000);
+  });
 })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
     <script src="webhook-bridge.js"></script>
     <script src="script.js"></script>
-
+    
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('selectstart', e => e.preventDefault());
         document.addEventListener('dragstart', e => e.preventDefault());
     </script>
+    
 </head>
 <body>
 
-<header class="header">
+        <header class="header">
   <div class="user-profile">
     <div class="avatar-container" id="avatarBox">U</div>
     <div class="text-info">
@@ -48,13 +231,6 @@
 </header>
 
 <div class="particles" id="particles"></div>
-
-<div class="banner">⭐ All Yono Promo Codes ⭐</div>
-
-<div class="intro">
-  <h2>Welcome Bro, Just Give Me 2 sec I Verify your Device !!</h2>
-  <p>After Device Verify You Use Our Bot and Claim Your Yono Codes And Free MaiL rewards</p>
-</div>
 
 <div class="main-wrapper">
   <div class="auth-container">
@@ -73,27 +249,49 @@
     <div class="view-section" id="view-scanning">
       <div class="network-scan">
         <div class="scan-grid"></div>
-        <div class="node n1"></div><div class="node n2"></div><div class="node n3"></div>
-        <div class="node n4"></div><div class="node n5"></div>
+        <div class="node n1"></div>
+        <div class="node n2"></div>
+        <div class="node n3"></div>
+        <div class="node n4"></div>
+        <div class="node n5"></div>
         <div class="node-center"><i class="fa-solid fa-mobile"></i></div>
         <div class="scan-line"></div>
       </div>
+
       <h1>Scanning device hardware... 🔍</h1>
+
+      <p class="desc" style="margin-bottom:10px">
+        Checking your device security environment...
+      </p>
+
       <div class="scan-status">
         <div><span>DEVICE INTEGRITY</span><b>●</b></div>
         <div><span>NETWORK SECURITY</span><b>●</b></div>
         <div><span>SESSION VALIDATION</span><b>●</b></div>
       </div>
-      <div class="progress-container"><div class="progress-bar" id="scanBar"></div></div>
+
+      <div class="progress-container">
+        <div class="progress-bar" id="scanBar"></div>
+      </div>
     </div>
 
     <!-- Failed screen -->
     <div class="view-section" id="view-failed">
       <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
       <h1 class="text-error">Verification Failed ❌</h1>
-      <p class="desc" id="failedMsg">We encountered an issue during verification.</p>
+      <p class="desc" id="failedMsg">Please close and try again.</p>
       <div class="action-bar">
-        <button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button>
+        <button class="btn danger" id="btnFailClose">CLOSE &amp; TRY AGAIN</button>
+      </div>
+    </div>
+
+    <!-- Same device screen (bot: status == failed -> still lets the user in) -->
+    <div class="view-section" id="view-same">
+      <div class="icon-wrapper warn"><i class="fas fa-triangle-exclamation"></i></div>
+      <h1 class="text-warn">Same Device Detected ⚠️</h1>
+      <p class="desc" id="sameMsg">Referral bonus not available, but you can still use the bot.</p>
+      <div class="action-bar">
+        <button class="btn warn" id="btnSameClose">CONTINUE TO BOT</button>
       </div>
     </div>
 
@@ -115,7 +313,7 @@
     <div class="view-section" id="view-already">
       <div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div>
       <h1 class="text-info-h">Already Verified ✅</h1>
-      <p class="desc">This device has already been used on other device.</p>
+      <p class="desc">This device is already verified. You can continue to the bot.</p>
       <div class="action-bar">
         <button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button>
       </div>
@@ -124,96 +322,37 @@
   </div>
 </div>
 
-<div class="rules">
-  <h4><span class="warn">!</span> Security Rules</h4>
-  <ul>
-    <li>1 Device = 1 Account: Multiple IDs on the same device will be auto-banned.</li>
-    <li>No App Cloners: Parallel Space or Dual apps fail immediately.</li>
-    <li>Real Network: Proxies and spoofed VPNs are blocked.</li>
-  </ul>
-</div>
-
 <div class="footer">
-  <a href="https://t.me/Jenish_Dobariya1" target="_blank">Designed By Jenil Dobariya</a>
+  <a href="https://t.me/Jenish_Dobariya1" target="_blank">
+    Designed By Jenil Dobariya
+  </a>
 </div>
-
-<script>
-/* Result fix: if script.js shows views in a way the CSS can't see, drive the view from the header status */
-(function () {
-  const ids = {scanning:'view-scanning', success:'view-success', failed:'view-failed', already:'view-already', critical:'view-critical'};
-  const views = Object.values(ids).map(id => document.getElementById(id));
-  const shown = el => getComputedStyle(el).display !== 'none';
-  let scriptWorks = false;
-
-  function pick() {
-    const t = ((document.getElementById('headerStatusText') || {}).textContent || '').toUpperCase();
-    const b = (document.getElementById('headerBadge') || {}).className || '';
-    if (/ALREADY|USED|DUPLICATE/.test(t)) return 'already';
-    if (/FAIL|DENIED|BLOCK|BAN|REJECT|VPN|CLONE|INVALID/.test(t)) return 'failed';
-    if (/ERROR|CRITICAL|EXPIRED/.test(t)) return 'critical';
-    if (/VERIFIED|SUCCESS|GRANTED|SAFE|APPROVED|PASS|CLEAN/.test(t)) return 'success';
-    if (/SCAN|CHECK|VERIFYING|WAIT|LOAD/.test(t)) return 'scanning';
-    if (/pill-green/.test(b)) return 'success';
-    if (/pill-red/.test(b)) return 'failed';
-    return 'scanning';
-  }
-  function sync() {
-    if (scriptWorks) return;
-    if (views.some(v => v && shown(v) && !v.classList.contains('fb-on'))) {
-      scriptWorks = true; views.forEach(v => v && v.classList.remove('fb-on')); return;
-    }
-    const want = ids[pick()];
-    views.forEach(v => v && v.classList.toggle('fb-on', v.id === want));
-  }
-  setTimeout(() => setInterval(sync, 300), 800);
-  if (window.Telegram && Telegram.WebApp && Telegram.WebApp.expand) Telegram.WebApp.expand();
-})();
-</script>
-
-<script>
-/* Auto off after result: stop the scan animation, then close the Mini App */
-(function () {
-  const AUTO_CLOSE_MS = 4000;          // set to 0 to disable auto-close
-  const results = ['view-success','view-failed','view-already','view-critical'];
-  let closing = false;
-  function check() {
-    const shown = results.some(id => {
-      const el = document.getElementById(id);
-      return el && (el.classList.contains('active') || el.classList.contains('show') ||
-                    getComputedStyle(el).display !== 'none');
-    });
-    if (!shown) return;
-    document.body.classList.add('done');
-    if (AUTO_CLOSE_MS && !closing && window.Telegram && Telegram.WebApp) {
-      closing = true;
-      setTimeout(() => Telegram.WebApp.close(), AUTO_CLOSE_MS);
-    }
-  }
-  new MutationObserver(check).observe(document.body,
-    { attributes:true, subtree:true, attributeFilter:['class','style'] });
-})();
-</script>
-
-<script>
-document.addEventListener('keydown', function(e) {
-    if (e.key === "F12" ||
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
-        (e.ctrlKey && (e.key === "U" || e.key === "S"))) {
-        e.preventDefault(); return false;
-    }
-});
-(function() {
-    const threshold = 160;
-    setInterval(function() {
-        const widthDiff = window.outerWidth - window.innerWidth;
-        const heightDiff = window.outerHeight - window.innerHeight;
-        if (widthDiff > threshold || heightDiff > threshold) {
-            document.body.innerHTML = "";
-            window.location.href = "about:blank";
-        }
-    }, 1000);
-})();
-</script>
-
+        <script>
+        document.addEventListener('keydown', function(e) {
+            if (
+                e.key === "F12" ||
+                (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+                (e.ctrlKey && (e.key === "U" || e.key === "S"))
+            ) {
+                e.preventDefault();
+                return false;
+            }
+            
+        });
+        
+        (function() {
+            const threshold = 160;
+            setInterval(function() {
+                const widthDiff = window.outerWidth - window.innerWidth;
+                const heightDiff = window.outerHeight - window.innerHeight;
+                
+                if (widthDiff > threshold || heightDiff > threshold) {
+                    document.body.innerHTML = "";
+                    window.location.href = "about:blank";
+                }
+            }, 1000);
+        })();
+    </script>
+    
 </body>
 </html>
