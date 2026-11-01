@@ -164,6 +164,7 @@ body{
   var S = null;           // latest state from API
   var view = 'verify';    // verify | home | withdraw | msg
   var busy = false;
+  var via = 'direct';     // which route works: direct | proxy
 
   var $ = function (id) { return document.getElementById(id); };
   var inr = function (n) { n = Number(n) || 0; return '₹' + (Math.round(n * 100) / 100).toString(); };
@@ -209,7 +210,7 @@ body{
   function demoState(action, extra) {
     if (!demoState.s) demoState.s = {
       ok: true, uid: '1', all_joined: false, balance: 12.5, payout_id: '749628', min: 50, max: 200, min_refs: 0, ref_count: 0,
-      refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, applied: false, withdraw_on: true,
+      refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, ref_bonus: 5, ref_bonus_set: true, applied: false, withdraw_on: true,
       title: 'YONO777 REWARDS', logo: '', history: [{ id: 3, amount: 50, status: 'paid', date: '2026-11-01 13:05', to: '749628' }],
       channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: true, req: true },
                  { id: '2', title: 'Backup Channel', link: 'https://t.me/telegram', joined: false }]
@@ -232,15 +233,28 @@ body{
     if (!API || !UID || !SIG) return { ok: false, error: 'Please open this app from the bot button.', code: 'auth' };
     var payload = { uid: UID, sig: SIG, action: action };
     for (var k in extra) payload[k] = extra[k];
-    var body = JSON.stringify(payload), r;
-    try {
-      r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body });
-    } catch (e1) {
-      try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }); }
-      catch (e2) { return { ok: false, error: 'Network error. Check your connection and try again.', code: 'net' }; }
+    var body = JSON.stringify(payload), r = null, why = [];
+    var order = via === 'proxy' ? ['proxy', 'direct'] : ['direct', 'proxy'];
+    for (var oi = 0; oi < order.length && !r; oi++) {
+      if (order[oi] === 'direct') {
+        try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body }); via = 'direct'; }
+        catch (e1) {
+          why.push('direct: ' + ((e1 && e1.message) || e1));
+          try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }); via = 'direct'; }
+          catch (e2) { r = null; why.push('plain: ' + ((e2 && e2.message) || e2)); }
+        }
+      } else {
+        try {
+          var pp = { api: API }; for (var pk in payload) pp[pk] = payload[pk];
+          var pr = await fetch(location.origin + '/api/rpc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pp) });
+          if (pr.status === 200) { r = pr; via = 'proxy'; } else why.push('proxy: HTTP ' + pr.status);
+        } catch (e3) { why.push('proxy: ' + ((e3 && e3.message) || e3)); }
+      }
     }
-    try { return await r.json(); }
-    catch (e3) { return { ok: false, error: 'Server returned an invalid response.', code: 'bad' }; }
+    if (!r) return { ok: false, error: 'Cannot reach the bot server.', code: 'net', detail: why.join(' | ') };
+    var txt = '';
+    try { txt = await r.text(); return JSON.parse(txt); }
+    catch (e4) { return { ok: false, error: 'Server returned an invalid response (HTTP ' + r.status + ').', code: 'bad', detail: String(txt).slice(0, 160) }; }
   }
 
   // ---------- header branding from state ----------
@@ -263,11 +277,12 @@ body{
   }
   function mount(node) { var v = $('view'); v.textContent = ''; v.appendChild(node); window.scrollTo(0, 0); }
 
-  function showMessage(text, icon) {
+  function showMessage(text, icon, detail) {
     view = 'msg'; setNav(false);
     mount(h('div', { class: 'card cream' },
       h('div', { class: 'display', style: 'font-size:46px', text: icon || '⚠️' }),
       h('div', { class: 'v-sub', text: text }),
+      detail ? h('div', { style: 'font-size:12px;color:#92400e;word-break:break-all;margin:0 0 12px;opacity:.85', text: detail }) : null,
       h('button', { class: 'btn b-yellow', onclick: function () { boot(); } }, 'Try again 🔄')
     ));
   }
@@ -351,6 +366,8 @@ body{
 
     // apply code
     var wel = Number(S.welcome_bonus) || 0;
+    var rb = S.ref_bonus_set ? (Number(S.ref_bonus) || 0) : 0;   // admin-set amount, both users get it
+    var earn = rb > 0 ? rb : wel;
     if (S.applied) {
       box.appendChild(h('div', { class: 'card center' }, h('div', { class: 'h2', text: '✅ Friend refer code already applied' })));
     } else {
@@ -361,7 +378,7 @@ body{
         await act(ab, 'apply', { code: code });
       } }, 'Apply Code 🚀');
       box.appendChild(h('div', { class: 'card' },
-        h('div', { class: 'h2', text: 'Enter your Friend Refer Code' + (wel > 0 ? ' and earn ' + wel + 'rs instant ⚡' : ' ⚡') }),
+        h('div', { class: 'h2', text: 'Enter your Friend Refer Code' + (earn > 0 ? ' and earn ' + earn + 'rs instant ⚡' : ' ⚡') }),
         inp, ab));
     }
 
@@ -389,8 +406,13 @@ body{
 
     // rules
     var rules = h('div', { class: 'card cream rules' }, h('h3', { text: '📜 Referral Rules:' }));
-    rules.appendChild(h('p', { text: '• Per valid invite ' + (S.per_ref && S.per_ref !== '0' ? S.per_ref + ' rs' : 'bonus') + ': when your friend applies your code you get paid instantly!' }));
-    if (wel > 0) rules.appendChild(h('p', { text: '• Welcome bonus ' + wel + ' rs: you get it the first time you apply a friend\'s code.' }));
+    if (rb > 0) {
+      rules.appendChild(h('p', { text: '• When a friend\'s refer code is applied, BOTH users get ' + rb + ' rs instantly!' }));
+      rules.appendChild(h('p', { text: '• Share your code: every friend who enters it earns you ' + rb + ' rs, and they get ' + rb + ' rs too.' }));
+    } else {
+      rules.appendChild(h('p', { text: '• Per valid invite ' + (S.per_ref && S.per_ref !== '0' ? S.per_ref + ' rs' : 'bonus') + ': when your friend applies your code you get paid instantly!' }));
+      if (wel > 0) rules.appendChild(h('p', { text: '• Welcome bonus ' + wel + ' rs: you get it the first time you apply a friend\'s code.' }));
+    }
     rules.appendChild(h('p', { text: '• Self-referrals and duplicate device manipulation lead to automatic account freeze.' }));
     box.appendChild(rules);
     mount(box);
@@ -464,13 +486,15 @@ body{
   }
 
   function editId() {
-    var inp = h('input', { class: 'input num', style: 'text-transform:none', maxlength: '60', value: S.payout_id || '', placeholder: 'Enter your ID' });
+    var inp = h('input', { class: 'input num', style: 'text-transform:none', maxlength: '7', inputmode: 'numeric', type: 'tel', value: S.payout_id || '', placeholder: '5 to 7 digit ID' });
+    inp.addEventListener('input', function () { inp.value = inp.value.replace(/\D/g, '').slice(0, 7); });
     var m = h('div', { class: 'modal' },
       h('div', { class: 'card' },
         h('div', { class: 'h2', text: '✏️ Your Payout ID' }), inp,
+        h('div', { class: 'note', style: 'margin:-6px 0 12px', text: 'Number of 5 to 7 digits' }),
         h('button', { class: 'btn b-green', onclick: async function () {
           var v = (inp.value || '').trim();
-          if (v.length < 3) return toast('Enter at least 3 characters');
+          if (!/^\d{5,7}$/.test(v)) return toast('ID must be 5 to 7 digits');
           document.body.removeChild(m);
           await act(null, 'saveid', { value: v });
         } }, 'Save'),
@@ -520,7 +544,7 @@ body{
     $('view').innerHTML = '<div class="loader"><div class="spin"></div><div class="display" style="font-size:22px">Loading...</div></div>';
     $('nav').classList.add('hide');
     var r = await call('init');
-    if (!r.ok) return showMessage(r.error || 'Could not load the app.', r.code === 'banned' ? '🚫' : '⚠️');
+    if (!r.ok) return showMessage(r.error || 'Could not load the app.', r.code === 'banned' ? '🚫' : '⚠️', r.detail);
     S = r; applyBranding();
     view = needsVerify() ? 'verify' : 'home';
     route();
