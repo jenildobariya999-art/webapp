@@ -510,15 +510,15 @@ body{
   }
 
   function editId() {
-    var inp = h('input', { class: 'input num', style: 'text-transform:none', maxlength: '7', inputmode: 'numeric', type: 'tel', value: S.payout_id || '', placeholder: '5 to 7 digit ID' });
-    inp.addEventListener('input', function () { inp.value = inp.value.replace(/\D/g, '').slice(0, 7); });
+    var inp = h('input', { class: 'input num', style: 'text-transform:none', maxlength: '20', inputmode: 'numeric', type: 'tel', value: S.payout_id || '', placeholder: '5 or more digit UID' });
+    inp.addEventListener('input', function () { inp.value = inp.value.replace(/\D/g, '').slice(0, 20); });
     var m = h('div', { class: 'modal' },
       h('div', { class: 'card' },
         h('div', { class: 'h2', text: '✏️ Your Payout ID' }), inp,
-        h('div', { class: 'note', style: 'margin:-6px 0 12px', text: 'Number of 5 to 7 digits' }),
+        h('div', { class: 'note', style: 'margin:-6px 0 12px', text: 'Number of 5 or more digits' }),
         h('button', { class: 'btn b-green', onclick: async function () {
           var v = (inp.value || '').trim();
-          if (!/^\d{5,7}$/.test(v)) return toast('ID must be 5 to 7 digits');
+          if (!/^\d{5,20}$/.test(v)) return toast('UID must be 5 or more digits');
           document.body.removeChild(m);
           await act(null, 'saveid', { value: v });
         } }, 'Save'),
