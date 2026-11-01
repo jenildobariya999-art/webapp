@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Secure Verification | Jenil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style2.css">
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+(function () {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg) { console.error("Telegram WebApp SDK not found"); return; }
+    tg.ready();
+    const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (!user || !user.id) { console.error("Telegram User ID not found"); return; }
+    const userId = String(user.id);
+    const idElement = document.getElementById("userIdDisplay");
+    if (idElement) { idElement.textContent = userId; }
+    window.telegramUserId = userId;
+})();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <script src="webhook-bridge.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+    </script>
+</head>
+<body>
+
+<header class="header">
+  <div class="user-profile">
+    <div class="avatar-container" id="avatarBox">U</div>
+    <div class="text-info">
+      <h3 id="userName">USER</h3>
+      <p>ID: <span id="userIdDisplay">---</span></p>
+    </div>
+  </div>
+  <div class="status-pill pill-blue" id="headerBadge">
+    <span class="dot"></span>
+    <span id="headerStatusText">SCANNING</span>
+  </div>
+</header>
+
+<div class="particles" id="particles"></div>
+
+<div class="banner">⭐ All Yono Promo Codes ⭐</div>
+
+<div class="intro">
+  <h2>Welcome Bro, Just Give Me 2 sec I Verify your Device !!</h2>
+  <p>After Device Verify You Use Our Bot and Claim Your Yono Codes And Free MaiL rewards</p>
+</div>
+
+<div class="main-wrapper">
+  <div class="auth-container">
+
+    <!-- Error screen -->
+    <div class="view-section" id="view-critical">
+      <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
+      <h1 class="text-error">Error Occurred ❌</h1>
+      <p class="desc">User ID Not Found or Session Expired.</p>
+      <div class="action-bar">
+        <button class="btn danger" onclick="window.location.reload()">CLOSE &amp; RETRY</button>
+      </div>
+    </div>
+
+    <!-- Scanning screen -->
+    <div class="view-section" id="view-scanning">
+      <div class="network-scan">
+        <div class="scan-grid"></div>
+        <div class="node n1"></div><div class="node n2"></div><div class="node n3"></div>
+        <div class="node n4"></div><div class="node n5"></div>
+        <div class="node-center"><i class="fa-solid fa-mobile"></i></div>
+        <div class="scan-line"></div>
+      </div>
+      <h1>Scanning device hardware... 🔍</h1>
+      <div class="scan-status">
+        <div><span>DEVICE INTEGRITY</span><b>●</b></div>
+        <div><span>NETWORK SECURITY</span><b>●</b></div>
+        <div><span>SESSION VALIDATION</span><b>●</b></div>
+      </div>
+      <div class="progress-container"><div class="progress-bar" id="scanBar"></div></div>
+    </div>
+
+    <!-- Failed screen -->
+    <div class="view-section" id="view-failed">
+      <div class="icon-wrapper error"><i class="fas fa-triangle-exclamation"></i></div>
+      <h1 class="text-error">Verification Failed ❌</h1>
+      <p class="desc" id="failedMsg">We encountered an issue during verification.</p>
+      <div class="action-bar">
+        <button class="btn danger" id="btnFailClose">CONTINUE TO BOT</button>
+      </div>
+    </div>
+
+    <!-- Success screen -->
+    <div class="view-section" id="view-success">
+      <div class="icon-wrapper success">
+        <svg class="check-svg" viewBox="0 0 52 52">
+          <circle class="check-circle" cx="26" cy="26" r="23"/>
+          <path class="check-mark" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+      <h1 class="text-success">Device Verified Successfully! 🎉</h1>
+      <div class="action-bar">
+        <button class="btn success" id="btnSuccessClose">CONTINUE TO BOT</button>
+      </div>
+    </div>
+
+    <!-- Already verified screen -->
+    <div class="view-section" id="view-already">
+      <div class="icon-wrapper info"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 class="text-info-h">Already Verified ✅</h1>
+      <p class="desc">This device has already been used on other device.</p>
+      <div class="action-bar">
+        <button class="btn primary" id="btnAlreadyClose">CONTINUE TO BOT</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="rules">
+  <h4><span class="warn">!</span> Security Rules</h4>
+  <ul>
+    <li>1 Device = 1 Account: Multiple IDs on the same device will be auto-banned.</li>
+    <li>No App Cloners: Parallel Space or Dual apps fail immediately.</li>
+    <li>Real Network: Proxies and spoofed VPNs are blocked.</li>
+  </ul>
+</div>
+
+<div class="footer">
+  <a href="https://t.me/Jenish_Dobariya1" target="_blank">Designed By Jenil Dobariya</a>
+</div>
+
+<script>
+/* Auto off after result: stop the scan animation, then close the Mini App */
+(function () {
+  const AUTO_CLOSE_MS = 4000;          // set to 0 to disable auto-close
+  const results = ['view-success','view-failed','view-already','view-critical'];
+  let closing = false;
+  function check() {
+    const shown = results.some(id => {
+      const el = document.getElementById(id);
+      return el && (el.classList.contains('active') || el.classList.contains('show') ||
+                    getComputedStyle(el).display !== 'none');
+    });
+    if (!shown) return;
+    document.body.classList.add('done');
+    if (AUTO_CLOSE_MS && !closing && window.Telegram && Telegram.WebApp) {
+      closing = true;
+      setTimeout(() => Telegram.WebApp.close(), AUTO_CLOSE_MS);
+    }
+  }
+  new MutationObserver(check).observe(document.body,
+    { attributes:true, subtree:true, attributeFilter:['class','style'] });
+})();
+</script>
+
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
+        (e.ctrlKey && (e.key === "U" || e.key === "S"))) {
+        e.preventDefault(); return false;
+    }
+});
+(function() {
+    const threshold = 160;
+    setInterval(function() {
+        const widthDiff = window.outerWidth - window.innerWidth;
+        const heightDiff = window.outerHeight - window.innerHeight;
+        if (widthDiff > threshold || heightDiff > threshold) {
+            document.body.innerHTML = "";
+            window.location.href = "about:blank";
+        }
+    }, 1000);
+})();
+</script>
+
+</body>
+  </html>
+  
