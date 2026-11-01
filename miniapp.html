@@ -1,274 +1,527 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Rewards</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0f172a;--sky:#38bdf8;--sky2:#bae6fd;--gold:#facc15;--gold2:#fde68a;--green:#22c55e;--card:#fff;--muted:#64748b;--cream:#fef9c3;--brown:#9a3412}
+:root{
+  --navy:#0f172a; --sky1:#3dbcf8; --sky2:#aee3ff; --sky3:#d9f1ff;
+  --yellow:#facc15; --orange:#fb923c; --blue:#38bdf8; --green:#22c55e; --red:#ef4444;
+  --brown:#b45309; --cream:#fff7cc;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%}
-body{font-family:'Fredoka',system-ui,sans-serif;font-weight:600;color:var(--ink);background:linear-gradient(#38bdf8,#bae6fd 70%,#e0f2fe);background-attachment:fixed;padding:12px 12px calc(96px + env(safe-area-inset-bottom,0px));padding-top:calc(12px + env(safe-area-inset-top,0px))}
-.wrap{max-width:480px;margin:0 auto}
-.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Fredoka',system-ui,sans-serif; font-weight:600; color:var(--navy);
+  background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 55%,var(--sky3) 100%);
+  background-attachment:fixed; min-height:100vh;
+}
+.wrap{max-width:520px;margin:0 auto;padding:14px 14px 120px}
+.display{font-family:'Lilita One','Fredoka',sans-serif;font-weight:400;letter-spacing:.3px}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.logo{width:52px;height:52px;border-radius:14px;border:3px solid var(--ink);background:#14532d;display:grid;place-items:center;font-size:26px;overflow:hidden;flex:none}
+.logo{width:56px;height:56px;border-radius:16px;border:3px solid var(--navy);background:#0b5d2e;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;
+  font-family:'Lilita One';color:var(--yellow);font-size:15px;line-height:1;text-align:center}
 .logo img{width:100%;height:100%;object-fit:cover}
-.title{font-size:24px;line-height:1;font-weight:700;letter-spacing:.5px;text-shadow:2px 2px 0 #fff;word-break:break-word}
-.hi{display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 12px 6px 6px;box-shadow:0 4px 0 var(--ink);max-width:48%}
-.hi img,.hi .av{width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);background:#e2e8f0;flex:none;object-fit:cover;display:grid;place-items:center}
-.hi small{display:block;font-size:11px;color:#0369a1;line-height:1.1}
-.hi b{display:block;font-size:13px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card{background:var(--card);border:3px solid var(--ink);border-radius:26px;padding:16px;margin-bottom:16px;box-shadow:0 7px 0 var(--ink)}
-.gold{background:linear-gradient(135deg,#fde68a,#facc15);text-align:center}
-.gold .lbl{font-size:15px;color:#78350f;letter-spacing:.5px}
-.gold .amt{font-size:56px;line-height:1.1;font-weight:700;text-shadow:2px 2px 0 #fff}
-.note{margin-top:8px;border:2px dashed var(--ink);border-radius:14px;background:var(--cream);padding:8px;font-size:13px}
-h3{margin:0 0 10px;font-size:17px;text-align:center}
-.cap{text-align:center;font-size:17px;margin:4px 0 12px}
-input{width:100%;font:inherit;font-weight:600;font-size:16px;padding:13px 14px;border:3px solid var(--ink);border-radius:16px;background:#f8fafc;color:var(--ink);outline:none;text-align:center}
-input::placeholder{color:#94a3b8}
-.btn{display:block;width:100%;font:inherit;font-weight:700;font-size:17px;letter-spacing:.4px;border:3px solid var(--ink);border-radius:18px;padding:13px;margin-top:12px;cursor:pointer;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s;color:var(--ink)}
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
-.btn[disabled]{opacity:.55}
-.y{background:var(--gold);color:#78350f}.g{background:var(--green);color:#fff}.b{background:#38bdf8;color:#075985}.o{background:#fb923c;color:#fff}
-.code{border:3px dashed var(--green);background:#f0fdf4;color:#15803d;border-radius:16px;padding:12px;text-align:center;font-size:26px;font-weight:700;word-break:break-all}
-.row{display:flex;gap:8px}
-.chip{flex:1;font:inherit;font-weight:700;font-size:17px;padding:11px 4px;border:3px solid var(--ink);border-radius:14px;background:#f1f5f9;box-shadow:0 4px 0 var(--ink);color:var(--ink);cursor:pointer}
-.chip.on{background:var(--gold)}
-.uid{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.uid small{color:var(--muted);font-size:13px}.uid b{font-size:22px;word-break:break-all}
-.edit{flex:none;font:inherit;font-weight:700;background:#38bdf8;border:3px solid var(--ink);border-radius:14px;padding:8px 14px;box-shadow:0 4px 0 var(--ink);color:var(--ink)}
-.muted{text-align:center;color:#475569;font-size:14px;margin:6px 0}
-.rules{background:var(--cream);border-color:var(--ink);font-size:14px;line-height:1.45}
-.rules li{margin-bottom:6px}.rules ul{margin:0;padding-left:18px}
-.hist{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px dashed #cbd5e1;font-size:15px}
-.hist:last-child{border:0}
-.tag{font-size:12px;padding:3px 9px;border-radius:99px;border:2px solid var(--ink)}
-.tag.pending{background:#fef08a}.tag.paid{background:#bbf7d0}.tag.rejected{background:#fecaca}
-.nav{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;display:flex;gap:6px;background:#fff;border:3px solid var(--ink);border-radius:26px;padding:6px;box-shadow:0 6px 0 var(--ink)}
-.nav button{flex:1;font:inherit;font-weight:700;font-size:16px;border:0;border-radius:20px;padding:13px 6px;background:transparent;color:#475569}
-.nav button.on{background:var(--gold);color:#78350f;box-shadow:0 0 0 3px var(--ink) inset}
-.verify{background:linear-gradient(#fffbeb,#fef3c7);border-color:#b45309;box-shadow:0 7px 0 #b45309;text-align:center}
-.verify h2{margin:0;color:var(--brown);font-size:30px;line-height:1.05}
-.verify p{margin:8px 0;color:#7c2d12}
-.ch{background:#fff;border:3px solid var(--ink);border-radius:22px;padding:12px;margin-top:14px;text-align:left}
-.ch .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.st{font-size:14px;padding:3px 10px;border:2px solid var(--ink);border-radius:99px;white-space:nowrap}
-.st.ok{background:#dcfce7;color:#166534}.st.no{background:#fee2e2;color:#b91c1c}
+.brand-title{font-family:'Lilita One';font-size:27px;line-height:.95;color:var(--navy);text-transform:uppercase;
+  text-shadow:2px 2px 0 #fff, -1px -1px 0 #fff;word-break:break-word}
+.hello{display:flex;align-items:center;gap:8px;background:#fff;border:4px solid var(--navy);border-radius:999px;
+  box-shadow:0 4px 0 var(--navy);padding:6px 12px 6px 6px;max-width:48%;min-width:0}
+.avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--navy);background:#1e3a5f;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-family:'Lilita One';overflow:hidden;flex:none}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.hello-t{min-width:0;line-height:1.05}
+.hello-t small{display:block;color:#0369a1;font-size:13px;font-weight:700}
+.hello-t b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* cards */
+.card{background:#fff;border:4px solid var(--navy);border-radius:28px;box-shadow:0 8px 0 var(--navy);padding:16px;margin-bottom:24px}
+.card.gold{background:linear-gradient(135deg,#fde68a,#facc15 60%,#f5c40d);text-align:center}
+.card.cream{background:linear-gradient(180deg,#fff7cc,#fff3b0);border-color:var(--brown);box-shadow:0 8px 0 var(--brown);text-align:center}
+.label{font-family:'Lilita One';font-size:17px;color:#7c4a03;letter-spacing:.5px;text-transform:uppercase}
+.amount{font-family:'Lilita One';font-size:64px;line-height:1.05;color:var(--navy);margin:2px 0 10px;text-shadow:2px 2px 0 #fff}
+.dashed{border:3px dashed var(--navy);border-radius:18px;background:#fff6cf;padding:10px 12px;font-size:16px;font-weight:700;line-height:1.25}
+.center{text-align:center}
+.h2{font-family:'Lilita One';font-size:19px;text-align:center;margin:0 0 12px}
+.sect-title{font-family:'Lilita One';font-size:21px;text-align:center;margin:-6px 0 14px;text-shadow:1px 1px 0 #fff}
+
+/* inputs + buttons */
+.input{width:100%;border:4px solid var(--navy);border-radius:20px;padding:14px 16px;font:700 18px 'Fredoka',sans-serif;
+  color:var(--navy);background:#f1f5f9;text-transform:uppercase;outline:none;margin-bottom:14px}
+.input::placeholder{color:#64748b}
+.input.num{text-align:center;text-transform:none;font-size:22px}
+.btn{display:block;width:100%;border:4px solid var(--navy);border-radius:22px;box-shadow:0 6px 0 var(--navy);
+  font-family:'Lilita One';font-size:21px;letter-spacing:.4px;text-transform:uppercase;padding:13px 10px;color:var(--navy);
+  cursor:pointer;transition:transform .06s,box-shadow .06s;margin:0 0 6px}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--navy)}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.b-yellow{background:var(--yellow);color:#7c4a03}
+.b-orange{background:var(--orange);color:#fff}
+.b-blue{background:var(--blue);color:#0c4a6e}
+.b-green{background:var(--green);color:#fff}
+.b-sm{display:inline-block;width:auto;font-size:16px;padding:8px 14px;border-radius:16px;box-shadow:0 4px 0 var(--navy);margin:0}
+
+/* verification */
+.v-title{font-family:'Lilita One';font-size:38px;line-height:1.02;color:var(--brown);margin:6px 0 10px;text-transform:uppercase}
+.v-sub{font-size:19px;font-weight:700;color:#7c2d12;margin:0 0 6px;line-height:1.2}
+.v-sub2{font-size:17px;font-weight:600;color:var(--brown);margin:0 0 16px}
+.ch{background:#fff;border:4px solid var(--navy);border-radius:26px;box-shadow:0 6px 0 var(--navy);padding:14px 12px 10px;margin-bottom:18px;text-align:left}
+.ch-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.ch-name{font-size:19px;font-weight:700;min-width:0;word-break:break-word}
+.badge{flex:none;border:3px solid var(--navy);border-radius:999px;padding:3px 12px;font-size:16px;font-weight:700}
+.badge.ok{background:#dcfce7;color:#15803d}
+.badge.no{background:#fee2e2;color:#b91c1c}
+
+/* wd */
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.chip{border:4px solid var(--navy);border-radius:16px;box-shadow:0 4px 0 var(--navy);background:#eef2f7;
+  font-family:'Lilita One';font-size:22px;padding:10px 0;text-align:center;cursor:pointer}
+.chip.sel{background:var(--yellow)}
+.chip:active{transform:translateY(3px);box-shadow:0 1px 0 var(--navy)}
+.uid-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.uid-lab{font-size:14px;color:#475569;font-weight:700;text-transform:uppercase}
+.uid-val{font-family:'Lilita One';font-size:30px;word-break:break-all;line-height:1.1}
+.note{font-size:14px;color:#0369a1;font-weight:700;text-align:center;margin-top:4px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:2px dashed #cbd5e1;padding:10px 0}
+.row:last-child{border-bottom:0}
+.row small{display:block;color:#64748b;font-weight:600}
+.pill{border:3px solid var(--navy);border-radius:999px;padding:2px 10px;font-size:14px;font-weight:700;text-transform:capitalize}
+.pill.paid{background:#dcfce7;color:#15803d}.pill.pending{background:#fef9c3;color:#a16207}.pill.rejected{background:#fee2e2;color:#b91c1c}
+.empty{color:#64748b;text-align:center;padding:12px 0;font-weight:700}
+.rules{text-align:left;font-size:16px;line-height:1.3;font-weight:600;color:#7c2d12}
+.rules h3{margin:0 0 8px;font-family:'Lilita One';font-weight:400;font-size:19px;color:var(--brown)}
+.rules p{margin:0 0 8px}
+.codebox{border:4px dashed var(--green);background:#f0fdf4;color:#15803d;border-radius:22px;
+  font-family:'Lilita One';font-size:36px;text-align:center;padding:14px 8px;margin-bottom:14px;word-break:break-all;user-select:all}
+
+/* nav */
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(92vw,500px);background:#fff;
+  border:4px solid var(--navy);border-radius:28px;box-shadow:0 6px 0 var(--navy);display:flex;padding:8px;gap:8px;z-index:20}
+.nav button{flex:1;border:0;background:transparent;border-radius:20px;padding:12px 6px;font-family:'Lilita One';font-size:20px;
+  color:#64748b;text-transform:uppercase;cursor:pointer}
+.nav button.on{background:var(--yellow);color:#7c4a03;box-shadow:inset 0 0 0 3px var(--navy)}
+
+/* misc */
+.toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;
+  background:var(--navy);color:#fff;border-radius:16px;padding:12px 18px;font-weight:700;font-size:16px;z-index:60;
+  max-width:88vw;text-align:center;transition:.25s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.modal .card{width:100%;max-width:420px;margin:0}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.spin{width:54px;height:54px;border:6px solid #fff;border-top-color:var(--navy);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 .hide{display:none!important}
-.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-140%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;font-size:15px;max-width:90%;text-align:center;transition:transform .25s;z-index:9}
-.toast.show{transform:translate(-50%,0)}
-.spin{text-align:center;padding:60px 0;font-size:20px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="head">
-    <div class="brand"><div class="logo" id="logo">🎁</div><div class="title" id="title">REWARDS</div></div>
-    <div class="hi"><div class="av" id="av">🙂</div><div style="min-width:0"><small id="greet">Hello</small><b id="uname">Friend</b></div></div>
+  <div class="top" id="top">
+    <div class="brand">
+      <div class="logo" id="logo">YONO<br>777</div>
+      <div class="brand-title" id="brandTitle">REWARDS</div>
+    </div>
+    <div class="hello">
+      <div class="avatar" id="avatar">U</div>
+      <div class="hello-t"><small id="greet">Hello</small><b id="uname">User</b></div>
+    </div>
   </div>
-  <div id="app"><div class="spin">Loading…</div></div>
+  <div id="view"><div class="loader"><div class="spin"></div><div class="display" style="font-size:22px">Loading...</div></div></div>
 </div>
+
 <div class="nav hide" id="nav">
-  <button id="nHome" class="on">🏠 HOME</button>
-  <button id="nWd">💳 WITHDRAW</button>
+  <button id="nHome" class="on">🏠 Home</button>
+  <button id="nWd">💳 Withdraw</button>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-const tg = window.Telegram && Telegram.WebApp;
-if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#38bdf8'); tg.setBackgroundColor('#38bdf8'); } catch (e) {} }
+(function () {
+  var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  try { tg && tg.ready(); tg && tg.expand(); tg && tg.setHeaderColor('#1e293b'); } catch (e) {}
 
-// PASTE your Cloudflare Worker URL here (e.g. https://miniapp-proxy.yourname.workers.dev)
-const PROXY = 'https://snowy-recipe-94d7.unknownboy05880.workers.dev/';
-
-// ---------- link params: ?uid=..&sig=..&api=<webhook url> (api is last, may contain ? and &) ----------
-const qs = location.search.slice(1);
-const ai = qs.indexOf('api=');
-const API = ai >= 0 ? decodeURIComponent(qs.slice(ai + 4)) : '';
-const head = ai >= 0 ? qs.slice(0, ai) : qs;
-const prm = new URLSearchParams(head);
-const UID = prm.get('uid') || '', SIG = prm.get('sig') || '';
-const DEMO = !API;
-
-let S = null, tab = 'home', busy = false;
-const $ = id => document.getElementById(id);
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const money = n => '₹' + Number(n || 0).toFixed(2);
-
-function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); }
-
-// ---------- API ----------
-async function call(action, extra) {
-  if (DEMO) return demo(action, extra || {});
-  const body = JSON.stringify(Object.assign({ uid: UID, sig: SIG, action }, extra || {}));
-  let r;
-  const endpoint = PROXY ? PROXY + '?t=' + encodeURIComponent(API) : API;
-  try { r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
-  catch (e) { throw new Error('BLOCKED (likely CORS): ' + e.message + ' | API=' + API.slice(0, 60)); }
-  const raw = await r.text();
-  let j;
-  try { j = JSON.parse(raw); } catch (e) { throw new Error('HTTP ' + r.status + ' not JSON: ' + raw.slice(0, 120)); }
-  if (j && j.result && !j.ok && j.ok !== false) return j.result;   // tolerate wrapped responses
-  return j;
-}
-function demo(a, x) {
-  S = S || { ok: true, uid: '123456', balance: 0, payout_id: '', min: 50, max: 200, min_refs: 0, ref_count: 0, refer_code: 'REFA1B2C3', bot_username: 'YourBot',
-    per_ref: '10', welcome_bonus: 5, applied: false, withdraw_on: true, title: 'REWARDS', logo: '', history: [],
-    channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: false }, { id: '2', title: 'Backup Channel', link: 'https://t.me/durov', joined: false }] };
-  if (a === 'check') S.channels.forEach(c => c.joined = true);
-  S.all_joined = S.channels.every(c => c.joined);
-  if (a === 'saveid') S.payout_id = x.value;
-  return Object.assign({}, S, { message: '' });
-}
-async function run(action, extra, okMsg) {
-  if (busy) return; busy = true;
-  try {
-    const j = await call(action, extra);
-    if (!j.ok) { toast(j.error || 'Something went wrong'); if (j.code === 'auth' || j.code === 'disabled' || j.code === 'no_user') fatal(j.error); return null; }
-    S = j; if (j.message || okMsg) toast(j.message || okMsg);
-    render(); return j;
-  } catch (e) {
-    toast('Network error. Try again.');
-    if (!S) $('app').innerHTML = '<div class="card" style="word-break:break-all;font-size:13px"><h3>⚠️ Connection problem</h3>' + esc(e.message) + '</div>';
-    return null;
+  // ---------- read link params (api is LAST on purpose, it contains ? and =) ----------
+  var raw = location.search || '';
+  var apiIdx = raw.indexOf('api=');
+  var API = '', head = raw;
+  if (apiIdx > -1) {
+    API = raw.slice(apiIdx + 4);
+    head = raw.slice(0, apiIdx);
+    if (/^https?%3A/i.test(API)) { try { API = decodeURIComponent(API); } catch (e) {} }
   }
-  finally { busy = false; }
-}
-function fatal(msg) { $('app').innerHTML = '<div class="card" style="text-align:center"><h3>⚠️ ' + esc(msg) + '</h3></div>'; $('nav').classList.add('hide'); }
+  var qp = new URLSearchParams(head);
+  var UID = qp.get('uid') || '';
+  var SIG = qp.get('sig') || '';
+  var DEMO = qp.get('demo') === '1';
 
-// ---------- render ----------
-function render() {
-  if (!S) return;
-  $('title').textContent = S.title || 'REWARDS';
-  if (S.logo) $('logo').innerHTML = '<img src="' + esc(S.logo) + '" alt="">';
-  document.title = S.title || 'Rewards';
-  if (!S.all_joined) { $('nav').classList.add('hide'); return renderVerify(); }
-  $('nav').classList.remove('hide');
-  $('nHome').className = tab === 'home' ? 'on' : '';
-  $('nWd').className = tab === 'wd' ? 'on' : '';
-  tab === 'home' ? renderHome() : renderWd();
-}
+  var S = null;           // latest state from API
+  var view = 'verify';    // verify | home | withdraw | msg
+  var busy = false;
 
-function renderVerify() {
-  const chs = S.channels.map((c, i) => `
-    <div class="ch">
-      <div class="top"><b>${i + 1}. ${esc(c.title)}</b><span class="st ${c.joined ? 'ok' : 'no'}">${c.joined ? 'Joined ✅' : 'Pending ❌'}</span></div>
-      ${c.joined ? '' : `<button class="btn ${i % 2 ? 'b' : 'o'}" data-link="${esc(c.link)}">CLICK &amp; JOIN 🔥</button>`}
-    </div>`).join('');
-  $('app').innerHTML = `
-    <div class="card verify">
-      <h2>LAST VERIFICATION REQUIRED!</h2>
-      <p>Join all official channels to use the app!!</p>
-      ${chs || '<p>No channels configured.</p>'}
-      <button class="btn y" id="start">START APP NOW 🚀</button>
-    </div>`;
-  document.querySelectorAll('[data-link]').forEach(b => b.onclick = () => openLink(b.dataset.link));
-  $('start').onclick = async () => { const j = await run('check'); if (j && !j.all_joined) toast('Please join all channels first'); };
-}
+  var $ = function (id) { return document.getElementById(id); };
+  var inr = function (n) { n = Number(n) || 0; return '₹' + (Math.round(n * 100) / 100).toString(); };
 
-function renderHome() {
-  const link = 'https://t.me/' + S.bot_username + '?start=' + S.uid;
-  $('app').innerHTML = `
-    <div class="card gold">
-      <div class="lbl">💰 TOTAL WALLET BALANCE</div>
-      <div class="amt">${money(S.balance)}</div>
-      <div class="note">Refer friends &amp; earn ${esc(S.per_ref)} per valid invite 🎁</div>
-    </div>
-    <div class="cap">Earn by inviting your friends !! 🚀</div>
-    ${S.applied ? '' : `
-    <div class="card">
-      <h3>Enter your friend's refer code${S.welcome_bonus > 0 ? ' and earn ₹' + S.welcome_bonus + ' instantly ⚡' : ''}</h3>
-      <input id="code" placeholder="ENTER REFER CODE" autocapitalize="characters" maxlength="30">
-      <button class="btn y" id="apply">APPLY CODE 🚀</button>
-    </div>`}
-    <div class="card">
-      <h3>Here is your Refer Code 👇</h3>
-      <div class="code" id="mycode">${esc(S.refer_code)}</div>
-      <button class="btn b" id="copy">📋 COPY CODE</button>
-      <button class="btn g" id="share">📤 SHARE INVITE LINK</button>
-    </div>
-    <div class="card">
-      <h3>📊 Referral History</h3>
-      <div class="muted">${S.ref_count > 0 ? 'You have invited <b>' + S.ref_count + '</b> friend' + (S.ref_count > 1 ? 's' : '') + ' 🎉' : 'No referrals yet. Invite friends to earn!'}</div>
-    </div>
-    <div class="card rules"><b>📜 Referral Rules:</b><ul>
-      <li>Per valid invite you get ₹${esc(S.per_ref)} instantly.</li>
-      ${S.welcome_bonus > 0 ? '<li>Welcome bonus: ₹' + S.welcome_bonus + ' when you apply a friend\'s code for the first time.</li>' : ''}
-      <li>One refer code can be applied only once per account.</li>
-      <li>Self-referrals and duplicate device manipulation lead to automatic account freeze.</li></ul></div>`;
-  $('copy').onclick = () => copy(S.refer_code);
-  $('share').onclick = () => {
-    const url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Join and earn rewards! My code: ' + S.refer_code);
-    openLink(url);
-  };
-  if ($('apply')) $('apply').onclick = () => {
-    const v = $('code').value.trim().replace(/'/g, '');
-    if (!v) return toast('Enter a refer code');
-    run('apply', { code: v });
-  };
-}
-
-function renderWd() {
-  const min = S.min || 0, max = S.max || 0;
-  let amts = [min, Math.round((min + (max || min * 4)) / 2), max || min * 4].filter((v, i, a) => v > 0 && a.indexOf(v) === i);
-  const hist = (S.history || []).map(h => `<div class="hist"><span>${money(h.amount)}<br><small style="color:#64748b">${esc(h.date)}</small></span><span class="tag ${esc(h.status)}">${esc(h.status).toUpperCase()}</span></div>`).join('');
-  $('app').innerHTML = `
-    <div class="card gold">
-      <div class="lbl">💰 AVAILABLE REDEEM BALANCE</div>
-      <div class="amt">${money(S.balance)}</div>
-    </div>
-    <div class="card"><div class="uid"><div><small>YOUR PAYOUT ID (UPI / WALLET / UID)</small><br><b>${esc(S.payout_id) || '— not set —'}</b></div><button class="edit" id="edit">✏️ Edit</button></div></div>
-    <div class="card">
-      <h3>Enter Amount to Withdraw 💸</h3>
-      <div class="row">${amts.map(a => `<button class="chip" data-a="${a}">₹${a}</button>`).join('')}</div>
-      <input id="amt" type="number" inputmode="decimal" placeholder="Min ₹${min}${max ? ' - Max ₹' + max : ''}" style="margin-top:14px">
-      <button class="btn g" id="wd" ${S.withdraw_on ? '' : 'disabled'}>${S.withdraw_on ? 'WITHDRAW CASH NOW 🚀' : 'WITHDRAWALS ARE OFF'}</button>
-      <div class="muted">⚡ Min: ${money(min)}${max ? ' | Max: ' + money(max) : ''} per transaction${S.min_refs ? '<br>Need ' + S.min_refs + ' referrals (you have ' + S.ref_count + ')' : ''}</div>
-    </div>
-    <div class="card"><h3 style="text-align:left">📋 Recent Withdrawals</h3>${hist || '<div class="muted">No withdrawal requests yet.</div>'}</div>`;
-  document.querySelectorAll('.chip').forEach(c => c.onclick = () => { $('amt').value = c.dataset.a; document.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); c.classList.add('on'); });
-  $('edit').onclick = () => {
-    const v = (prompt('Enter your payout ID (UPI / wallet number / UID):', S.payout_id || '') || '').trim().replace(/'/g, '');
-    if (v) run('saveid', { value: v }, 'Saved ✅');
-  };
-  $('wd').onclick = () => {
-    const a = parseFloat($('amt').value);
-    if (!(a > 0)) return toast('Enter an amount');
-    if (!S.payout_id) return toast('Add your payout ID first');
-    if (confirm('Withdraw ' + money(a) + ' to ' + S.payout_id + '?')) run('withdraw', { amount: a });
-  };
-}
-
-// ---------- helpers ----------
-function openLink(u) { if (tg && /^https:\/\/t\.me\//.test(u) && tg.openTelegramLink) tg.openTelegramLink(u); else if (tg && tg.openLink) tg.openLink(u); else window.open(u, '_blank'); }
-function copy(t) {
-  const done = () => toast('Copied ✅');
-  if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, fb); else fb();
-  function fb() { const i = document.createElement('input'); i.value = t; document.body.appendChild(i); i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast(t); } i.remove(); }
-}
-$('nHome').onclick = () => { tab = 'home'; render(); };
-$('nWd').onclick = () => { tab = 'wd'; render(); };
-
-// ---------- greeting ----------
-try {
-  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
-  const h = new Date().getHours();
-  $('greet').textContent = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
-  if (u) {
-    $('uname').textContent = u.first_name || 'Friend';
-    if (u.photo_url) $('av').innerHTML = '<img src="' + esc(u.photo_url) + '" alt="" style="width:100%;height:100%;border-radius:50%">';
+  // safe element builder (no innerHTML with server data)
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    attrs = attrs || {};
+    for (var k in attrs) {
+      if (k === 'class') el.className = attrs[k];
+      else if (k === 'text') el.textContent = attrs[k];
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), attrs[k]);
+      else el.setAttribute(k, attrs[k]);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return el;
   }
-} catch (e) {}
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
 
-// re-check channels when the user comes back from Telegram's join screen
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !S.all_joined && !busy) run('check'); });
-if (tg && tg.onEvent) tg.onEvent('viewportChanged', () => {});
+  // ---------- user header ----------
+  (function userHeader() {
+    var u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+    var hr = new Date().getHours();
+    $('greet').textContent = hr < 12 ? 'Good Morning' : hr < 17 ? 'Good Afternoon' : 'Good Evening';
+    var name = u ? ((u.first_name || '') + (u.last_name ? ' ' + u.last_name : '')).trim() : 'User';
+    $('uname').textContent = (name || 'User') + ' !!!';
+    var av = $('avatar');
+    if (u && u.photo_url) {
+      var im = h('img', { src: u.photo_url, alt: '' });
+      im.onerror = function () { av.textContent = (name[0] || 'U').toUpperCase(); };
+      av.textContent = ''; av.appendChild(im);
+    } else av.textContent = (name[0] || 'U').toUpperCase();
+  })();
 
-run('init');
+  // ---------- API ----------
+  function demoState(action, extra) {
+    if (!demoState.s) demoState.s = {
+      ok: true, uid: '1', all_joined: false, balance: 12.5, payout_id: '749628', min: 50, max: 200, min_refs: 0, ref_count: 0,
+      refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, applied: false, withdraw_on: true,
+      title: 'YONO777 REWARDS', logo: '', history: [{ id: 3, amount: 50, status: 'paid', date: '2026-11-01 13:05', to: '749628' }],
+      channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: true, req: true },
+                 { id: '2', title: 'Backup Channel', link: 'https://t.me/telegram', joined: false }]
+    };
+    var s = demoState.s;
+    if (action === 'init') { s.all_joined = s.channels.every(function (c) { return c.joined; }); }
+    if (action === 'saveid') s.payout_id = extra.value;
+    if (action === 'withdraw') { s.balance -= extra.amount; s.history.unshift({ id: 4, amount: extra.amount, status: 'pending', date: 'now', to: s.payout_id }); }
+    if (action === 'apply') { s.applied = true; s.balance += 5; }
+    s.message = '';
+    return JSON.parse(JSON.stringify(s));
+  }
+
+  async function call(action, extra) {
+    extra = extra || {};
+    if (DEMO) {
+      if (action === 'init' && demoState.s) demoState.s.channels.forEach(function (c) { c.joined = true; });
+      return demoState(action, extra);
+    }
+    if (!API || !UID || !SIG) return { ok: false, error: 'Please open this app from the bot button.', code: 'auth' };
+    var payload = { uid: UID, sig: SIG, action: action };
+    for (var k in extra) payload[k] = extra[k];
+    var body = JSON.stringify(payload), r;
+    try {
+      r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body });
+    } catch (e1) {
+      try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body }); }
+      catch (e2) { return { ok: false, error: 'Network error. Check your connection and try again.', code: 'net' }; }
+    }
+    try { return await r.json(); }
+    catch (e3) { return { ok: false, error: 'Server returned an invalid response.', code: 'bad' }; }
+  }
+
+  // ---------- header branding from state ----------
+  function applyBranding() {
+    if (!S) return;
+    $('brandTitle').textContent = (S.title || 'REWARDS');
+    var lg = $('logo');
+    if (S.logo) {
+      var im = h('img', { src: S.logo, alt: '' });
+      im.onerror = function () { lg.textContent = ''; lg.innerHTML = 'YONO<br>777'; };
+      lg.textContent = ''; lg.appendChild(im);
+    }
+  }
+
+  // ---------- views ----------
+  function setNav(on) {
+    $('nav').classList.toggle('hide', !on);
+    $('nHome').classList.toggle('on', view === 'home');
+    $('nWd').classList.toggle('on', view === 'withdraw');
+  }
+  function mount(node) { var v = $('view'); v.textContent = ''; v.appendChild(node); window.scrollTo(0, 0); }
+
+  function showMessage(text, icon) {
+    view = 'msg'; setNav(false);
+    mount(h('div', { class: 'card cream' },
+      h('div', { class: 'display', style: 'font-size:46px', text: icon || '⚠️' }),
+      h('div', { class: 'v-sub', text: text }),
+      h('button', { class: 'btn b-yellow', onclick: function () { boot(); } }, 'Try again 🔄')
+    ));
+  }
+
+  function route() {
+    if (!S) return;
+    if (!S.all_joined) return renderVerify();
+    if (view === 'withdraw') return renderWithdraw();
+    return renderHome();
+  }
+
+  // ----- verification -----
+  function renderVerify() {
+    view = 'verify'; setNav(false);
+    var chs = S.channels || [];
+    var card = h('div', { class: 'card cream' },
+      h('div', { class: 'v-title', text: 'Last Verification Required!' }),
+      h('div', { class: 'v-sub', text: 'Join All Official Channels To Use Bot!!' }),
+      h('div', { class: 'v-sub2', text: 'Get free cash rewards from the bot.' })
+    );
+    chs.forEach(function (c, i) {
+      var isReq = !!c.req;
+      var badge = h('span', { class: 'badge ' + (c.joined ? 'ok' : 'no'), text: c.joined ? 'Joined ✅' : 'Pending ❌' });
+      var btn = h('button', {
+        class: 'btn ' + (isReq ? 'b-orange' : 'b-blue'),
+        onclick: function () { openLink(c.link); }
+      }, isReq ? 'Click & Join (Request) 🔥' : 'Visit & Join Channel 📢');
+      if (!c.link) btn.setAttribute('disabled', 'disabled');
+      card.appendChild(h('div', { class: 'ch' },
+        h('div', { class: 'ch-head' }, h('div', { class: 'ch-name', text: (i + 1) + '. ' + (c.title || 'Channel') + (isReq ? ' 🔥' : ' ⚡') }), badge),
+        btn
+      ));
+    });
+    if (!chs.length) card.appendChild(h('div', { class: 'empty', text: 'No channels to join.' }));
+    var start = h('button', { class: 'btn b-yellow', id: 'startBtn', onclick: onStart }, 'Start Bot Now 🚀');
+    card.appendChild(start);
+    mount(card);
+  }
+  function openLink(url) {
+    if (!url) return;
+    try {
+      if (tg && /^https?:\/\/t\.me\//i.test(url) && tg.openTelegramLink) tg.openTelegramLink(url);
+      else if (tg && tg.openLink) tg.openLink(url);
+      else window.open(url, '_blank');
+    } catch (e) { window.open(url, '_blank'); }
+  }
+  async function onStart() {
+    if (busy) return; busy = true;
+    var b = $('startBtn'); if (b) { b.setAttribute('disabled', 'disabled'); b.textContent = 'Checking...'; }
+    var r = await call('init'); busy = false;
+    if (!r.ok) { toast(r.error || 'Error'); return renderVerify(); }
+    S = r; applyBranding();
+    if (!S.all_joined) { toast('Join all pending channels first ❌'); return renderVerify(); }
+    view = 'home'; route();
+  }
+  // re-check when user comes back from joining
+  document.addEventListener('visibilitychange', async function () {
+    if (document.visibilityState !== 'visible' || view !== 'verify' || busy || !S) return;
+    var r = await call('init');
+    if (r && r.ok) { S = r; if (S.all_joined) { toast('All joined ✅'); view = 'home'; } route(); }
+  });
+
+  // ----- home -----
+  function renderHome() {
+    view = 'home'; setNav(true);
+    var box = h('div');
+    var note = S.min > 0
+      ? 'Minimum withdraw ' + inr(S.min) + (S.max > 0 ? ' • Max ' + inr(S.max) : '') + ' 🎁'
+      : 'Invite friends and earn cash 🎁';
+    box.appendChild(h('div', { class: 'card gold' },
+      h('div', { class: 'label', text: '💰 Total Wallet Balance' }),
+      h('div', { class: 'amount', text: inr(S.balance) }),
+      h('div', { class: 'dashed', text: note })
+    ));
+    box.appendChild(h('div', { class: 'sect-title', text: 'Earn Coins By Invite your Friends !! 🚀' }));
+
+    // apply code
+    var wel = Number(S.welcome_bonus) || 0;
+    if (S.applied) {
+      box.appendChild(h('div', { class: 'card center' }, h('div', { class: 'h2', text: '✅ Friend refer code already applied' })));
+    } else {
+      var inp = h('input', { class: 'input', id: 'codeIn', placeholder: 'ENTER REFER CODE (E.G. ' + (S.refer_code || 'REF123ABC') .slice(0, 3) + '...)', maxlength: '24', autocomplete: 'off' });
+      var ab = h('button', { class: 'btn b-yellow', onclick: async function () {
+        var code = (inp.value || '').trim();
+        if (!code) return toast('Enter a refer code first');
+        await act(ab, 'apply', { code: code });
+      } }, 'Apply Code 🚀');
+      box.appendChild(h('div', { class: 'card' },
+        h('div', { class: 'h2', text: 'Enter your Friend Refer Code' + (wel > 0 ? ' and earn ' + wel + 'rs instant ⚡' : ' ⚡') }),
+        inp, ab));
+    }
+
+    // my code
+    var code = S.refer_code || '';
+    var shareTxt = '🎁 Join and earn free cash! Use my refer code: ' + code;
+    var shareUrl = S.bot_username ? 'https://t.me/' + S.bot_username : '';
+    box.appendChild(h('div', { class: 'card' },
+      h('div', { class: 'h2', text: 'Here is your Refer Code 👇' }),
+      h('div', { class: 'codebox', text: code }),
+      h('button', { class: 'btn b-blue', onclick: function () { copy(code); } }, '📋 Copy Code'),
+      h('button', { class: 'btn b-green', onclick: function () {
+        var u = 'https://t.me/share/url?url=' + encodeURIComponent(shareUrl || ' ') + '&text=' + encodeURIComponent(shareTxt);
+        openLink(u);
+      } }, '📤 Share')
+    ));
+
+    // history
+    var rc = Number(S.ref_count) || 0;
+    var hist = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📊 Referral History' }));
+    if (rc > 0) hist.appendChild(h('div', { class: 'center display', style: 'font-size:26px', text: rc + ' friend' + (rc > 1 ? 's' : '') + ' invited ✅' }));
+    else hist.appendChild(h('div', { class: 'empty', text: 'No referrals yet. Invite friends to earn!' }));
+    if (S.min_refs > 0) hist.appendChild(h('div', { class: 'note', text: 'Need ' + S.min_refs + ' referral' + (S.min_refs > 1 ? 's' : '') + ' to withdraw (you have ' + rc + ')' }));
+    box.appendChild(hist);
+
+    // rules
+    var rules = h('div', { class: 'card cream rules' }, h('h3', { text: '📜 Referral Rules:' }));
+    rules.appendChild(h('p', { text: '• Per valid invite ' + (S.per_ref && S.per_ref !== '0' ? S.per_ref + ' rs' : 'bonus') + ': when your friend applies your code you get paid instantly!' }));
+    if (wel > 0) rules.appendChild(h('p', { text: '• Welcome bonus ' + wel + ' rs: you get it the first time you apply a friend\'s code.' }));
+    rules.appendChild(h('p', { text: '• Self-referrals and duplicate device manipulation lead to automatic account freeze.' }));
+    box.appendChild(rules);
+    mount(box);
+  }
+
+  // ----- withdraw -----
+  var selAmt = null;
+  function chipAmounts() {
+    var mn = Number(S.min) || 0, mx = Number(S.max) || 0;
+    if (mn <= 0) mn = 10;
+    var arr = mx > mn ? [mn, Math.round((mn + mx) / 2 / 10) * 10, mx] : [mn, mn * 2, mn * 4];
+    var seen = {}, out = [];
+    arr.forEach(function (n) { if (n > 0 && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
+  function renderWithdraw() {
+    view = 'withdraw'; setNav(true);
+    var box = h('div');
+    box.appendChild(h('div', { class: 'card gold' },
+      h('div', { class: 'label', text: '💰 Available Redeem Balance' }),
+      h('div', { class: 'amount', style: 'margin-bottom:0', text: inr(S.balance) })
+    ));
+
+    box.appendChild(h('div', { class: 'card' },
+      h('div', { class: 'uid-row' },
+        h('div', {}, h('div', { class: 'uid-lab', text: 'Your Payout ID' }), h('div', { class: 'uid-val', text: S.payout_id || 'Not set' })),
+        h('button', { class: 'btn b-blue b-sm', onclick: editId }, '✏️ Edit')
+      )
+    ));
+
+    var amtIn = h('input', { class: 'input num', id: 'amtIn', type: 'number', inputmode: 'decimal',
+      placeholder: 'Min ' + inr(S.min) + (S.max > 0 ? ' - Max ' + inr(S.max) : '') });
+    var chips = h('div', { class: 'chips' });
+    chipAmounts().forEach(function (n) {
+      var c = h('div', { class: 'chip', text: inr(n), onclick: function () {
+        amtIn.value = n; selAmt = n;
+        Array.prototype.forEach.call(chips.children, function (x) { x.classList.remove('sel'); });
+        c.classList.add('sel');
+      } });
+      chips.appendChild(c);
+    });
+    amtIn.addEventListener('input', function () {
+      Array.prototype.forEach.call(chips.children, function (x) { x.classList.remove('sel'); });
+    });
+    var wb = h('button', { class: 'btn b-green', onclick: async function () {
+      var v = parseFloat(amtIn.value);
+      if (!(v > 0)) return toast('Enter a valid amount');
+      if (!S.payout_id) return toast('Add your payout ID first');
+      await act(wb, 'withdraw', { amount: v });
+    } }, 'Withdraw Cash Now 🚀');
+    if (!S.withdraw_on) wb.setAttribute('disabled', 'disabled');
+
+    box.appendChild(h('div', { class: 'card' },
+      h('div', { class: 'h2', text: 'Enter Amount to Withdraw 💸' }),
+      chips, amtIn, wb,
+      h('div', { class: 'note', text: S.withdraw_on ? '⚡ Min: ' + inr(S.min) + (S.max > 0 ? ' | Max: ' + inr(S.max) : '') + ' per transaction' : '⛔ Withdrawals are currently turned off' })
+    ));
+
+    var hc = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📋 Recent Withdrawals' }));
+    var hist = S.history || [];
+    if (!hist.length) hc.appendChild(h('div', { class: 'empty', text: 'No withdrawal requests yet.' }));
+    hist.forEach(function (r) {
+      var st = String(r.status || 'pending');
+      hc.appendChild(h('div', { class: 'row' },
+        h('div', {}, h('b', { text: '#' + r.id + '  ' + inr(r.amount) }), h('small', { text: r.date || '' })),
+        h('span', { class: 'pill ' + st, text: st })
+      ));
+    });
+    box.appendChild(hc);
+    mount(box);
+  }
+
+  function editId() {
+    var inp = h('input', { class: 'input num', style: 'text-transform:none', maxlength: '60', value: S.payout_id || '', placeholder: 'Enter your ID' });
+    var m = h('div', { class: 'modal' },
+      h('div', { class: 'card' },
+        h('div', { class: 'h2', text: '✏️ Your Payout ID' }), inp,
+        h('button', { class: 'btn b-green', onclick: async function () {
+          var v = (inp.value || '').trim();
+          if (v.length < 3) return toast('Enter at least 3 characters');
+          document.body.removeChild(m);
+          await act(null, 'saveid', { value: v });
+        } }, 'Save'),
+        h('button', { class: 'btn b-yellow', onclick: function () { document.body.removeChild(m); } }, 'Cancel')
+      )
+    );
+    document.body.appendChild(m);
+    setTimeout(function () { inp.focus(); }, 80);
+  }
+
+  // run an API action, then refresh the current view with the returned state
+  async function act(btn, action, extra) {
+    if (busy) return; busy = true;
+    var old = btn ? btn.textContent : '';
+    if (btn) { btn.setAttribute('disabled', 'disabled'); btn.textContent = 'Please wait...'; }
+    var r = await call(action, extra); busy = false;
+    if (btn) { btn.removeAttribute('disabled'); btn.textContent = old; }
+    if (!r.ok) {
+      toast(r.error || 'Something went wrong');
+      if (r.code === 'not_joined') { var f = await call('init'); if (f.ok) { S = f; route(); } }
+      return;
+    }
+    S = r; applyBranding();
+    toast(r.message || 'Done ✅');
+    route();
+  }
+
+  function copy(text) {
+    function ok() { toast('Copied: ' + text); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, fallback); return; }
+    } catch (e) {}
+    fallback();
+    function fallback() {
+      var t = h('textarea', { style: 'position:fixed;opacity:0' }); t.value = text;
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); ok(); } catch (e) { toast('Long-press the code to copy'); }
+      document.body.removeChild(t);
+    }
+  }
+
+  $('nHome').addEventListener('click', function () { if (S && S.all_joined) { view = 'home'; renderHome(); } });
+  $('nWd').addEventListener('click', function () { if (S && S.all_joined) { renderWithdraw(); } });
+
+  // ---------- boot ----------
+  async function boot() {
+    $('view').innerHTML = '<div class="loader"><div class="spin"></div><div class="display" style="font-size:22px">Loading...</div></div>';
+    $('nav').classList.add('hide');
+    var r = await call('init');
+    if (!r.ok) return showMessage(r.error || 'Could not load the app.', r.code === 'banned' ? '🚫' : '⚠️');
+    S = r; applyBranding();
+    view = S.all_joined ? 'home' : 'verify';
+    route();
+  }
+  boot();
+})();
 </script>
 </body>
 </html>
