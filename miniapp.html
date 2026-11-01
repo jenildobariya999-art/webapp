@@ -224,6 +224,26 @@ body{
     return JSON.parse(JSON.stringify(s));
   }
 
+  // The webhook may wrap our JSON (e.g. {"ok":true,"result":{...}}). Find the real state/error inside.
+  function isState(o) { return o && typeof o === 'object' && !Array.isArray(o) && ('refer_code' in o || 'all_joined' in o || 'payout_id' in o); }
+  function isErr(o) { return o && typeof o === 'object' && o.ok === false && typeof o.error === 'string'; }
+  function unwrap(o, d) {
+    d = d || 0;
+    if (typeof o === 'string') {
+      var t = o.trim();
+      if (t.charAt(0) === '{') { try { o = JSON.parse(t); } catch (e) { return null; } } else return null;
+    }
+    if (!o || typeof o !== 'object' || d > 4) return null;
+    if (isState(o)) { if (o.ok === undefined) o.ok = true; return o; }
+    if (!Array.isArray(o)) {
+      for (var k in o) {
+        var v = o[k];
+        if (v && (typeof v === 'object' || typeof v === 'string')) { var f = unwrap(v, d + 1); if (f) return f; }
+      }
+    }
+    return isErr(o) ? o : null;
+  }
+
   async function call(action, extra) {
     extra = extra || {};
     if (DEMO) {
@@ -253,8 +273,12 @@ body{
     }
     if (!r) return { ok: false, error: 'Cannot reach the bot server.', code: 'net', detail: why.join(' | ') };
     var txt = '';
-    try { txt = await r.text(); return JSON.parse(txt); }
-    catch (e4) { return { ok: false, error: 'Server returned an invalid response (HTTP ' + r.status + ').', code: 'bad', detail: String(txt).slice(0, 160) }; }
+    var parsed = null;
+    try { txt = await r.text(); parsed = JSON.parse(txt); }
+    catch (e4) { return { ok: false, error: 'Server returned an invalid response (HTTP ' + r.status + ').', code: 'bad', detail: String(txt).slice(0, 200) }; }
+    var found = unwrap(parsed);
+    if (found) return found;
+    return { ok: false, error: 'Unexpected reply from the bot server.', code: 'shape', detail: String(txt).slice(0, 200) };
   }
 
   // ---------- header branding from state ----------
@@ -463,12 +487,12 @@ body{
       if (!S.payout_id) return toast('Add your payout ID first');
       await act(wb, 'withdraw', { amount: v });
     } }, 'Withdraw Cash Now 🚀');
-    if (!S.withdraw_on) wb.setAttribute('disabled', 'disabled');
+    if (S.withdraw_on === false) wb.setAttribute('disabled', 'disabled');
 
     box.appendChild(h('div', { class: 'card' },
       h('div', { class: 'h2', text: 'Enter Amount to Withdraw 💸' }),
       chips, amtIn, wb,
-      h('div', { class: 'note', text: S.withdraw_on ? '⚡ Min: ' + inr(S.min) + (S.max > 0 ? ' | Max: ' + inr(S.max) : '') + ' per transaction' : '⛔ Withdrawals are currently turned off' })
+      h('div', { class: 'note', text: S.withdraw_on !== false ? '⚡ Min: ' + inr(S.min) + (S.max > 0 ? ' | Max: ' + inr(S.max) : '') + ' per transaction' : '⛔ Withdrawals are currently turned off' })
     ));
 
     var hc = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📋 Recent Withdrawals' }));
