@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rewards</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f172a;--sky:#38bdf8;--sky2:#bae6fd;--gold:#facc15;--gold2:#fde68a;--green:#22c55e;--card:#fff;--muted:#64748b;--cream:#fef9c3;--brown:#9a3412}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:'Fredoka',system-ui,sans-serif;font-weight:600;color:var(--ink);background:linear-gradient(#38bdf8,#bae6fd 70%,#e0f2fe);background-attachment:fixed;padding:12px 12px calc(96px + env(safe-area-inset-bottom,0px));padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.wrap{max-width:480px;margin:0 auto}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:52px;height:52px;border-radius:14px;border:3px solid var(--ink);background:#14532d;display:grid;place-items:center;font-size:26px;overflow:hidden;flex:none}
+.logo img{width:100%;height:100%;object-fit:cover}
+.title{font-size:24px;line-height:1;font-weight:700;letter-spacing:.5px;text-shadow:2px 2px 0 #fff;word-break:break-word}
+.hi{display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 12px 6px 6px;box-shadow:0 4px 0 var(--ink);max-width:48%}
+.hi img,.hi .av{width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);background:#e2e8f0;flex:none;object-fit:cover;display:grid;place-items:center}
+.hi small{display:block;font-size:11px;color:#0369a1;line-height:1.1}
+.hi b{display:block;font-size:13px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card{background:var(--card);border:3px solid var(--ink);border-radius:26px;padding:16px;margin-bottom:16px;box-shadow:0 7px 0 var(--ink)}
+.gold{background:linear-gradient(135deg,#fde68a,#facc15);text-align:center}
+.gold .lbl{font-size:15px;color:#78350f;letter-spacing:.5px}
+.gold .amt{font-size:56px;line-height:1.1;font-weight:700;text-shadow:2px 2px 0 #fff}
+.note{margin-top:8px;border:2px dashed var(--ink);border-radius:14px;background:var(--cream);padding:8px;font-size:13px}
+h3{margin:0 0 10px;font-size:17px;text-align:center}
+.cap{text-align:center;font-size:17px;margin:4px 0 12px}
+input{width:100%;font:inherit;font-weight:600;font-size:16px;padding:13px 14px;border:3px solid var(--ink);border-radius:16px;background:#f8fafc;color:var(--ink);outline:none;text-align:center}
+input::placeholder{color:#94a3b8}
+.btn{display:block;width:100%;font:inherit;font-weight:700;font-size:17px;letter-spacing:.4px;border:3px solid var(--ink);border-radius:18px;padding:13px;margin-top:12px;cursor:pointer;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s;color:var(--ink)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.btn[disabled]{opacity:.55}
+.y{background:var(--gold);color:#78350f}.g{background:var(--green);color:#fff}.b{background:#38bdf8;color:#075985}.o{background:#fb923c;color:#fff}
+.code{border:3px dashed var(--green);background:#f0fdf4;color:#15803d;border-radius:16px;padding:12px;text-align:center;font-size:26px;font-weight:700;word-break:break-all}
+.row{display:flex;gap:8px}
+.chip{flex:1;font:inherit;font-weight:700;font-size:17px;padding:11px 4px;border:3px solid var(--ink);border-radius:14px;background:#f1f5f9;box-shadow:0 4px 0 var(--ink);color:var(--ink);cursor:pointer}
+.chip.on{background:var(--gold)}
+.uid{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.uid small{color:var(--muted);font-size:13px}.uid b{font-size:22px;word-break:break-all}
+.edit{flex:none;font:inherit;font-weight:700;background:#38bdf8;border:3px solid var(--ink);border-radius:14px;padding:8px 14px;box-shadow:0 4px 0 var(--ink);color:var(--ink)}
+.muted{text-align:center;color:#475569;font-size:14px;margin:6px 0}
+.rules{background:var(--cream);border-color:var(--ink);font-size:14px;line-height:1.45}
+.rules li{margin-bottom:6px}.rules ul{margin:0;padding-left:18px}
+.hist{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px dashed #cbd5e1;font-size:15px}
+.hist:last-child{border:0}
+.tag{font-size:12px;padding:3px 9px;border-radius:99px;border:2px solid var(--ink)}
+.tag.pending{background:#fef08a}.tag.paid{background:#bbf7d0}.tag.rejected{background:#fecaca}
+.nav{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;display:flex;gap:6px;background:#fff;border:3px solid var(--ink);border-radius:26px;padding:6px;box-shadow:0 6px 0 var(--ink)}
+.nav button{flex:1;font:inherit;font-weight:700;font-size:16px;border:0;border-radius:20px;padding:13px 6px;background:transparent;color:#475569}
+.nav button.on{background:var(--gold);color:#78350f;box-shadow:0 0 0 3px var(--ink) inset}
+.verify{background:linear-gradient(#fffbeb,#fef3c7);border-color:#b45309;box-shadow:0 7px 0 #b45309;text-align:center}
+.verify h2{margin:0;color:var(--brown);font-size:30px;line-height:1.05}
+.verify p{margin:8px 0;color:#7c2d12}
+.ch{background:#fff;border:3px solid var(--ink);border-radius:22px;padding:12px;margin-top:14px;text-align:left}
+.ch .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.st{font-size:14px;padding:3px 10px;border:2px solid var(--ink);border-radius:99px;white-space:nowrap}
+.st.ok{background:#dcfce7;color:#166534}.st.no{background:#fee2e2;color:#b91c1c}
+.hide{display:none!important}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-140%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;font-size:15px;max-width:90%;text-align:center;transition:transform .25s;z-index:9}
+.toast.show{transform:translate(-50%,0)}
+.spin{text-align:center;padding:60px 0;font-size:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><div class="logo" id="logo">🎁</div><div class="title" id="title">REWARDS</div></div>
+    <div class="hi"><div class="av" id="av">🙂</div><div style="min-width:0"><small id="greet">Hello</small><b id="uname">Friend</b></div></div>
+  </div>
+  <div id="app"><div class="spin">Loading…</div></div>
+</div>
+<div class="nav hide" id="nav">
+  <button id="nHome" class="on">🏠 HOME</button>
+  <button id="nWd">💳 WITHDRAW</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#38bdf8'); tg.setBackgroundColor('#38bdf8'); } catch (e) {} }
+
+// ---------- link params: ?uid=..&sig=..&api=<webhook url> (api is last, may contain ? and &) ----------
+const qs = location.search.slice(1);
+const ai = qs.indexOf('api=');
+const API = ai >= 0 ? decodeURIComponent(qs.slice(ai + 4)) : '';
+const head = ai >= 0 ? qs.slice(0, ai) : qs;
+const prm = new URLSearchParams(head);
+const UID = prm.get('uid') || '', SIG = prm.get('sig') || '';
+const DEMO = !API;
+
+let S = null, tab = 'home', busy = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = n => '₹' + Number(n || 0).toFixed(2);
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); }
+
+// ---------- API ----------
+async function call(action, extra) {
+  if (DEMO) return demo(action, extra || {});
+  const body = JSON.stringify(Object.assign({ uid: UID, sig: SIG, action }, extra || {}));
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body });
+  const j = await r.json();
+  if (j && j.result && !j.ok && j.ok !== false) return j.result;   // tolerate wrapped responses
+  return j;
+}
+function demo(a, x) {
+  S = S || { ok: true, uid: '123456', balance: 0, payout_id: '', min: 50, max: 200, min_refs: 0, ref_count: 0, refer_code: 'REFA1B2C3', bot_username: 'YourBot',
+    per_ref: '10', welcome_bonus: 5, applied: false, withdraw_on: true, title: 'REWARDS', logo: '', history: [],
+    channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: false }, { id: '2', title: 'Backup Channel', link: 'https://t.me/durov', joined: false }] };
+  if (a === 'check') S.channels.forEach(c => c.joined = true);
+  S.all_joined = S.channels.every(c => c.joined);
+  if (a === 'saveid') S.payout_id = x.value;
+  return Object.assign({}, S, { message: '' });
+}
+async function run(action, extra, okMsg) {
+  if (busy) return; busy = true;
+  try {
+    const j = await call(action, extra);
+    if (!j.ok) { toast(j.error || 'Something went wrong'); if (j.code === 'auth' || j.code === 'disabled' || j.code === 'no_user') fatal(j.error); return null; }
+    S = j; if (j.message || okMsg) toast(j.message || okMsg);
+    render(); return j;
+  } catch (e) { toast('Network error. Try again.'); return null; }
+  finally { busy = false; }
+}
+function fatal(msg) { $('app').innerHTML = '<div class="card" style="text-align:center"><h3>⚠️ ' + esc(msg) + '</h3></div>'; $('nav').classList.add('hide'); }
+
+// ---------- render ----------
+function render() {
+  if (!S) return;
+  $('title').textContent = S.title || 'REWARDS';
+  if (S.logo) $('logo').innerHTML = '<img src="' + esc(S.logo) + '" alt="">';
+  document.title = S.title || 'Rewards';
+  if (!S.all_joined) { $('nav').classList.add('hide'); return renderVerify(); }
+  $('nav').classList.remove('hide');
+  $('nHome').className = tab === 'home' ? 'on' : '';
+  $('nWd').className = tab === 'wd' ? 'on' : '';
+  tab === 'home' ? renderHome() : renderWd();
+}
+
+function renderVerify() {
+  const chs = S.channels.map((c, i) => `
+    <div class="ch">
+      <div class="top"><b>${i + 1}. ${esc(c.title)}</b><span class="st ${c.joined ? 'ok' : 'no'}">${c.joined ? 'Joined ✅' : 'Pending ❌'}</span></div>
+      ${c.joined ? '' : `<button class="btn ${i % 2 ? 'b' : 'o'}" data-link="${esc(c.link)}">CLICK &amp; JOIN 🔥</button>`}
+    </div>`).join('');
+  $('app').innerHTML = `
+    <div class="card verify">
+      <h2>LAST VERIFICATION REQUIRED!</h2>
+      <p>Join all official channels to use the app!!</p>
+      ${chs || '<p>No channels configured.</p>'}
+      <button class="btn y" id="start">START APP NOW 🚀</button>
+    </div>`;
+  document.querySelectorAll('[data-link]').forEach(b => b.onclick = () => openLink(b.dataset.link));
+  $('start').onclick = async () => { const j = await run('check'); if (j && !j.all_joined) toast('Please join all channels first'); };
+}
+
+function renderHome() {
+  const link = 'https://t.me/' + S.bot_username + '?start=' + S.uid;
+  $('app').innerHTML = `
+    <div class="card gold">
+      <div class="lbl">💰 TOTAL WALLET BALANCE</div>
+      <div class="amt">${money(S.balance)}</div>
+      <div class="note">Refer friends &amp; earn ${esc(S.per_ref)} per valid invite 🎁</div>
+    </div>
+    <div class="cap">Earn by inviting your friends !! 🚀</div>
+    ${S.applied ? '' : `
+    <div class="card">
+      <h3>Enter your friend's refer code${S.welcome_bonus > 0 ? ' and earn ₹' + S.welcome_bonus + ' instantly ⚡' : ''}</h3>
+      <input id="code" placeholder="ENTER REFER CODE" autocapitalize="characters" maxlength="30">
+      <button class="btn y" id="apply">APPLY CODE 🚀</button>
+    </div>`}
+    <div class="card">
+      <h3>Here is your Refer Code 👇</h3>
+      <div class="code" id="mycode">${esc(S.refer_code)}</div>
+      <button class="btn b" id="copy">📋 COPY CODE</button>
+      <button class="btn g" id="share">📤 SHARE INVITE LINK</button>
+    </div>
+    <div class="card">
+      <h3>📊 Referral History</h3>
+      <div class="muted">${S.ref_count > 0 ? 'You have invited <b>' + S.ref_count + '</b> friend' + (S.ref_count > 1 ? 's' : '') + ' 🎉' : 'No referrals yet. Invite friends to earn!'}</div>
+    </div>
+    <div class="card rules"><b>📜 Referral Rules:</b><ul>
+      <li>Per valid invite you get ₹${esc(S.per_ref)} instantly.</li>
+      ${S.welcome_bonus > 0 ? '<li>Welcome bonus: ₹' + S.welcome_bonus + ' when you apply a friend\'s code for the first time.</li>' : ''}
+      <li>One refer code can be applied only once per account.</li>
+      <li>Self-referrals and duplicate device manipulation lead to automatic account freeze.</li></ul></div>`;
+  $('copy').onclick = () => copy(S.refer_code);
+  $('share').onclick = () => {
+    const url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Join and earn rewards! My code: ' + S.refer_code);
+    openLink(url);
+  };
+  if ($('apply')) $('apply').onclick = () => {
+    const v = $('code').value.trim().replace(/'/g, '');
+    if (!v) return toast('Enter a refer code');
+    run('apply', { code: v });
+  };
+}
+
+function renderWd() {
+  const min = S.min || 0, max = S.max || 0;
+  let amts = [min, Math.round((min + (max || min * 4)) / 2), max || min * 4].filter((v, i, a) => v > 0 && a.indexOf(v) === i);
+  const hist = (S.history || []).map(h => `<div class="hist"><span>${money(h.amount)}<br><small style="color:#64748b">${esc(h.date)}</small></span><span class="tag ${esc(h.status)}">${esc(h.status).toUpperCase()}</span></div>`).join('');
+  $('app').innerHTML = `
+    <div class="card gold">
+      <div class="lbl">💰 AVAILABLE REDEEM BALANCE</div>
+      <div class="amt">${money(S.balance)}</div>
+    </div>
+    <div class="card"><div class="uid"><div><small>YOUR PAYOUT ID (UPI / WALLET / UID)</small><br><b>${esc(S.payout_id) || '— not set —'}</b></div><button class="edit" id="edit">✏️ Edit</button></div></div>
+    <div class="card">
+      <h3>Enter Amount to Withdraw 💸</h3>
+      <div class="row">${amts.map(a => `<button class="chip" data-a="${a}">₹${a}</button>`).join('')}</div>
+      <input id="amt" type="number" inputmode="decimal" placeholder="Min ₹${min}${max ? ' - Max ₹' + max : ''}" style="margin-top:14px">
+      <button class="btn g" id="wd" ${S.withdraw_on ? '' : 'disabled'}>${S.withdraw_on ? 'WITHDRAW CASH NOW 🚀' : 'WITHDRAWALS ARE OFF'}</button>
+      <div class="muted">⚡ Min: ${money(min)}${max ? ' | Max: ' + money(max) : ''} per transaction${S.min_refs ? '<br>Need ' + S.min_refs + ' referrals (you have ' + S.ref_count + ')' : ''}</div>
+    </div>
+    <div class="card"><h3 style="text-align:left">📋 Recent Withdrawals</h3>${hist || '<div class="muted">No withdrawal requests yet.</div>'}</div>`;
+  document.querySelectorAll('.chip').forEach(c => c.onclick = () => { $('amt').value = c.dataset.a; document.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); c.classList.add('on'); });
+  $('edit').onclick = () => {
+    const v = (prompt('Enter your payout ID (UPI / wallet number / UID):', S.payout_id || '') || '').trim().replace(/'/g, '');
+    if (v) run('saveid', { value: v }, 'Saved ✅');
+  };
+  $('wd').onclick = () => {
+    const a = parseFloat($('amt').value);
+    if (!(a > 0)) return toast('Enter an amount');
+    if (!S.payout_id) return toast('Add your payout ID first');
+    if (confirm('Withdraw ' + money(a) + ' to ' + S.payout_id + '?')) run('withdraw', { amount: a });
+  };
+}
+
+// ---------- helpers ----------
+function openLink(u) { if (tg && /^https:\/\/t\.me\//.test(u) && tg.openTelegramLink) tg.openTelegramLink(u); else if (tg && tg.openLink) tg.openLink(u); else window.open(u, '_blank'); }
+function copy(t) {
+  const done = () => toast('Copied ✅');
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb() { const i = document.createElement('input'); i.value = t; document.body.appendChild(i); i.select(); try { document.execCommand('copy'); done(); } catch (e) { toast(t); } i.remove(); }
+}
+$('nHome').onclick = () => { tab = 'home'; render(); };
+$('nWd').onclick = () => { tab = 'wd'; render(); };
+
+// ---------- greeting ----------
+try {
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  const h = new Date().getHours();
+  $('greet').textContent = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+  if (u) {
+    $('uname').textContent = u.first_name || 'Friend';
+    if (u.photo_url) $('av').innerHTML = '<img src="' + esc(u.photo_url) + '" alt="" style="width:100%;height:100%;border-radius:50%">';
+  }
+} catch (e) {}
+
+// re-check channels when the user comes back from Telegram's join screen
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !S.all_joined && !busy) run('check'); });
+if (tg && tg.onEvent) tg.onEvent('viewportChanged', () => {});
+
+run('init');
+</script>
+</body>
+</html>
