@@ -210,7 +210,7 @@ body{
   function demoState(action, extra) {
     if (!demoState.s) demoState.s = {
       ok: true, uid: '1', all_joined: false, balance: 12.5, payout_id: '749628', min: 50, max: 200, min_refs: 0, ref_count: 0,
-      refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, ref_bonus: 5, ref_bonus_set: true, applied: false, withdraw_on: true,
+      refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, ref_bonus: 5, ref_bonus_set: true, referrer_bonus: '5', referee_bonus: 10, ref_earned: 5, applied: false, withdraw_on: true,
       title: 'YONO777 REWARDS', logo: '', history: [{ id: 3, amount: 50, status: 'paid', date: '2026-11-01 13:05', to: '749628' }],
       channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: true, req: true },
                  { id: '2', title: 'Backup Channel', link: 'https://t.me/telegram', joined: false }]
@@ -389,9 +389,13 @@ body{
     box.appendChild(h('div', { class: 'sect-title', text: 'Earn Coins By Invite your Friends !! 🚀' }));
 
     // apply code
-    var wel = Number(S.welcome_bonus) || 0;
-    var rb = S.ref_bonus_set ? (Number(S.ref_bonus) || 0) : 0;   // admin-set amount, both users get it
-    var earn = rb > 0 ? rb : wel;
+    // referrer (code owner) and referee (code user) can get DIFFERENT amounts
+    var referee = S.referee_bonus !== undefined ? (Number(S.referee_bonus) || 0)
+      : (S.ref_bonus_set ? (Number(S.ref_bonus) || 0) : (Number(S.welcome_bonus) || 0));
+    var referrerTxt = S.referrer_bonus !== undefined ? String(S.referrer_bonus)
+      : (S.ref_bonus_set ? String(S.ref_bonus) : String(S.per_ref || '0'));
+    var referrerOk = referrerTxt !== '0' && referrerTxt !== '';
+    var earn = referee;
     if (S.applied) {
       box.appendChild(h('div', { class: 'card center' }, h('div', { class: 'h2', text: '✅ Friend refer code already applied' })));
     } else {
@@ -425,18 +429,14 @@ body{
     var hist = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📊 Referral History' }));
     if (rc > 0) hist.appendChild(h('div', { class: 'center display', style: 'font-size:26px', text: rc + ' friend' + (rc > 1 ? 's' : '') + ' invited ✅' }));
     else hist.appendChild(h('div', { class: 'empty', text: 'No referrals yet. Invite friends to earn!' }));
+    if ((Number(S.ref_earned) || 0) > 0) hist.appendChild(h('div', { class: 'note', style: 'font-size:16px', text: '💰 Earned from referrals: ' + inr(S.ref_earned) }));
     if (S.min_refs > 0) hist.appendChild(h('div', { class: 'note', text: 'Need ' + S.min_refs + ' referral' + (S.min_refs > 1 ? 's' : '') + ' to withdraw (you have ' + rc + ')' }));
     box.appendChild(hist);
 
     // rules
     var rules = h('div', { class: 'card cream rules' }, h('h3', { text: '📜 Referral Rules:' }));
-    if (rb > 0) {
-      rules.appendChild(h('p', { text: '• When a friend\'s refer code is applied, BOTH users get ' + rb + ' rs instantly!' }));
-      rules.appendChild(h('p', { text: '• Share your code: every friend who enters it earns you ' + rb + ' rs, and they get ' + rb + ' rs too.' }));
-    } else {
-      rules.appendChild(h('p', { text: '• Per valid invite ' + (S.per_ref && S.per_ref !== '0' ? S.per_ref + ' rs' : 'bonus') + ': when your friend applies your code you get paid instantly!' }));
-      if (wel > 0) rules.appendChild(h('p', { text: '• Welcome bonus ' + wel + ' rs: you get it the first time you apply a friend\'s code.' }));
-    }
+    if (referrerOk) rules.appendChild(h('p', { text: '• Share your code: every friend who applies it earns YOU ' + referrerTxt + ' rs instantly!' }));
+    if (referee > 0) rules.appendChild(h('p', { text: '• Your friend gets ' + referee + ' rs when they apply your code. If you apply a friend\'s code, you get ' + referee + ' rs.' }));
     rules.appendChild(h('p', { text: '• Self-referrals and duplicate device manipulation lead to automatic account freeze.' }));
     box.appendChild(rules);
     mount(box);
