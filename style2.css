@@ -1,175 +1,178 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@800&display=swap');
 
-/* ===== style2.css — Midnight glass, single-screen (no scroll) ===== */
+/* ==========================================================================
+   style2.css — screenshot design, ONE screen (no scroll), CSS-ONLY.
+   Works with your ORIGINAL index.html: banner, heading and Security Rules
+   are drawn by CSS, all IDs / classes / script.js logic stay untouched.
+   Result screens use .view-section.active (same as your old style.css).
+   ========================================================================== */
+
 :root{
-  --bg:#060a18;
-  --ink:#e9edff;
-  --muted:#8e99c4;
-  --cyan:#22d3ee;
-  --violet:#8b5cf6;
-  --green:#34d399;
-  --red:#fb7185;
-  --amber:#fbbf24;
-  --glass:rgba(255,255,255,.06);
-  --line:rgba(255,255,255,.13);
-  --vh:var(--tg-viewport-stable-height,100dvh);
+  --navy:#111a2e; --yellow:#facc15; --yellow-text:#7a4a0c;
+  --green:#4ade80; --green-soft:#86efac; --green-text:#14532d;
+  --blue:#0284c7; --red:#fb7185; --orange:#d97706;
+  --vh:100vh;
 }
+@supports (height:100dvh){ :root{ --vh:var(--tg-viewport-stable-height,100dvh); } }
+/* 1 unit = 1dp on a 360x700 screen; auto-shrinks so everything fits, never scrolls */
+:root{ --u:min(calc(100vw / 360), calc(var(--vh) / 700)); }
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:linear-gradient(180deg,#38bdf8 0%,#7dd3fc 45%,#bae6fd 100%) fixed}
 html,body{height:var(--vh);overflow:hidden;overscroll-behavior:none}
 body{
-  font-family:'Inter',system-ui,sans-serif;color:var(--ink);
-  background:
-    radial-gradient(60vmax 40vmax at 10% -10%,rgba(139,92,246,.35),transparent 60%),
-    radial-gradient(55vmax 40vmax at 100% 105%,rgba(34,211,238,.28),transparent 60%),
-    var(--bg);
-  display:flex;flex-direction:column;align-items:stretch;
-  gap:clamp(6px,1.4dvh,14px);
-  padding:max(10px,env(safe-area-inset-top)) 14px max(10px,env(safe-area-inset-bottom));
-  max-width:520px;margin:0 auto;
-  user-select:none;-webkit-user-select:none;
+  font-family:'Baloo 2',system-ui,sans-serif;color:var(--navy);background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:calc(10*var(--u));
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
 }
-.particles{display:none}
 
-/* ---------- Header ---------- */
+/* ---------- Visually hidden but STILL RENDERED (so script.js keeps working) ---------- */
+.user-profile,.status-pill,.scan-grid,.node,.scan-line,.scan-status,.progress-container{
+  position:absolute;width:100px;height:10px;overflow:hidden;opacity:0;
+  clip-path:inset(50%);pointer-events:none;
+}
+.particle{display:none}
+.banner,.intro,.rules{display:none}       /* only if you used my edited HTML: CSS draws these now */
+body::after{display:none}
+
+/* ---------- 1) Banner  (= the old .header box) ---------- */
 .header{
-  flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;
-  background:var(--glass);border:1px solid var(--line);border-radius:16px;
-  padding:6px 8px 6px 6px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  order:1;position:relative;display:block;width:calc(340*var(--u));
+  background:var(--yellow);border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(40*var(--u));
+  box-shadow:0 calc(7*var(--u)) 0 var(--navy);padding:calc(12*var(--u)) calc(14*var(--u));
 }
-.user-profile{display:flex;align-items:center;gap:9px;min-width:0}
-.avatar-container{
-  width:clamp(30px,5.2dvh,38px);height:clamp(30px,5.2dvh,38px);border-radius:12px;flex:none;
-  background:linear-gradient(135deg,var(--violet),var(--cyan));
-  display:grid;place-items:center;font:800 15px 'Sora',sans-serif;color:#fff;overflow:hidden;
+.header::before{
+  content:"\2B50  ALL YONO PROMO CODES  \2B50";display:block;text-align:center;
+  font-family:'Inter',sans-serif;font-weight:800;text-transform:uppercase;
+  font-size:calc(22*var(--u));line-height:1.2;color:var(--yellow-text);
 }
-.avatar-container img{width:100%;height:100%;object-fit:cover}
-.text-info h3{font:700 13px/1.15 'Sora',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
-.text-info p{font-size:11px;color:var(--muted);line-height:1.2}
-.status-pill{
-  display:flex;align-items:center;gap:6px;flex:none;
-  font:700 10.5px 'Sora',sans-serif;letter-spacing:.6px;
-  padding:5px 10px;border-radius:999px;border:1px solid currentColor;
-}
-.status-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
-.pill-blue{color:var(--cyan);background:rgba(34,211,238,.1)}
-.pill-green{color:var(--green);background:rgba(52,211,153,.1)}
-.pill-red{color:var(--red);background:rgba(251,113,133,.1)}
-.pill-orange{color:var(--amber);background:rgba(251,191,36,.1)}
-.pill-blue .dot{animation:pulse 1.1s infinite}
-@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
 
-/* ---------- Title + intro ---------- */
-.banner{
-  flex:none;text-align:center;font:800 clamp(17px,min(5.4vw,3.3dvh),24px)/1.15 'Sora',sans-serif;
-  text-transform:uppercase;letter-spacing:.5px;
-  background:linear-gradient(90deg,var(--amber),#fff 50%,var(--cyan));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  padding:2px 0;
+/* ---------- 2) Welcome heading ---------- */
+body::before{
+  content:"Welcome Bro, Just Give Me 2 sec I Verify your Device !!";
+  order:2;display:block;width:calc(340*var(--u));text-align:center;
+  font-size:calc(23*var(--u));font-weight:800;line-height:1.2;color:var(--navy);
+  text-shadow:calc(1.5*var(--u)) calc(1.5*var(--u)) 0 #fff;margin-bottom:calc(-6*var(--u));
 }
-.intro{flex:none;text-align:center}
-.intro h2{font:700 clamp(15px,min(4.6vw,2.9dvh),21px)/1.25 'Sora',sans-serif;margin-bottom:4px}
-.intro p{font-size:clamp(11.5px,1.9dvh,14px);line-height:1.35;color:var(--muted)}
 
-/* ---------- Stage (fills the leftover space) ---------- */
-.main-wrapper{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center}
-.auth-container{width:100%;max-height:100%;display:flex;justify-content:center}
-.view-section{
-  display:none;width:100%;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;gap:clamp(8px,1.8dvh,16px);
+/* ---------- 3) Blue sub-text  (= the empty .particles box) ---------- */
+.particles{
+  order:3;position:static;display:block;width:calc(340*var(--u));height:auto;overflow:visible;
+  inset:auto;z-index:auto;
 }
-.view-section.active,.view-section.show{display:flex}
+.particles::before{
+  content:"After Device Verify You Use Our Bot and Claim Your Yono Codes And Free MaiL rewards";
+  display:block;text-align:center;font-size:calc(15*var(--u));font-weight:700;line-height:1.25;color:var(--blue);
+}
+
+/* ---------- 4) Stage (fixed height, so layout never jumps) ---------- */
+.main-wrapper{
+  order:4;width:calc(340*var(--u));height:calc(270*var(--u));padding:0;overflow:visible;
+  display:flex;align-items:center;justify-content:center;
+}
+.auth-container{
+  width:100%;max-width:none;margin:0;padding:0;background:none;border:0;border-radius:0;
+  box-shadow:none;overflow:visible;position:relative;
+}
+.auth-container::before,.auth-container::after{display:none}
+
+/* result screens: same switch as your old style.css */
+.view-section{display:none;position:relative;width:100%;flex-direction:column;align-items:center;text-align:center}
+.view-section.active{display:flex;animation:viewEnter .35s ease-out both}
+@keyframes viewEnter{from{opacity:0;transform:translateY(calc(8*var(--u)))}to{opacity:1;transform:none}}
 
 /* round icon */
-:root{--icon:clamp(70px,min(19dvh,34vw),128px)}
 .icon-wrapper,.network-scan{
-  position:relative;flex:none;width:var(--icon);height:var(--icon);border-radius:50%;
-  display:grid;place-items:center;font-size:calc(var(--icon)*.4);
-  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.14),rgba(255,255,255,.03));
-  border:1px solid var(--line);
+  position:relative;flex:none;width:calc(88*var(--u));height:calc(88*var(--u));border-radius:50%;
+  border:calc(5*var(--u)) solid var(--navy);box-shadow:0 calc(6*var(--u)) 0 var(--navy);
+  display:grid;place-items:center;margin:0 auto calc(16*var(--u));
+  background:#fff;font-size:calc(38*var(--u));
 }
-.icon-wrapper.success{color:var(--green);box-shadow:0 0 0 6px rgba(52,211,153,.12),0 0 40px rgba(52,211,153,.45)}
-.icon-wrapper.error{color:var(--red);box-shadow:0 0 0 6px rgba(251,113,133,.12),0 0 40px rgba(251,113,133,.4)}
-.icon-wrapper.info{color:var(--violet);box-shadow:0 0 0 6px rgba(139,92,246,.14),0 0 40px rgba(139,92,246,.45)}
+.icon-wrapper.success{background:var(--green)}
+.icon-wrapper.error{background:var(--red)}
+.icon-wrapper.info{background:#7dd3fc}
+.icon-wrapper i{color:var(--navy)}
 
-/* scanner: spinning gradient ring */
-.scan-grid,.node,.scan-line{display:none}
-.network-scan{box-shadow:0 0 40px rgba(34,211,238,.25)}
 .network-scan::before{
-  content:"";position:absolute;inset:-5px;border-radius:50%;
-  background:conic-gradient(from 0deg,transparent 0 55%,var(--cyan) 90%,var(--violet) 100%);
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
-          mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
-  animation:spin 1.6s linear infinite;
+  content:"";position:absolute;inset:calc(5*var(--u));border-radius:50%;
+  border:calc(6*var(--u)) dashed var(--blue);animation:spin 6s linear infinite;
 }
-.node-center{position:relative;color:var(--cyan);z-index:1;filter:drop-shadow(0 0 10px rgba(34,211,238,.7))}
+.network-scan::after{display:none}
+.node-center{position:relative;z-index:1;font-size:calc(40*var(--u));color:var(--blue)}
+.node-center i{color:var(--blue)}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* check mark */
-.check-svg{width:62%;height:62%}
+.check-svg{width:calc(56*var(--u));height:calc(56*var(--u))}
 .check-circle{fill:none;stroke:none}
 .check-mark{
-  fill:none;stroke:currentColor;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;
+  fill:none;stroke:var(--navy);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;
   stroke-dasharray:48;stroke-dashoffset:48;animation:draw .5s .1s ease forwards;
 }
 @keyframes draw{to{stroke-dashoffset:0}}
 
-/* status line (h1) */
-.view-section h1{
-  max-width:100%;font:700 clamp(15px,min(4.6vw,2.8dvh),20px)/1.25 'Sora',sans-serif;
-  padding:clamp(8px,1.6dvh,13px) 18px;border-radius:14px;
-  background:var(--glass);border:1px solid var(--line);color:var(--cyan);
+/* status pill = h1 */
+h1{
+  width:100%;font-size:calc(21*var(--u));font-weight:800;line-height:1.2;padding:calc(10*var(--u));
+  border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(30*var(--u));
+  box-shadow:0 calc(6*var(--u)) 0 var(--navy);background:#fff;color:var(--blue);
 }
-.view-section h1.text-success{color:var(--green);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.08)}
-.view-section h1.text-error{color:var(--red);border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.08)}
-.view-section h1.text-info-h{color:#c4b5fd;border-color:rgba(139,92,246,.55);background:rgba(139,92,246,.1)}
-.desc{font-size:clamp(12px,1.95dvh,14.5px);line-height:1.35;color:var(--muted)}
-.scan-status,.progress-container{display:none}
+h1.text-success{background:var(--green-soft);color:var(--green-text)}
+h1.text-error{background:#fecdd3;color:#9f1239}
+h1.text-info-h{background:#e0f2fe;color:var(--blue)}
+p.desc,.desc{margin-top:calc(10*var(--u));font-size:calc(14.5*var(--u));font-weight:700;line-height:1.2;color:var(--navy)}
+
+/* progress bar stays functional (just not visible) */
+.progress-bar{width:0;height:100%;transition:width .3s;background:var(--blue)}
 
 /* buttons */
-.action-bar{width:100%}
+.action-bar{width:100%;margin-top:calc(12*var(--u))}
 .btn{
-  width:100%;font:700 clamp(13px,2.2dvh,16px) 'Sora',sans-serif;letter-spacing:.4px;color:#04101a;
-  padding:clamp(10px,1.9dvh,15px) 16px;border:0;border-radius:14px;cursor:pointer;
-  transition:transform .1s,filter .1s;
+  width:100%;height:calc(42*var(--u));font-family:inherit;font-size:calc(18*var(--u));font-weight:800;
+  color:var(--navy);border:calc(3.5*var(--u)) solid var(--navy);border-radius:999px;
+  box-shadow:0 calc(5*var(--u)) 0 var(--navy);cursor:pointer;
 }
-.btn:active{transform:scale(.97);filter:brightness(.92)}
-.btn.success{background:linear-gradient(90deg,#34d399,#22d3ee);box-shadow:0 8px 24px rgba(52,211,153,.35)}
-.btn.danger{background:linear-gradient(90deg,#fb7185,#f59e0b);box-shadow:0 8px 24px rgba(251,113,133,.35)}
-.btn.primary{background:linear-gradient(90deg,#a78bfa,#22d3ee);box-shadow:0 8px 24px rgba(139,92,246,.4)}
+.btn:active{transform:translateY(calc(4*var(--u)));box-shadow:0 calc(1*var(--u)) 0 var(--navy)}
+.btn:disabled{opacity:.5}
+.btn.success{background:var(--green)}
+.btn.danger{background:var(--red)}
+.btn.primary{background:var(--yellow)}
 
-/* ---------- Security rules ---------- */
-.rules{
-  flex:none;background:var(--glass);border:1px solid var(--line);border-radius:18px;
-  padding:clamp(8px,1.6dvh,14px) 14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+/* ---------- 5) Security rules card  (= the old .footer box) ---------- */
+.footer{
+  order:5;position:relative;width:calc(340*var(--u));margin-bottom:calc(22*var(--u));
+  background:#fff;border:calc(3.5*var(--u)) solid var(--navy);border-radius:calc(32*var(--u));
+  box-shadow:0 calc(7*var(--u)) 0 var(--navy);padding:calc(12*var(--u)) calc(16*var(--u)) calc(10*var(--u));
+  text-align:left;display:block;
 }
-.rules h4{
-  display:flex;align-items:center;gap:8px;color:var(--amber);
-  font:700 clamp(11px,1.8dvh,13px) 'Sora',sans-serif;letter-spacing:.8px;text-transform:uppercase;
-  margin-bottom:clamp(3px,.8dvh,8px);
+.footer::before{
+  content:"\26A0\FE0E  SECURITY RULES";display:block;margin-bottom:calc(4*var(--u));
+  font-size:calc(19*var(--u));font-weight:800;color:var(--orange);
 }
-.rules h4 .warn{
-  width:18px;height:18px;border-radius:50%;background:var(--amber);color:#1a1200;
-  display:grid;place-items:center;font:800 11px 'Sora',sans-serif;
+.footer::after{
+  content:"\25CF\00a0 1 Device = 1 Account: Multiple IDs on the same\A\00a0\00a0\00a0\00a0 device will be auto-banned.\A\25CF\00a0 No App Cloners: Parallel Space or Dual apps\A\00a0\00a0\00a0\00a0 fail immediately.\A\25CF\00a0 Real Network: Proxies and spoofed VPNs are\A\00a0\00a0\00a0\00a0 blocked.";
+  display:block;white-space:pre-line;font-size:calc(14*var(--u));font-weight:700;line-height:1.35;color:var(--navy);
 }
-.rules ul{list-style:none}
-.rules li{
-  position:relative;padding-left:20px;margin:clamp(3px,.8dvh,7px) 0;
-  font-size:clamp(10.5px,1.7dvh,13px);line-height:1.35;color:#c9d1f2;
-}
-.rules li::before{
-  content:"";position:absolute;left:3px;top:.45em;width:7px;height:7px;border-radius:50%;
-  background:var(--cyan);box-shadow:0 0 8px var(--cyan);
+.footer a{
+  position:absolute;left:0;right:0;top:calc(100% + 10*var(--u));text-align:center;
+  font-size:calc(11*var(--u));font-weight:700;color:var(--navy);text-decoration:none;opacity:.65;
 }
 
-/* ---------- Footer ---------- */
-.footer{flex:none;text-align:center;font-size:11px}
-.footer a{color:var(--muted);text-decoration:none}
+/* ---------- Sound toggle (created by sounds.js) ---------- */
+.sfx-toggle{
+  position:fixed;right:calc(10*var(--u));bottom:calc(10*var(--u));z-index:20;
+  width:calc(38*var(--u));height:calc(38*var(--u));display:grid;place-items:center;border-radius:50%;
+  background:#fff;color:var(--navy);border:calc(3*var(--u)) solid var(--navy);
+  box-shadow:0 calc(3*var(--u)) 0 var(--navy);cursor:pointer;
+}
+.sfx-toggle svg{width:calc(18*var(--u));height:calc(18*var(--u));stroke-width:2}
+.sfx-toggle .sfx-off{display:none}
+.sfx-toggle[aria-pressed='true'] .sfx-on{display:none}
+.sfx-toggle[aria-pressed='true'] .sfx-off{display:block}
+.sfx-toggle.sfx-hint::before{
+  content:'Tap for sound';position:absolute;right:calc(100% + 8*var(--u));top:50%;transform:translateY(-50%);
+  padding:calc(5*var(--u)) calc(10*var(--u));white-space:nowrap;font-size:calc(11*var(--u));font-weight:700;
+  background:#fff;border:calc(2*var(--u)) solid var(--navy);border-radius:999px;
+}
 
-/* ---------- Auto-off after result ---------- */
-body.done .network-scan::before,body.done .pill-blue .dot{animation:none}
-
-/* very short screens: drop the least important copy so nothing scrolls */
-@media (max-height:660px){.intro p{display:none}}
-@media (max-height:560px){.footer{display:none}.banner{font-size:16px}}
-@media (max-height:480px){.rules li:nth-child(3){display:none}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
