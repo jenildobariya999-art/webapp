@@ -15,13 +15,13 @@
 }
 @supports (height:100dvh){ :root{ --vh:var(--tg-viewport-stable-height,100dvh); } }
 /* 1 unit = 1dp on a 360x700 screen; auto-shrinks so everything fits, never scrolls */
-:root{ --u:min(calc(100vw / 360), calc(var(--vh) / 700)); }
+:root{ --u:min(calc(100vw / 360), calc(var(--vh) / 740)); }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:linear-gradient(180deg,#38bdf8 0%,#7dd3fc 45%,#bae6fd 100%) fixed}
 html,body{height:var(--vh);overflow:hidden;overscroll-behavior:none}
 body{
-  font-family:'Baloo 2',system-ui,sans-serif;color:var(--navy);background:transparent;
+  font-family:'Baloo 2','Nunito','Arial Rounded MT Bold',system-ui,sans-serif;color:var(--navy);background:transparent;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:calc(10*var(--u));
   -webkit-user-select:none;user-select:none;touch-action:manipulation;
@@ -150,8 +150,8 @@ p.desc,.desc{margin-top:calc(10*var(--u));font-size:calc(14.5*var(--u));font-wei
   font-size:calc(19*var(--u));font-weight:800;color:var(--orange);
 }
 .footer::after{
-  content:"\25CF\00a0 1 Device = 1 Account: Multiple IDs on the same\A\00a0\00a0\00a0\00a0 device will be auto-banned.\A\25CF\00a0 No App Cloners: Parallel Space or Dual apps\A\00a0\00a0\00a0\00a0 fail immediately.\A\25CF\00a0 Real Network: Proxies and spoofed VPNs are\A\00a0\00a0\00a0\00a0 blocked.";
-  display:block;white-space:pre-line;font-size:calc(14*var(--u));font-weight:700;line-height:1.35;color:var(--navy);
+  content:"\25CF\00a0 1 Device = 1 Account: Multiple IDs on the same device will be auto-banned.\A\25CF\00a0 No App Cloners: Parallel Space or Dual apps fail immediately.\A\25CF\00a0 Real Network: Proxies and spoofed VPNs are blocked.";
+  display:block;white-space:pre-line;font-size:calc(14*var(--u));font-weight:700;line-height:1.3;color:var(--navy);
 }
 .footer a{
   position:absolute;left:0;right:0;top:calc(100% + 10*var(--u));text-align:center;
