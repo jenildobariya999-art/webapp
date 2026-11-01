@@ -79,6 +79,31 @@ body{
 .badge.ok{background:#dcfce7;color:#15803d}
 .badge.no{background:#fee2e2;color:#b91c1c}
 
+/* compact join page */
+.vcard{background:#fff;border:4px solid var(--navy);border-radius:26px;box-shadow:0 7px 0 var(--navy);padding:14px 12px 12px;margin-bottom:22px;position:relative;overflow:hidden}
+.vcard:before{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,#fde68a 0%,rgba(253,230,138,0) 70%);pointer-events:none}
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;position:relative}
+.vico{width:44px;height:44px;border-radius:14px;background:var(--yellow);border:3px solid var(--navy);box-shadow:0 3px 0 var(--navy);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.vtit{font-family:'Lilita One';font-size:21px;line-height:1.05;text-transform:uppercase;color:var(--navy)}
+.vsub{font-size:13px;color:#475569;font-weight:600;line-height:1.2;margin-top:2px}
+.vpill{margin-left:auto;flex:none;border:3px solid var(--navy);border-radius:999px;background:#fff6cf;padding:2px 11px;font-family:'Lilita One';font-size:16px}
+.prog{height:14px;border:3px solid var(--navy);border-radius:999px;background:#e2e8f0;overflow:hidden;margin:0 0 12px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#86efac);border-radius:999px;transition:width .5s}
+.vrow{display:flex;align-items:center;gap:10px;padding:7px 8px;border:3px solid var(--navy);border-radius:18px;background:#f8fafc;margin-bottom:8px}
+.vrow.done{background:#f0fdf4;border-color:#15803d}
+.vav{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Lilita One';color:#fff;border:2px solid var(--navy);flex:none;font-size:17px}
+.vmid{flex:1;min-width:0;line-height:1.1}
+.vmid b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vmid small{font-size:12px;font-weight:700;color:#64748b}
+.vrow.done .vmid small{color:#15803d}
+.vgo{flex:none;border:3px solid var(--navy);border-radius:14px;box-shadow:0 3px 0 var(--navy);padding:7px 14px;font-family:'Lilita One';font-size:15px;text-transform:uppercase;cursor:pointer;margin:0 0 3px}
+.vgo:active{transform:translateY(2px);box-shadow:0 1px 0 var(--navy)}
+.vgo[disabled]{opacity:.5;pointer-events:none}
+.vgo.blue{background:var(--blue);color:#0c4a6e}
+.vgo.orange{background:var(--orange);color:#fff}
+.vtick{flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;border:3px solid var(--navy);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
+.vhint{font-size:12px;color:#64748b;font-weight:600;text-align:center;margin:2px 0 10px}
+
 /* wd */
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .chip{border:4px solid var(--navy);border-radius:16px;box-shadow:0 4px 0 var(--navy);background:#eef2f7;
@@ -213,7 +238,8 @@ body{
       refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, ref_bonus: 5, ref_bonus_set: true, referrer_bonus: '5', referee_bonus: 10, ref_earned: 5, applied: false, withdraw_on: true,
       title: 'YONO777 REWARDS', logo: '', history: [{ id: 3, amount: 50, status: 'paid', date: '2026-11-01 13:05', to: '749628' }],
       channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: true, req: true },
-                 { id: '2', title: 'Backup Channel', link: 'https://t.me/telegram', joined: false }]
+                 { id: '2', title: 'Backup Channel', link: 'https://t.me/telegram', joined: false },
+                 { id: '3', title: 'Payout Proofs', link: 'https://t.me/telegram', joined: false }]
     };
     var s = demoState.s;
     if (action === 'init') { s.all_joined = s.channels.every(function (c) { return c.joined; }); }
@@ -333,27 +359,39 @@ body{
   function renderVerify() {
     view = 'verify'; setNav(false);
     var chs = S.channels || [];
-    var card = h('div', { class: 'card cream' },
-      h('div', { class: 'v-title', text: 'Last Verification Required!' }),
-      h('div', { class: 'v-sub', text: 'Join All Official Channels To Use Bot!!' }),
-      h('div', { class: 'v-sub2', text: 'Get free cash rewards from the bot.' })
+    var done = chs.filter(function (c) { return c.joined; }).length;
+    var pct = chs.length ? Math.round(done * 100 / chs.length) : 0;
+    var colors = ['#f97316', '#0ea5e9', '#8b5cf6', '#ec4899', '#14b8a6', '#eab308'];
+    var card = h('div', { class: 'vcard' },
+      h('div', { class: 'vhead' },
+        h('div', { class: 'vico', text: '🔒' }),
+        h('div', {},
+          h('div', { class: 'vtit', text: 'Join to unlock' }),
+          h('div', { class: 'vsub', text: 'Join all channels, then tap Verify' })),
+        h('div', { class: 'vpill', text: done + '/' + chs.length })
+      ),
+      h('div', { class: 'prog' }, h('i', { style: 'width:' + pct + '%' }))
     );
     chs.forEach(function (c, i) {
       var isReq = !!c.req;
-      var badge = h('span', { class: 'badge ' + (c.joined ? 'ok' : 'no'), text: c.joined ? 'Joined ✅' : 'Pending ❌' });
-      var btn = h('button', {
-        class: 'btn ' + (isReq ? 'b-orange' : 'b-blue'),
-        onclick: function () { openLink(c.link); }
-      }, isReq ? 'Click & Join (Request) 🔥' : 'Visit & Join Channel 📢');
-      if (!c.link) btn.setAttribute('disabled', 'disabled');
-      card.appendChild(h('div', { class: 'ch' },
-        h('div', { class: 'ch-head' }, h('div', { class: 'ch-name', text: (i + 1) + '. ' + (c.title || 'Channel') + (isReq ? ' 🔥' : ' ⚡') }), badge),
-        btn
+      var name = c.title || 'Channel';
+      var right;
+      if (c.joined) {
+        right = h('div', { class: 'vtick', text: '✓' });
+      } else {
+        right = h('button', { class: 'vgo ' + (isReq ? 'orange' : 'blue'), onclick: function () { openLink(c.link); } }, isReq ? 'Request' : 'Join');
+        if (!c.link) right.setAttribute('disabled', 'disabled');
+      }
+      card.appendChild(h('div', { class: 'vrow' + (c.joined ? ' done' : '') },
+        h('div', { class: 'vav', style: 'background:' + colors[i % colors.length], text: (name.replace(/[^A-Za-z0-9]/g, '')[0] || '#').toUpperCase() }),
+        h('div', { class: 'vmid' },
+          h('b', { text: name }),
+          h('small', { text: c.joined ? '✅ Joined' : (isReq ? '🔥 Send a join request' : '📢 Tap Join') })),
+        right
       ));
     });
-    if (!chs.length) card.appendChild(h('div', { class: 'empty', text: 'No channels to join.' }));
-    var start = h('button', { class: 'btn b-yellow', id: 'startBtn', onclick: onStart }, 'Start Bot Now 🚀');
-    card.appendChild(start);
+    card.appendChild(h('div', { class: 'vhint', text: 'Already joined? Just tap Verify.' }));
+    card.appendChild(h('button', { class: 'btn b-yellow', id: 'startBtn', onclick: onStart }, 'Verify & Continue ✅'));
     mount(card);
   }
   function openLink(url) {
