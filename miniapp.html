@@ -125,8 +125,8 @@ body{
 <div class="wrap">
   <div class="top" id="top">
     <div class="brand">
-      <div class="logo" id="logo">YONO<br>777</div>
-      <div class="brand-title" id="brandTitle">REWARDS</div>
+      <div class="logo" id="logo">🎁</div>
+      <div class="brand-title" id="brandTitle"></div>
     </div>
     <div class="hello">
       <div class="avatar" id="avatar">U</div>
@@ -209,7 +209,7 @@ body{
   // ---------- API ----------
   function demoState(action, extra) {
     if (!demoState.s) demoState.s = {
-      ok: true, uid: '1', all_joined: false, balance: 12.5, payout_id: '749628', min: 50, max: 200, min_refs: 0, ref_count: 0,
+      ok: true, uid: '1', all_joined: false, balance: 12.5, payout_id: '749628', min: 50, max: 200, min_refs: 0, ref_count: 3, referrals: ['69•••••837', '12•••••456', '98•••••001'],
       refer_code: 'REF6F38A1', bot_username: 'DemoBot', per_ref: '5-10', welcome_bonus: 5, ref_bonus: 5, ref_bonus_set: true, referrer_bonus: '5', referee_bonus: 10, ref_earned: 5, applied: false, withdraw_on: true,
       title: 'YONO777 REWARDS', logo: '', history: [{ id: 3, amount: 50, status: 'paid', date: '2026-11-01 13:05', to: '749628' }],
       channels: [{ id: '1', title: 'Official Loot Channel', link: 'https://t.me/telegram', joined: true, req: true },
@@ -282,15 +282,21 @@ body{
   }
 
   // ---------- header branding from state ----------
+  function initials(t) {
+    var w = String(t || '').trim().split(/\s+/).filter(Boolean);
+    if (!w.length) return '🎁';
+    return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase();
+  }
   function applyBranding() {
     if (!S) return;
-    $('brandTitle').textContent = (S.title || 'REWARDS');
-    var lg = $('logo');
+    var ttl = S.title || 'REWARDS';
+    $('brandTitle').textContent = ttl;
+    var lg = $('logo'), ini = initials(ttl);
     if (S.logo) {
       var im = h('img', { src: S.logo, alt: '' });
-      im.onerror = function () { lg.textContent = ''; lg.innerHTML = 'YONO<br>777'; };
+      im.onerror = function () { lg.textContent = ini; };
       lg.textContent = ''; lg.appendChild(im);
-    }
+    } else lg.textContent = ini;
   }
 
   // ---------- views ----------
@@ -429,6 +435,14 @@ body{
     var hist = h('div', { class: 'card' }, h('div', { class: 'h2', text: '📊 Referral History' }));
     if (rc > 0) hist.appendChild(h('div', { class: 'center display', style: 'font-size:26px', text: rc + ' friend' + (rc > 1 ? 's' : '') + ' invited ✅' }));
     else hist.appendChild(h('div', { class: 'empty', text: 'No referrals yet. Invite friends to earn!' }));
+    var rl = S.referrals || [];
+    rl.slice(0, 30).forEach(function (r) {
+      hist.appendChild(h('div', { class: 'row' },
+        h('b', { text: '👤 ' + r }),
+        h('span', { class: 'pill paid', text: 'Joined' })
+      ));
+    });
+    if (rc > rl.length && rl.length) hist.appendChild(h('div', { class: 'note', text: '+ ' + (rc - rl.length) + ' more' }));
     if ((Number(S.ref_earned) || 0) > 0) hist.appendChild(h('div', { class: 'note', style: 'font-size:16px', text: '💰 Earned from referrals: ' + inr(S.ref_earned) }));
     if (S.min_refs > 0) hist.appendChild(h('div', { class: 'note', text: 'Need ' + S.min_refs + ' referral' + (S.min_refs > 1 ? 's' : '') + ' to withdraw (you have ' + rc + ')' }));
     box.appendChild(hist);
