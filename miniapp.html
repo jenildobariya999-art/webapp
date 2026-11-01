@@ -82,6 +82,9 @@ input::placeholder{color:#94a3b8}
 const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#38bdf8'); tg.setBackgroundColor('#38bdf8'); } catch (e) {} }
 
+// PASTE your Cloudflare Worker URL here (e.g. https://miniapp-proxy.yourname.workers.dev)
+const PROXY = '';
+
 // ---------- link params: ?uid=..&sig=..&api=<webhook url> (api is last, may contain ? and &) ----------
 const qs = location.search.slice(1);
 const ai = qs.indexOf('api=');
@@ -103,7 +106,8 @@ async function call(action, extra) {
   if (DEMO) return demo(action, extra || {});
   const body = JSON.stringify(Object.assign({ uid: UID, sig: SIG, action }, extra || {}));
   let r;
-  try { r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
+  const endpoint = PROXY ? PROXY + '?t=' + encodeURIComponent(API) : API;
+  try { r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }); }
   catch (e) { throw new Error('BLOCKED (likely CORS): ' + e.message + ' | API=' + API.slice(0, 60)); }
   const raw = await r.text();
   let j;
