@@ -83,7 +83,7 @@ const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#38bdf8'); tg.setBackgroundColor('#38bdf8'); } catch (e) {} }
 
 // PASTE your Cloudflare Worker URL here (e.g. https://miniapp-proxy.yourname.workers.dev)
-const PROXY = '';
+const PROXY = 'https://snowy-recipe-94d7.unknownboy05880.workers.dev/';
 
 // ---------- link params: ?uid=..&sig=..&api=<webhook url> (api is last, may contain ? and &) ----------
 const qs = location.search.slice(1);
