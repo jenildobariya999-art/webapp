@@ -2,19 +2,23 @@
 Auto Approve Join Request Bot  (Render + MongoDB)
 
 NEW requests : approved automatically (24/7) + welcome DM to the user
-OLD pending  : the channel owner logs in (own API ID/HASH + phone) and approves all pending requests in bulk
+OLD pending  : the channel owner logs in with their own phone number and approves all pending requests in bulk
 USERS        : add the bot, switch auto-approve ON/OFF per channel, approve pending requests
 ADMIN        : Admin Panel (messages, banner, premium emoji, links, broadcast, stats)
 
 ENV (Render -> Environment):
   BOT_TOKEN    token from @BotFather
+  API_ID       your my.telegram.org API ID (used to talk to Telegram's login API only)
+  API_HASH     your my.telegram.org API HASH
   ADMIN_IDS    123456789,987654321
   MONGO_URI    mongodb+srv://user:pass@cluster.mongodb.net/
   MONGO_DB     optional (default approve_bot)
   SESSION_KEY  optional - if empty, the encryption key is derived from BOT_TOKEN automatically
   PORT         provided by Render
 
-API_ID / API_HASH are NOT stored in env. Each user enters their own when logging in.
+API_ID / API_HASH just identify this one app to Telegram (like a website's domain) - they are not a
+personal login. Every user still logs in with their OWN phone number, OTP and password, and ends up
+with their own separate session, so one user's bulk-approve never affects another user's account.
 """
 import asyncio
 import base64
@@ -57,6 +61,8 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 log = logging.getLogger("approve-bot")
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
+API_ID = int(os.environ["API_ID"])
+API_HASH = os.environ["API_HASH"]
 ADMIN_IDS = {int(x) for x in os.environ.get("ADMIN_IDS", "").split(",") if x.strip()}
 PORT = int(os.environ.get("PORT", "8080"))
 MONGO_URI = os.environ["MONGO_URI"]
@@ -132,7 +138,7 @@ DEFAULT_EMOJI = dict(zip(list(EMO), _DEFAULT_IDS))
 GLOBAL_KEYS = ["g", "welcome_msg", "banner", "emoji", "premium", "btn_fx", "channel_url", "tut_url", "stats"]
 DB = {
     "users": set(),
-    "sessions": {},  # uid -> {"s": telethon string session, "id": api_id, "hash": api_hash}
+    "sessions": {},  # uid -> {"s": telethon string session (login state for that user's own account)}
     "chats": {},  # chat_id -> {owner, title, auto}
     "g": {"dm": True, "approve_msg": None},
     "welcome_msg": None,
@@ -781,12 +787,12 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.answer()
         await _drop_login(uid)
         return await prompt(
-            context, chat_id, msg, "api_id",
+            context, chat_id, msg, "phone",
             f"{e('lock')} <b>Secure Login</b>\n\n"
             f"<blockquote>Your session is stored <b>encrypted</b> and used only to approve pending join requests for your own "
             f"channels. Press <b>Logout</b> at any time to revoke and delete it.</blockquote>\n\n"
-            f"<b>Step 1 of 4</b> - Send your <b>API ID</b> (numbers only).\n"
-            f"<i>Get it at my.telegram.org → API development tools → create an app.</i>", "bulk",
+            f"Please enter your number (<b>without +</b> and <b>without spaces</b>, like <code>91xxxxxxxxxx</code>) "
+            f"where <b>91</b> is the country code and <b>xxxxxxxxxx</b> is your number.", "bulk",
         )
 
     if act == "logout":
@@ -933,7 +939,7 @@ async def get_client(uid):
     d = DB["sessions"].get(str(uid))
     if not d:
         return None
-    cl = TelegramClient(StringSession(d["s"]), d["id"], d["hash"])
+    cl = TelegramClient(StringSession(d["s"]), API_ID, API_HASH)
     await cl.connect()
     if not await cl.is_user_authorized():
         await cl.disconnect()
@@ -1035,7 +1041,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
 
 async def _login_done(ctx, user, chat_id):
     t = _login_tmp.pop(user.id)
-    DB["sessions"][str(user.id)] = {"s": t["cl"].session.save(), "id": t["api_id"], "hash": t["api_hash"]}
+    DB["sessions"][str(user.id)] = {"s": t["cl"].session.save()}
     save_session(user.id)
     _clients[user.id] = t["cl"]
     ctx.user_data.pop("state", None)
@@ -1113,38 +1119,17 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.application.create_task(bulk_guard(context, user, chat_id, chat.id, chat.title or "channel"))
         return
 
-    # ---- login flow: API ID -> API HASH -> phone -> code -> (2FA)
-    if state == "api_id":
-        await cleanup()
-        if not text.isdigit():
-            return await prompt(context, chat_id, None, "api_id", f"{e('no')} The API ID must be numbers only. Please send it again.", "bulk")
-        _login_tmp[uid] = {"api_id": int(text)}
-        return await prompt(
-            context, chat_id, None, "api_hash",
-            f"{e('key')} <b>Step 2 of 4</b> - Send your <b>API HASH</b> (32 characters).", "bulk",
-        )
-
-    if state == "api_hash":
-        await cleanup()
-        if not re.fullmatch(r"[0-9a-fA-F]{32}", text):
-            return await prompt(context, chat_id, None, "api_hash", f"{e('no')} The API HASH must be 32 characters. Please send it again.", "bulk")
-        t = _login_tmp.get(uid)
-        if not t:
-            return await finish("bulk")
-        t["api_hash"] = text
-        return await prompt(
-            context, chat_id, None, "phone",
-            f"{e('phone')} <b>Step 3 of 4</b> - Please enter your phone number <b>without +</b> and <b>without spaces</b>, "
-            f"like <code>91xxxxxxxxxx</code> (91 is the country code, followed by your number).", "bulk",
-        )
-
+    # ---- login flow: phone -> code -> (2FA)
     if state == "phone":
         await cleanup()
-        t = _login_tmp.get(uid)
-        if not t or "api_hash" not in t:
-            return await finish("bulk")
-        phone = "+" + re.sub(r"\D", "", text)
-        cl = TelegramClient(StringSession(), t["api_id"], t["api_hash"])
+        digits = re.sub(r"\D", "", text)
+        if len(digits) < 8:
+            return await prompt(
+                context, chat_id, None, "phone",
+                f"{e('no')} That doesn't look like a valid number. Please enter it without + and without spaces, like <code>91xxxxxxxxxx</code>.", "bulk",
+            )
+        phone = "+" + digits
+        cl = TelegramClient(StringSession(), API_ID, API_HASH)
         try:
             await cl.connect()
             sent = await cl.send_code_request(phone)
@@ -1153,15 +1138,14 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await cl.disconnect()
             except Exception:
                 pass
-            _login_tmp.pop(uid, None)
             return await prompt(
-                context, chat_id, None, "api_id",
-                f"{e('no')} <code>{esc(ex)}</code>\n\nYour API ID / HASH or phone number may be wrong. Let's start again - send your <b>API ID</b>.", "bulk",
+                context, chat_id, None, "phone",
+                f"{e('no')} <code>{esc(ex)}</code>\n\nPlease enter your number again, without + and without spaces.", "bulk",
             )
-        t.update(cl=cl, phone=phone, hash=sent.phone_code_hash)
+        _login_tmp[uid] = {"cl": cl, "phone": phone, "hash": sent.phone_code_hash}
         return await prompt(
             context, chat_id, None, "code",
-            f"{e('key')} <b>Step 4 of 4</b> - Send the login code Telegram just sent you, with <b>spaces between the digits</b>, "
+            f"{e('key')} Telegram just sent you a login code. Send it here with <b>spaces between the digits</b>, "
             f"like <code>1 2 3 4 5</code>.\n<i>Without spaces Telegram may expire the code.</i>", "bulk",
         )
 
@@ -1178,7 +1162,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return await prompt(context, chat_id, None, "code", f"{e('no')} Wrong code. Please send it again (with spaces).", "bulk")
         except Exception as ex:
             await _drop_login(uid)
-            return await prompt(context, chat_id, None, "api_id", f"{e('no')} <code>{esc(ex)}</code>\n\nLet's try again - send your <b>API ID</b>.", "bulk")
+            return await prompt(context, chat_id, None, "phone", f"{e('no')} <code>{esc(ex)}</code>\n\nLet's try again - enter your number.", "bulk")
         return await _login_done(context, user, chat_id)
 
     if state == "2fa":
