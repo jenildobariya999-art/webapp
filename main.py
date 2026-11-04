@@ -1,9 +1,9 @@
 """
 💎 Auto Approve Join Request Bot  (Render + MongoDB, v5 - per-user login)
 
-NEW requests : bot khud approve/reject karta hai + user ko DM (message admin/owner ka set kiya hua)
+NEW requests : bot khud APPROVE karta hai + user ko DM (message admin ka set kiya hua). Reject nahi.
 OLD pending  : user Login (apna API ID/HASH + phone) karke apne channel ki pending requests bulk approve kare
-USER side    : sirf bot add karo + (optional) Bulk Approve login. Koi setting nahi - sab admin control
+USER side    : bot add karo, apne channel ka auto-approve ON/OFF, pending approve (login). Sirf request-related.
 ADMIN side   : Admin Panel -> default messages, welcome, banner, premium emoji, links, broadcast, stats
 Messages     : text + premium emoji + formatting + photo/video/gif/file (caption) sab support
 
@@ -96,7 +96,7 @@ EMO = {
 # har emoji key kahan dikhta hai (Guided Setup me admin ko ye dikhta hai)
 EMO_WHERE = {
     "bot": "Welcome message ka top", "gem": "Welcome / Admin title", "bolt": "Bulk Approve button + titles",
-    "ok": "Approve message + success", "no": "Reject message + cancel buttons", "lock": "Login button",
+    "ok": "Approve message + success", "no": "Cancel buttons + errors + OFF status", "lock": "Login button",
     "unlock": "Logout button", "gear": "Admin settings", "mega": "Channels list + Add to Channel button",
     "group": "Add to Group button", "back": "Har Back button", "star": "Welcome points + Approve All button",
     "fire": "Approve message + Private Channel button", "rocket": "Bulk approve start", "info": "Help button",
@@ -107,13 +107,26 @@ EMO_WHERE = {
     "bell": "Warnings / DM toggle", "image": "Banner button", "link": "Links button",
 }
 
+# Default premium emoji pack: neeche IDs EMO ke key order me (1..28) lagti hain.
+# bell / image / link ke liye abhi ID nahi -> normal emoji dikhega (Admin Panel -> Premium Emoji se set kar sakte ho).
+_DEFAULT_IDS = [
+    "5372981976804366741", "6158677579965407023", "6158890438544597850", "6237704110628413424",
+    "4956612582816351459", "5832546462478635761", "6066366333203783372", "6298820412918734860",
+    "5440460938136300137", "5352759161945867747", "5954135079662916434", "5420315771991497307",
+    "6291981609507755102", "4958506272551863292", "6158813567219932663", "4958725487682650920",
+    "5195033767969839232", "5407025283456835913", "5330115548900501467", "6158877450563494862",
+    "5197269100878907942", "5442979945045335455", "5197288647275071607", "6242319667168287353",
+    "5015299982316536836", "6160983049690422056", "5017243970414052392", "6158822075550145902",
+]
+DEFAULT_EMOJI = dict(zip(list(EMO), _DEFAULT_IDS))
+
 # ------------------------------------------------------------------ storage (MongoDB)
 GLOBAL_KEYS = ["g", "welcome_msg", "banner", "emoji", "premium", "btn_fx", "channel_url", "tut_url", "stats"]
 DB = {
     "users": set(),
     "sessions": {},  # uid -> {"s": telethon string session, "id": api_id, "hash": api_hash}
     "chats": {},  # chat_id -> {owner, title}
-    "g": {"mode": "approve", "dm": True, "approve_msg": None, "reject_msg": None},
+    "g": {"dm": True, "approve_msg": None},
     "welcome_msg": None,
     "banner": None,
     "emoji": {},
@@ -121,7 +134,7 @@ DB = {
     "btn_fx": True,
     "channel_url": "",
     "tut_url": "",
-    "stats": {"approved": 0, "rejected": 0},
+    "stats": {"approved": 0},
 }
 mdb = None
 _dirty = False
@@ -139,6 +152,8 @@ async def load_db():
                 DB[k].update(kv[k])
             else:
                 DB[k] = kv[k]
+    for k, v in DEFAULT_EMOJI.items():
+        DB["emoji"].setdefault(k, v)
     DB["users"] = {d["_id"] async for d in mdb.users.find({}, {"_id": 1})}
     if FERNET:
         async for d in mdb.sessions.find():
@@ -332,11 +347,13 @@ async def dm(bot, uid, t, name, chat, kb=None):
 def default_welcome():
     return (
         f"{e('bot')} <b>Hey {{name}}!</b> {e('party')}\n\n"
-        f"{e('gem')} <b>Free Auto Approve Bot</b>\n\n"
+        f"{e('gem')} <b>Free Auto Approve Bot</b>\n"
+        f"Ye bot aapke channel/group ki join requests <b>apne aap approve</b> karta hai.\n\n"
         f"<blockquote>"
         f"{e('group')} <b>Step 1:</b> Bot ko apne channel/group me <b>admin</b> banao (Invite Users permission)\n"
         f"{e('bolt')} <b>Step 2:</b> Bas! Nayi join requests <b>auto approve</b> hongi\n"
-        f"{e('lock')} <b>Step 3 (optional):</b> Purani pending requests ke liye <b>Bulk Approve</b> → Login → Approve All"
+        f"{e('list')} <b>Manage:</b> My Channels me apne channel ka auto approve ON/OFF karo\n"
+        f"{e('lock')} <b>Purani pending requests:</b> Bulk Approve → Login → Approve All"
         f"</blockquote>\n\n"
         f"{e('ok')} Powered By <b>Piro</b>"
     )
@@ -345,21 +362,17 @@ def default_welcome():
 def default_approve():
     return (
         f"{e('party')} <b>Congratulations {{name}}!</b>\n\n"
-        f"{e('ok')} Aapki join request <b>{{chat}}</b> me <b>APPROVE</b> ho gayi hai.\n"
+        f"{e('ok')} Aapki join request <b>{{chat}}</b> me <b>approve</b> ho gayi hai.\n"
         f"{e('fire')} Welcome aboard!"
     )
 
 
-def default_reject():
-    return f"{e('no')} <b>Sorry {{name}}</b>\n\nAapki join request <b>{{chat}}</b> me <b>REJECT</b> ho gayi hai."
-
-
-def tpl(uid, kind):
-    # message sirf admin set karta hai (global) - users ke liye koi alag setting nahi
-    v = norm(DB["g"].get(kind + "_msg"))
+def tpl(uid=0, kind="approve"):
+    # sirf approve message - admin set karta hai (global)
+    v = norm(DB["g"].get("approve_msg"))
     if v and (v["html"] or v.get("media")):
         return v
-    return {"html": default_approve() if kind == "approve" else default_reject(), "media": None}
+    return {"html": default_approve(), "media": None}
 
 
 def pv(t):
@@ -455,6 +468,7 @@ def s_bulk(uid, fname):
     status = f"{e('ok')} <b>Logged in</b>" if logged else f"{e('no')} <b>Not logged in</b>"
     text = (
         f"{e('bolt')} <b>Bulk Approve - Purani Pending Requests</b>\n\n"
+        f"Jo requests bot ke admin banne se <b>pehle</b> se pending hain, unhe ek saath approve karne ke liye:\n\n"
         f"<blockquote>"
         f"<b>1.</b> {e('lock')} <b>Login</b> dabao (apna API ID/HASH + number)\n"
         f"<b>2.</b> {e('star')} <b>Approve All</b> dabao\n"
@@ -484,59 +498,77 @@ def s_help(uid, fname):
         f"{e('info')} <b>Help / Tutorial</b>\n\n"
         f"<blockquote>"
         f"{e('group')} <b>Nayi requests (automatic)</b>\n"
-        f"Bot ko channel/group me <b>admin</b> banao (Invite Users permission). Bas - ab har nayi join request apne aap approve hogi.\n\n"
+        f"Bot ko channel/group me <b>admin</b> banao (Invite Users permission). Bas - har nayi join request apne aap approve hogi.\n\n"
+        f"{e('list')} <b>Apna channel manage karo</b>\n"
+        f"My Channels me har channel ka auto approve <b>ON/OFF</b> kar sakte ho. OFF karne par nayi requests pending rahengi.\n\n"
         f"{e('bolt')} <b>Purani pending requests</b>\n"
-        f"Bulk Approve → Login → Approve All → channel ka message forward karo.\n"
+        f"Bulk Approve → Login → Approve All → channel ka message forward karo. "
+        f"Ya My Channels me channel ke saamne <b>Pending</b> button dabao (Login ke baad).\n"
         f"Login ke liye my.telegram.org → <b>API development tools</b> se apna API ID/HASH banao."
-        f"</blockquote>\n\n"
-        f"{e('shield')} Koi setting karne ki zaroorat nahi - sab automatic hai."
+        f"</blockquote>"
     )
     return text, lambda: Markup([[btn("Back", "back", "go:home")]])
 
 
 def s_channels(uid, fname):
-    mine = [(cid, c) for cid, c in DB["chats"].items() if c.get("owner") == uid]
+    mine = [(cid, c) for cid, c in DB["chats"].items() if c.get("owner") == uid][:10]
     if mine:
-        lines = "\n".join(f"{e('mega')} <b>{esc(c.get('title'))}</b> <code>{cid}</code>" for cid, c in mine[:40])
+        lines = "\n".join(
+            f"{e('mega')} <b>{esc(c.get('title'))}</b> - {'🟢 ON' if c.get('auto', True) else '🔴 OFF'}" for cid, c in mine
+        )
+        body = f"<blockquote>{lines}</blockquote>"
     else:
-        lines = "<i>Abhi koi channel/group connected nahi.\nBot ko apne channel me admin banao.</i>"
-    text = f"{e('list')} <b>My Channels</b>\n\n<blockquote>{lines}</blockquote>"
-    return text, lambda: Markup([add_links(), [btn("Back", "back", "go:home")]])
+        body = "<i>Abhi koi channel/group connected nahi.\nBot ko apne channel/group me admin banao, wo yahan aa jayega.</i>"
+    text = (
+        f"{e('list')} <b>My Channels</b>\n\n{body}\n\n"
+        f"<b>Buttons ka matlab:</b>\n"
+        f"{e('ok')} <b>Channel ka naam</b> - us channel ka auto approve ON/OFF\n"
+        f"{e('bolt')} <b>Pending</b> - us channel ki purani pending requests approve (pehle Bulk Approve me Login karo)"
+    )
+
+    def kb():
+        rows = []
+        for cid, c in mine:
+            on = c.get("auto", True)
+            rows.append(
+                [
+                    btn(f"{(c.get('title') or 'Channel')[:18]}: {'ON' if on else 'OFF'}", "ok" if on else "no", f"act:ch_t:{cid}"),
+                    btn("Pending", "bolt", f"act:ch_p:{cid}"),
+                ]
+            )
+        rows.append(add_links())
+        rows.append([btn("Back", "back", "go:home")])
+        return Markup(rows)
+
+    return text, kb
 
 
 def s_admin(uid, fname):
     s = DB["stats"]
-    mode = DB["g"]["mode"]
     dm_on = DB["g"]["dm"]
     text = (
         f"{e('crown')} <b>Admin Panel</b>\n\n"
         f"<blockquote>{e('chart')} Users: <b>{len(DB['users'])}</b>\n"
         f"{e('mega')} Channels: <b>{len(DB['chats'])}</b>\n"
         f"{e('lock')} Logged-in accounts: <b>{len(DB['sessions'])}</b>\n"
-        f"{e('ok')} Approved: <b>{s['approved']}</b>   {e('no')} Rejected: <b>{s['rejected']}</b></blockquote>\n\n"
-        f"{e('swap')} Nayi requests: <b>{'AUTO APPROVE' if mode == 'approve' else 'AUTO REJECT'}</b>   "
-        f"{e('mail')} DM: <b>{'ON' if dm_on else 'OFF'}</b>\n\n"
-        f"{e('ok')} <b>Approve DM</b>\n<blockquote>{pv(DB['g'].get('approve_msg') or default_approve())}</blockquote>\n"
-        f"{e('no')} <b>Reject DM</b>\n<blockquote>{pv(DB['g'].get('reject_msg') or default_reject())}</blockquote>\n"
-        f"<i>Ye saari settings sirf admin ke paas hain. Users kuch change nahi kar sakte.</i>"
+        f"{e('ok')} Total approved: <b>{s['approved']}</b></blockquote>\n\n"
+        f"{e('mail')} Approve hone par DM: <b>{'ON' if dm_on else 'OFF'}</b>\n\n"
+        f"{e('ok')} <b>Approve DM message</b>\n<blockquote>{pv(DB['g'].get('approve_msg') or default_approve())}</blockquote>\n"
+        f"<i>Messages, emoji aur links sirf admin set karta hai. Users apne channel ka sirf auto approve ON/OFF aur pending approve kar sakte hain.</i>"
     )
 
     def kb():
         return Markup(
             [
-                [btn("Approve Msg", "pen", "act:g_ap", style="success"), btn("Reject Msg", "pen", "act:g_rj", style="danger")],
-                [btn("Preview ✅", "eye", "act:pv_ap"), btn("Preview ❌", "eye", "act:pv_rj")],
+                [btn("Approve Msg", "pen", "act:g_ap", style="success"), btn("Preview", "eye", "act:pv_ap")],
                 [btn("Welcome Msg", "pen", "act:g_wl"), btn("Banner Image", "image", "act:banner")],
                 [btn("Premium Emoji", "star", "go:a_emoji", style="primary"), btn("Links", "link", "go:a_links")],
                 [
-                    btn(f"Mode: {mode.upper()}", "swap", "act:t_mode"),
                     btn(f"DM: {'ON' if dm_on else 'OFF'}", "bell", "act:t_dm"),
-                ],
-                [
                     btn(f"Premium Text: {'ON' if DB['premium'] else 'OFF'}", "swap", "act:t_prem"),
-                    btn(f"Button FX: {'ON' if DB['btn_fx'] else 'OFF'}", "swap", "act:t_fx"),
                 ],
-                [btn("Broadcast", "mega", "act:bc", style="success"), btn("Remove Banner", "no", "act:banner_rm")],
+                [btn(f"Button FX: {'ON' if DB['btn_fx'] else 'OFF'}", "swap", "act:t_fx"), btn("Remove Banner", "no", "act:banner_rm")],
+                [btn("Broadcast", "mega", "act:bc", style="success")],
                 [btn("Back", "back", "go:home")],
             ]
         )
@@ -547,7 +579,8 @@ def s_admin(uid, fname):
 def s_a_emoji(uid, fname):
     done = sum(1 for k in EMO if DB["emoji"].get(k))
     text = (
-        f"{e('star')} <b>Premium Emoji Setup</b>  ({done}/{len(EMO)} set)\n\n"
+        f"{e('star')} <b>Premium Emoji Setup</b>  ({done}/{len(EMO)} set)\n"
+        f"<i>Default pack pehle se set hai. Test dabake dekho; kuch galat jagah dikhe to Guided Setup se badal do.</i>\n\n"
         f"<blockquote>"
         f"<b>1.</b> <b>Guided Setup</b> dabao - bot ek-ek jagah batayega, aap ek premium emoji bhejo "
         f"(ek message me kai bhejoge to agli keys bhi saath me fill hongi)\n"
@@ -575,7 +608,7 @@ def s_a_emoji(uid, fname):
                 row = []
         if row:
             rows.append(row)
-        rows.append([btn("Reset All", "no", "act:emo_reset", style="danger"), btn("Back", "back", "go:admin")])
+        rows.append([btn("Reset Default", "swap", "act:emo_reset", style="danger"), btn("Back", "back", "go:admin")])
         return Markup(rows)
 
     return text, kb
@@ -646,27 +679,22 @@ async def prompt(ctx, chat_id, msg, state, text, ret, **extra):
 async def on_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     req = update.chat_join_request
     user, chat = req.from_user, req.chat
-    owner = DB["chats"].get(str(chat.id), {}).get("owner")
-    mode = DB["g"]["mode"]
-    dm_on = DB["g"]["dm"]
-    kind = "approve" if mode == "approve" else "reject"
+    info = DB["chats"].get(str(chat.id), {})
+    if info.get("auto", True) is False:
+        return  # channel owner ne auto approve OFF kiya hai - request pending rahegi
     try:
-        if kind == "approve":
-            await req.approve()
-            DB["stats"]["approved"] += 1
-        else:
-            await req.decline()
-            DB["stats"]["rejected"] += 1
+        await req.approve()
+        DB["stats"]["approved"] += 1
         save()
     except Exception as ex:
         log.warning("join request error: %s", ex)
         return
-    if dm_on:
+    if DB["g"]["dm"]:
         kb = None
         if chat.username:
             kb = Markup([[btn("Open " + (chat.title or "Channel")[:20], "mega", url=f"https://t.me/{chat.username}")]])
         context.application.create_task(
-            dm(context.bot, req.user_chat_id, tpl(owner or 0, kind), user.first_name or "User", chat.title or "channel", kb)
+            dm(context.bot, req.user_chat_id, tpl(), user.first_name or "User", chat.title or "channel", kb)
         )
 
 
@@ -677,7 +705,8 @@ async def on_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     new = m.new_chat_member
     if new.status == "administrator":
-        DB["chats"][str(chat.id)] = {"owner": m.from_user.id, "title": chat.title}
+        old = DB["chats"].get(str(chat.id), {})
+        DB["chats"][str(chat.id)] = {"owner": m.from_user.id, "title": chat.title, "auto": old.get("auto", True)}
         save_chat(chat.id)
         warn = ""
         if getattr(new, "can_invite_users", True) is False:
@@ -685,7 +714,9 @@ async def on_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await context.bot.send_message(
                 m.from_user.id,
-                f"{e('ok')} <b>{esc(chat.title)}</b> connected!\nAb nayi join requests auto handle hongi.{warn}",
+                f"{e('ok')} <b>{esc(chat.title)}</b> connected!\n\n"
+                f"{e('bolt')} Ab iski nayi join requests <b>auto approve</b> hongi.\n"
+                f"{e('list')} ON/OFF aur pending approve ke liye: /start → <b>My Channels</b>{warn}",
                 parse_mode=HTML,
             )
         except Exception:
@@ -779,23 +810,37 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<i>(Hidden-forward kaam nahi karta.)</i>", "bulk",
         )
 
+    # ---------------- user: apne channel ki request-related settings
+    if act.startswith("ch_t:") or act.startswith("ch_p:"):
+        cid = act.split(":", 1)[1]
+        info = DB["chats"].get(cid)
+        if not info or not (info.get("owner") == uid or is_admin(uid)):
+            return await q.answer("Ye channel aapka nahi hai.", show_alert=True)
+        if act.startswith("ch_t:"):
+            info["auto"] = not info.get("auto", True)
+            save_chat(cid)
+            await q.answer("Auto approve " + ("ON ✅" if info["auto"] else "OFF ⛔"))
+            return await goto(context, user, chat_id, "channels", msg=msg)
+        if str(uid) not in DB["sessions"]:
+            return await q.answer("Pehle Bulk Approve me Login karo.", show_alert=True)
+        await q.answer("Pending approve shuru...")
+        context.application.create_task(bulk_guard(context, user, chat_id, int(cid), info.get("title") or "channel"))
+        return
+
     # ---------------- admin actions
     if not is_admin(uid):
         return await q.answer("Admin only", show_alert=True)
     await q.answer()
 
-    if act in ("pv_ap", "pv_rj"):
-        kind = "approve" if act == "pv_ap" else "reject"
+    if act == "pv_ap":
+        kind = "approve"
         try:
             await send_tpl(context.bot, uid, tpl(0, kind), user.first_name or "User", "Demo Channel", prefix="👁 <b>Preview:</b>\n\n")
         except Exception as ex:
             await context.bot.send_message(uid, f"❌ Preview error: {esc(str(ex)[:200])}", parse_mode=HTML)
         return
-    if act in ("t_mode", "t_dm"):
-        if act == "t_mode":
-            DB["g"]["mode"] = "reject" if DB["g"]["mode"] == "approve" else "approve"
-        else:
-            DB["g"]["dm"] = not DB["g"]["dm"]
+    if act == "t_dm":
+        DB["g"]["dm"] = not DB["g"]["dm"]
         save()
         return await goto(context, user, chat_id, "admin", msg=msg)
     if act == "emo_guided":
@@ -815,8 +860,8 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             await context.bot.send_message(uid, strip_custom(txt), parse_mode=HTML)
         return
-    if act in ("g_ap", "g_rj", "g_wl"):
-        names = {"g_ap": "DEFAULT APPROVE", "g_rj": "DEFAULT REJECT", "g_wl": "WELCOME (/start)"}
+    if act in ("g_ap", "g_wl"):
+        names = {"g_ap": "APPROVE DM", "g_wl": "WELCOME (/start)"}
         return await prompt(
             context, chat_id, msg, act,
             f"{e('pen')} <b>Naya {names[act]} message bhejo</b>\n\n"
@@ -859,7 +904,7 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<i>Kam emoji bhejoge to utni keys set hongi (shuru se).</i>", "a_emoji",
         )
     if act == "emo_reset":
-        DB["emoji"] = {}
+        DB["emoji"] = dict(DEFAULT_EMOJI)
         save()
         return await goto(context, user, chat_id, "a_emoji", msg=msg)
     if act in ("url_ch", "url_tut"):
@@ -933,7 +978,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
         DB["chats"][str(tg_chat_id)] = {"owner": uid, "title": title}
         save_chat(tg_chat_id)
     approve = True  # pending bulk hamesha approve
-    t_tpl = tpl(uid, "approve" if approve else "reject")
+    t_tpl = tpl()
     send_dm = DB["g"]["dm"]
     done, stuck, last = 0, 0, 0.0
 
@@ -967,7 +1012,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             for u in results:
                 if u:
                     done += 1
-                    DB["stats"]["approved" if approve else "rejected"] += 1
+                    DB["stats"]["approved"] += 1
                     if send_dm:
                         ctx.application.create_task(dm(ctx.bot, u.id, t_tpl, u.first_name or "User", title))
             if time.time() - last > 2.5:
@@ -1128,15 +1173,13 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(uid):
         return
 
-    if state in ("g_ap", "g_rj", "g_wl"):
+    if state in ("g_ap", "g_wl"):
         t = capture(msg)
         if not (t["html"] or t["media"]):
             return
         await cleanup()
         if state == "g_ap":
             DB["g"]["approve_msg"] = t
-        elif state == "g_rj":
-            DB["g"]["reject_msg"] = t
         else:
             DB["welcome_msg"] = t["html"]
         save()
