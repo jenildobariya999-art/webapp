@@ -156,7 +156,7 @@ DEFAULT_EMOJI = {
     "swap": "5015299982316536836",
     "bell": "6160983049690422056",
     "image": "5375074927252621134",
-    "link":"6158822075550145902"
+    "link":"6158822075550145902",
 }
 
 # ------------------------------------------------------------------ storage (MongoDB)
@@ -422,7 +422,7 @@ def default_welcome():
         f"{e('star')} Accept Pending Join Requests\n\n"
         f"{e('rocket')} Approves every new join request automatically, 24/7\n"
         f"{e('bolt')} Clears old pending requests in bulk\n\n"
-        f"{e('ok')} Powered By <b>Piro</b>"
+        f"{e('ok')} Powered By <b>Jenil Dobariya</b>"
     )
 
 
