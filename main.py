@@ -107,12 +107,26 @@ EMO = {
     "shield": "🛡", "party": "🎉", "swap": "🔁", "bell": "🔔", "image": "🖼", "link": "🔗",
 }
 
-# Default pack: paste premium emoji IDs here, in EMO key order, to pre-fill them at startup.
-# Example: "5372981976804366741", "6158677579965407023", ...
-# Leave empty to manage everything from the Admin Panel -> Premium Emoji menu instead.
-_DEFAULT_IDS = [
-]
-DEFAULT_EMOJI = dict(zip(list(EMO), _DEFAULT_IDS))
+# ---------------------------------------------------------------------------
+# HOW TO SET PREMIUM EMOJI MANUALLY IN CODE
+#
+# 1. Send any premium emoji to this bot in a private chat (no button needed) and it
+#    replies with that emoji's numeric ID.
+# 2. Add it below as  "key": "the id",  using one of the key names from the EMO dict
+#    above (bot, gem, bolt, ok, no, lock, unlock, gear, mega, group, back, star, fire,
+#    rocket, info, chart, pen, mail, crown, check, phone, key, book, list, eye, shield,
+#    party, swap, bell, image, link).
+# 3. Redeploy. These are applied once when the bot starts; a key left out just keeps
+#    using its normal (non-premium) emoji.
+#
+# Example:
+# DEFAULT_EMOJI = {
+#     "bot": "5372981976804366741",
+#     "fire": "5832546462478635761",
+# }
+# ---------------------------------------------------------------------------
+DEFAULT_EMOJI = {
+}
 
 # ------------------------------------------------------------------ storage (MongoDB)
 GLOBAL_KEYS = ["g", "welcome_msg", "banner", "emoji", "premium", "btn_fx", "channel_url", "tut_url", "stats"]
@@ -120,7 +134,7 @@ DB = {
     "users": set(),
     "sessions": {},  # uid -> {"s": telethon string session (login state for that user's own account)}
     "chats": {},  # chat_id -> {owner, title, auto}
-    "g": {"dm": True, "approve_msg": None},
+    "g": {"dm": True, "notify": True, "approve_msg": None},
     "welcome_msg": None,
     "banner": None,
     "emoji": {},
@@ -357,6 +371,8 @@ async def dm(bot, uid, t, name, chat, kb=None):
 
 
 async def notify_admins(ctx, text, exclude=None):
+    if not DB["g"].get("notify", True):
+        return
     for admin_id in ADMIN_IDS:
         if admin_id == exclude:
             continue
@@ -586,13 +602,15 @@ async def channel_menu(ctx, user, chat_id, cid, msg=None):
 def s_admin(uid, fname):
     s = DB["stats"]
     dm_on = DB["g"]["dm"]
+    notify_on = DB["g"].get("notify", True)
     text = (
         f"{e('crown')} <b>Admin Panel</b>\n\n"
         f"<blockquote>{e('chart')} Users: <b>{len(DB['users'])}</b>\n"
         f"{e('mega')} Channels: <b>{len(DB['chats'])}</b>\n"
         f"{e('lock')} Logged-in accounts: <b>{len(DB['sessions'])}</b>\n"
         f"{e('ok')} Total approved: <b>{s['approved']}</b></blockquote>\n\n"
-        f"{e('mail')} Welcome DM after approval: <b>{'ON' if dm_on else 'OFF'}</b>\n\n"
+        f"{e('mail')} Welcome DM after approval: <b>{'ON' if dm_on else 'OFF'}</b>\n"
+        f"{e('bell')} New-user / Approve-All alerts to admins: <b>{'ON' if notify_on else 'OFF'}</b>\n\n"
         f"{e('ok')} <b>Approval message</b>\n<blockquote>{pv(DB['g'].get('approve_msg') or default_approve())}</blockquote>"
     )
 
@@ -604,9 +622,13 @@ def s_admin(uid, fname):
                 [btn("Links", "link", "go:a_links")],
                 [
                     btn(f"DM: {'ON' if dm_on else 'OFF'}", "bell", "act:t_dm"),
-                    btn(f"Premium Text: {'ON' if DB['premium'] else 'OFF'}", "swap", "act:t_prem"),
+                    btn(f"Admin Alerts: {'ON' if notify_on else 'OFF'}", "bell", "act:t_notify"),
                 ],
-                [btn(f"Button Icons: {'ON' if DB['btn_fx'] else 'OFF'}", "swap", "act:t_fx"), btn("Remove Banner", "no", "act:banner_rm")],
+                [
+                    btn(f"Premium Text: {'ON' if DB['premium'] else 'OFF'}", "swap", "act:t_prem"),
+                    btn(f"Button Icons: {'ON' if DB['btn_fx'] else 'OFF'}", "swap", "act:t_fx"),
+                ],
+                [btn("Remove Banner", "no", "act:banner_rm")],
                 [btn("Broadcast", "mega", "act:bc", style="success")],
                 [btn("Back", "back", "go:home")],
             ]
@@ -825,6 +847,10 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         DB["g"]["dm"] = not DB["g"]["dm"]
         save()
         return await goto(context, user, chat_id, "admin", msg=msg)
+    if act == "t_notify":
+        DB["g"]["notify"] = not DB["g"].get("notify", True)
+        save()
+        return await goto(context, user, chat_id, "admin", msg=msg)
     if act in ("g_ap", "g_wl"):
         names = {"g_ap": "APPROVAL", "g_wl": "WELCOME (main menu)"}
         return await prompt(
@@ -1026,20 +1052,56 @@ async def _login_done(ctx, user, chat_id):
     )
 
 
+def fmt_duration(sec):
+    sec = int(sec)
+    if sec < 60:
+        return f"{sec}s"
+    m, s = divmod(sec, 60)
+    if m < 60:
+        return f"{m}m {s}s"
+    h, m = divmod(m, 60)
+    return f"{h}h {m}m"
+
+
+_SPIN = ["⏳", "🔄", "⌛", "🔄"]
+
+
 # ------------------------------------------------------------------ message router
 async def broadcast(ctx, chat_id, t):
-    ok = 0
     users = list(DB["users"])
-    for u in users:
+    total = len(users)
+    start = time.time()
+    ok = fail = 0
+    last = 0.0
+    back = lambda: Markup([[btn("Back", "back", "go:admin")]])
+    for i, u in enumerate(users):
         try:
             await send_tpl(ctx.bot, u, t)
             ok += 1
         except Exception:
-            pass
+            fail += 1
         await asyncio.sleep(0.05)
+        if time.time() - last > 2.0:
+            last = time.time()
+            done = ok + fail
+            spin = _SPIN[i % len(_SPIN)]
+            pct = int(done * 100 / total) if total else 100
+            bar = "█" * (pct // 10) + "░" * (10 - pct // 10)
+            await render(
+                ctx, chat_id,
+                f"{spin} <b>Broadcasting...</b>  {pct}%\n<code>{bar}</code>\n\n"
+                f"<blockquote>{e('chart')} Sent: <b>{done}/{total}</b>\n"
+                f"{e('ok')} Success: <b>{ok}</b>   {e('no')} Failed: <b>{fail}</b>\n"
+                f"{e('bolt')} Time elapsed: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
+            )
     await render(
-        ctx, chat_id, f"{e('ok')} Broadcast finished: <b>{ok}/{len(users)}</b> delivered.",
-        lambda: Markup([[btn("Back", "back", "go:admin")]]),
+        ctx, chat_id,
+        f"{e('party')} <b>Broadcast Complete!</b>\n\n"
+        f"<blockquote>{e('chart')} Total users: <b>{total}</b>\n"
+        f"{e('ok')} Success: <b>{ok}</b>\n"
+        f"{e('no')} Failed: <b>{fail}</b>\n"
+        f"{e('bolt')} Time taken: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
+        back,
     )
 
 
