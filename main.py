@@ -107,20 +107,6 @@ EMO = {
     "shield": "🛡", "party": "🎉", "swap": "🔁", "bell": "🔔", "image": "🖼", "link": "🔗",
 }
 
-# where each emoji key appears (shown during Guided Setup)
-EMO_WHERE = {
-    "bot": "Welcome message (top)", "gem": "Welcome message + Admin Panel title", "bolt": "Bulk Approve button and titles",
-    "ok": "Approval message and success notes", "no": "Cancel buttons, errors and OFF status", "lock": "Login button",
-    "unlock": "Logout button", "gear": "Help menu (Features title)", "mega": "Add to Channel button, channel list",
-    "group": "Add to Group button", "back": "Every Back button", "star": "Welcome list and Approve All button",
-    "fire": "Approval message and Private Channel button", "rocket": "Welcome message, bulk start", "info": "Help Menu button",
-    "chart": "Admin statistics", "pen": "Edit buttons", "mail": "DM and Broadcast", "crown": "Admin Panel",
-    "check": "Verified tick after your name", "phone": "Login - phone step", "key": "Login - code / hash step",
-    "book": "Tutorial button and Help titles", "list": "My Channels", "eye": "Preview and Test buttons",
-    "shield": "Safety notes", "party": "Approval message (Congratulations)", "swap": "Toggle buttons",
-    "bell": "Warnings", "image": "Banner button", "link": "Links button",
-}
-
 # Default pack: paste premium emoji IDs here, in EMO key order, to pre-fill them at startup.
 # Example: "5372981976804366741", "6158677579965407023", ...
 # Leave empty to manage everything from the Admin Panel -> Premium Emoji menu instead.
@@ -555,11 +541,11 @@ def s_channel_menu(uid, cid):
         f"{e('mega')} <b>{esc(info.get('title'))}</b>\n\n"
         f"<blockquote>{e('swap')} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
         + (
-            f"{e('ok')} New join requests are approved automatically."
+            f"{e('ok')} New join requests are approved automatically.\n"
             if on
-            else f"{e('no')} New join requests stay pending until you turn this ON."
+            else f"{e('no')} New join requests stay pending until you turn this ON.\n"
         )
-        + "</blockquote>"
+        + f"{e('chart')} Approved via this bot (all time): <b>{info.get('approved', 0)}</b></blockquote>"
     )
 
     def kb():
@@ -600,7 +586,7 @@ def s_admin(uid, fname):
             [
                 [btn("Approval Message", "pen", "act:g_ap", style="success"), btn("Preview", "eye", "act:pv_ap")],
                 [btn("Welcome Message", "pen", "act:g_wl"), btn("Banner Image", "image", "act:banner")],
-                [btn("Premium Emoji", "star", "go:a_emoji", style="primary"), btn("Links", "link", "go:a_links")],
+                [btn("Links", "link", "go:a_links")],
                 [
                     btn(f"DM: {'ON' if dm_on else 'OFF'}", "bell", "act:t_dm"),
                     btn(f"Premium Text: {'ON' if DB['premium'] else 'OFF'}", "swap", "act:t_prem"),
@@ -610,41 +596,6 @@ def s_admin(uid, fname):
                 [btn("Back", "back", "go:home")],
             ]
         )
-
-    return text, kb
-
-
-def s_a_emoji(uid, fname):
-    done = sum(1 for k in EMO if DB["emoji"].get(k))
-    text = (
-        f"{e('star')} <b>Premium Emoji Setup</b>  ({done}/{len(EMO)} set)\n\n"
-        f"<blockquote>"
-        f"<b>1.</b> <b>Guided Setup</b> - I ask for one emoji at a time. Send several premium emoji in one message to fill the next slots too.\n"
-        f"<b>2.</b> <b>Bulk Fill</b> - send all premium emoji in one message, in key order.\n"
-        f"<b>3.</b> <b>Test</b> - preview every emoji in one message."
-        f"</blockquote>\n\n"
-        f"{e('bell')} <b>Note:</b> Telegram shows premium emoji in a bot's messages only when the bot owner meets its requirements "
-        f"(for example a Fragment username). If not, the normal emoji is shown automatically.\n\n"
-        f"☑️ = already set. Tap a key below to change just that one.\n"
-        f"<i>Tip: send any premium emoji to this bot (outside a setup step) to get its ID.</i>"
-    )
-
-    def kb():
-        rows = [
-            [btn("Guided Setup", "rocket", "act:emo_guided", style="primary")],
-            [btn("Bulk Fill", "list", "act:emo_bulk"), btn("Test", "eye", "act:emo_test", style="success")],
-        ]
-        row = []
-        for k in EMO:
-            mark = "☑️" if DB["emoji"].get(k) else EMO[k]
-            row.append(Btn(f"{mark} {k}", callback_data=f"act:emo:{k}"))
-            if len(row) == 3:
-                rows.append(row)
-                row = []
-        if row:
-            rows.append(row)
-        rows.append([btn("Reset to Default", "swap", "act:emo_reset", style="danger"), btn("Back", "back", "go:admin")])
-        return Markup(rows)
 
     return text, kb
 
@@ -665,9 +616,9 @@ def s_a_links(uid, fname):
 
 SCREENS = {
     "home": s_home, "bulk": s_bulk, "help": s_help, "channels": s_channels,
-    "admin": s_admin, "a_emoji": s_a_emoji, "a_links": s_a_links,
+    "admin": s_admin, "a_links": s_a_links,
 }
-ADMIN_SCREENS = {"admin", "a_emoji", "a_links"}
+ADMIN_SCREENS = {"admin", "a_links"}
 
 
 async def goto(ctx, user, chat_id, name, msg=None):
@@ -675,31 +626,6 @@ async def goto(ctx, user, chat_id, name, msg=None):
         name = "home"
     text, kb = SCREENS[name](user.id, user.first_name or "User")
     await render(ctx, chat_id, text, kb, msg=msg)
-
-
-async def ask_emoji(ctx, user, chat_id, i, msg=None):
-    keys = list(EMO)
-    if i >= len(keys):
-        ctx.user_data.pop("state", None)
-        return await goto(ctx, user, chat_id, "a_emoji", msg=msg)
-    k = keys[i]
-    ud = ctx.user_data
-    ud["state"] = "emoji_guided"
-    ud["ret"] = "a_emoji"
-    ud["emo_i"] = i
-    cur = "✅ already set" if DB["emoji"].get(k) else "⬜ not set yet"
-    text = (
-        f"{e('star')} <b>Premium Emoji Setup  {i + 1}/{len(keys)}</b>\n\n"
-        f"<blockquote>Key: <b>{esc(k)}</b>   (normal emoji: {EMO[k]})\n"
-        f"Used in: <b>{esc(EMO_WHERE.get(k, '-'))}</b>\nStatus: {cur}</blockquote>\n\n"
-        f"Send one <b>premium emoji</b> for this slot.\n"
-        f"<i>Send several in one message to fill the next slots in order.</i>"
-    )
-    await render(
-        ctx, chat_id, text,
-        lambda: Markup([[btn("Skip", "swap", "act:emo_skip"), btn("Stop", "no", "go:a_emoji", style="danger")]]),
-        msg=msg,
-    )
 
 
 async def prompt(ctx, chat_id, msg, state, text, ret, **extra):
@@ -720,6 +646,10 @@ async def on_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await req.approve()
         DB["stats"]["approved"] += 1
+        cid = str(chat.id)
+        if cid in DB["chats"]:
+            DB["chats"][cid]["approved"] = DB["chats"][cid].get("approved", 0) + 1
+            save_chat(cid)
         save()
     except Exception as ex:
         log.warning("join request error: %s", ex)
@@ -741,7 +671,10 @@ async def on_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new = m.new_chat_member
     if new.status == "administrator":
         old = DB["chats"].get(str(chat.id), {})
-        DB["chats"][str(chat.id)] = {"owner": m.from_user.id, "title": chat.title, "auto": old.get("auto", True)}
+        DB["chats"][str(chat.id)] = {
+            "owner": m.from_user.id, "title": chat.title,
+            "auto": old.get("auto", True), "approved": old.get("approved", 0),
+        }
         save_chat(chat.id)
         warn = ""
         if getattr(new, "can_invite_users", True) is False:
@@ -869,23 +802,6 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         DB["g"]["dm"] = not DB["g"]["dm"]
         save()
         return await goto(context, user, chat_id, "admin", msg=msg)
-    if act == "emo_guided":
-        return await ask_emoji(context, user, chat_id, 0, msg=msg)
-    if act == "emo_skip":
-        return await ask_emoji(context, user, chat_id, int(ud.get("emo_i", 0)) + 1)
-    if act == "emo_test":
-        row = " ".join(e(k) for k in EMO)
-        txt = (
-            f"💎 <b>Premium Emoji Test</b>\n\n{row}\n\n"
-            f"<blockquote>If the emoji above are premium (animated), the setup is perfect ✅\n"
-            f"If you only see normal emoji, Telegram is not allowing premium emoji for this bot "
-            f"(for example it needs a Fragment username) - the bot will keep using normal emoji.</blockquote>"
-        )
-        try:
-            await context.bot.send_message(uid, txt, parse_mode=HTML)
-        except Exception:
-            await context.bot.send_message(uid, strip_custom(txt), parse_mode=HTML)
-        return
     if act in ("g_ap", "g_wl"):
         names = {"g_ap": "APPROVAL", "g_wl": "WELCOME (main menu)"}
         return await prompt(
@@ -916,24 +832,6 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context, chat_id, msg, "broadcast",
             f"{e('mega')} <b>Send the broadcast message</b> (goes to all users).\nPremium emoji, photo and video are supported.", "admin",
         )
-    if act.startswith("emo:"):
-        key = act[4:]
-        return await prompt(
-            context, chat_id, msg, "emoji",
-            f"{e('star')} Send one <b>premium emoji</b> for <b>{esc(key)}</b>.", "a_emoji", emoji_key=key,
-        )
-    if act == "emo_bulk":
-        order = ", ".join(f"{i + 1}.{k}" for i, k in enumerate(EMO))
-        return await prompt(
-            context, chat_id, msg, "emoji_bulk",
-            f"{e('list')} <b>Bulk Fill</b>\n\nSend all premium emoji in <b>one message</b>, in this order "
-            f"(normal text or spaces in between are fine):\n\n<blockquote>{esc(order)}</blockquote>\n"
-            f"<i>If you send fewer, only the first keys are set.</i>", "a_emoji",
-        )
-    if act == "emo_reset":
-        DB["emoji"] = dict(DEFAULT_EMOJI)
-        save()
-        return await goto(context, user, chat_id, "a_emoji", msg=msg)
     if act in ("url_ch", "url_tut"):
         return await prompt(context, chat_id, msg, act, f"{e('link')} <b>Send the URL</b> (https://t.me/...)", "a_links")
     if act == "url_clear":
@@ -1001,12 +899,13 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             ctx, chat_id,
             f"{e('no')} Chat not found.\nThe account you logged in with must be an <b>admin</b> of this chat.\n<code>{esc(ex)}</code>", back,
         )
-    if str(tg_chat_id) not in DB["chats"]:
-        DB["chats"][str(tg_chat_id)] = {"owner": uid, "title": title, "auto": True}
-        save_chat(tg_chat_id)
+    cid = str(tg_chat_id)
+    if cid not in DB["chats"]:
+        DB["chats"][cid] = {"owner": uid, "title": title, "auto": True, "approved": 0}
+        save_chat(cid)
     t_tpl = tpl()
     send_dm = DB["g"]["dm"]
-    done, stuck, last = 0, 0, 0.0
+    done, stuck, last, found_any = 0, 0, 0.0, False
 
     async def one(u):
         try:
@@ -1032,6 +931,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             return await render(ctx, chat_id, f"{e('no')} Error: <code>{esc(ex)}</code>\nApproved so far: <b>{done}</b>", back)
         if not res.users:
             break
+        found_any = True
         before = done
         for i in range(0, len(res.users), 20):
             results = await asyncio.gather(*[one(u) for u in res.users[i : i + 20]])
@@ -1049,10 +949,27 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             stuck += 1
             if stuck >= 2:
                 break
-    await render(
-        ctx, chat_id,
-        f"{e('party')} <b>Done!</b>\n\n<blockquote>{e('mega')} {esc(title)}\n{e('ok')} Total approved: <b>{done}</b></blockquote>", back,
-    )
+    ch = DB["chats"].setdefault(cid, {"owner": uid, "title": title, "auto": True, "approved": 0})
+    ch["approved"] = ch.get("approved", 0) + done
+    save_chat(cid)
+    on = ch.get("auto", True)
+
+    if not found_any:
+        text = (
+            f"{e('info')} <b>No Pending Requests</b>\n\n"
+            f"<blockquote>{e('mega')} {esc(title)}\n"
+            f"{e('swap')} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
+            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b></blockquote>\n\n"
+            f"<i>There are no old join requests waiting right now - new requests are handled automatically as they arrive.</i>"
+        )
+    else:
+        text = (
+            f"{e('party')} <b>Done!</b>\n\n"
+            f"<blockquote>{e('mega')} {esc(title)}\n"
+            f"{e('ok')} Approved just now: <b>{done}</b>\n"
+            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b></blockquote>"
+        )
+    await render(ctx, chat_id, text, back)
 
 
 async def _login_done(ctx, user, chat_id):
@@ -1215,38 +1132,6 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save()
         await cleanup()
         ud["panel"] = None
-        return await finish()
-
-    if state == "emoji":
-        ids = custom_emoji_ids(msg)
-        if not ids:
-            return await msg.reply_text("❌ Please send a premium (custom) emoji, not a normal one.")
-        DB["emoji"][ud.get("emoji_key")] = ids[0]
-        save()
-        await cleanup()
-        return await finish()
-
-    if state == "emoji_guided":
-        ids = custom_emoji_ids(msg)
-        if not ids:
-            return await msg.reply_text("❌ Please send a premium (custom) emoji, or press Skip.")
-        keys = list(EMO)
-        i = int(ud.get("emo_i", 0))
-        for j, cid in enumerate(ids):
-            if i + j < len(keys):
-                DB["emoji"][keys[i + j]] = cid
-        save()
-        await cleanup()
-        return await ask_emoji(context, user, chat_id, i + len(ids))
-
-    if state == "emoji_bulk":
-        ids = custom_emoji_ids(msg)
-        if not ids:
-            return await msg.reply_text("❌ Please send premium (custom) emoji, not normal ones.")
-        for k, cid in zip(EMO, ids):
-            DB["emoji"][k] = cid
-        save()
-        await cleanup()
         return await finish()
 
     if state in ("url_ch", "url_tut"):
