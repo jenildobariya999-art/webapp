@@ -199,9 +199,11 @@ async def flush_loop():
 
 
 def add_user(uid):
-    if uid not in DB["users"]:
-        DB["users"].add(uid)
-        bg(mdb.users.update_one({"_id": uid}, {"$set": {"t": time.time()}}, upsert=True))
+    if uid in DB["users"]:
+        return False
+    DB["users"].add(uid)
+    bg(mdb.users.update_one({"_id": uid}, {"$set": {"t": time.time()}}, upsert=True))
+    return True
 
 
 def save_session(uid):
@@ -344,11 +346,24 @@ async def send_tpl(bot, chat_id, t, name=None, chat=None, kb=None, prefix=""):
 
 async def dm(bot, uid, t, name, chat, kb=None):
     async with _dm_sem:
+        ok = True
         try:
             await send_tpl(bot, uid, t, name, chat, kb)
         except Exception as ex:
+            ok = False
             log.info("DM failed %s: %s", uid, ex)
         await asyncio.sleep(0.04)
+        return ok
+
+
+async def notify_admins(ctx, text, exclude=None):
+    for admin_id in ADMIN_IDS:
+        if admin_id == exclude:
+            continue
+        try:
+            await ctx.bot.send_message(admin_id, text, parse_mode=HTML)
+        except Exception:
+            pass
 
 
 # ------------------------------------------------------------------ default texts
@@ -696,9 +711,17 @@ async def on_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ------------------------------------------------------------------ commands (only /start and the hidden /admin)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
-    add_user(u.id)
+    is_new = add_user(u.id)
     context.user_data.clear()
     await goto(context, u, update.effective_chat.id, "home")
+    if is_new:
+        uname = f"@{u.username}" if u.username else "no username"
+        text = (
+            f"{e('bell')} <b>New user started the bot</b>\n\n"
+            f"<blockquote>{esc(u.first_name or 'User')} ({esc(uname)})\nID: <code>{u.id}</code>\n"
+            f"{e('chart')} Total users: <b>{len(DB['users'])}</b></blockquote>"
+        )
+        await notify_admins(context, text, exclude=u.id)
 
 
 async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -906,6 +929,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
     t_tpl = tpl()
     send_dm = DB["g"]["dm"]
     done, stuck, last, found_any = 0, 0, 0.0, False
+    dm_tasks = []
 
     async def one(u):
         try:
@@ -940,7 +964,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
                     done += 1
                     DB["stats"]["approved"] += 1
                     if send_dm:
-                        ctx.application.create_task(dm(ctx.bot, u.id, t_tpl, u.first_name or "User", title))
+                        dm_tasks.append(asyncio.ensure_future(dm(ctx.bot, u.id, t_tpl, u.first_name or "User", title)))
             if time.time() - last > 2.5:
                 last = time.time()
                 await render(ctx, chat_id, f"{e('bolt')} <b>{esc(title)}</b>\n\n⏳ Approved so far: <b>{done}</b>")
@@ -949,10 +973,17 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             stuck += 1
             if stuck >= 2:
                 break
+    dm_ok = dm_fail = 0
+    if dm_tasks:
+        results = await asyncio.gather(*dm_tasks, return_exceptions=True)
+        dm_ok = sum(1 for r in results if r is True)
+        dm_fail = len(results) - dm_ok
+
     ch = DB["chats"].setdefault(cid, {"owner": uid, "title": title, "auto": True, "approved": 0})
     ch["approved"] = ch.get("approved", 0) + done
     save_chat(cid)
     on = ch.get("auto", True)
+    dm_line = f"\n{e('mail')} DM delivered: <b>{dm_ok}</b>   {e('no')} Failed: <b>{dm_fail}</b>" if send_dm and dm_tasks else ""
 
     if not found_any:
         text = (
@@ -967,9 +998,19 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             f"{e('party')} <b>Done!</b>\n\n"
             f"<blockquote>{e('mega')} {esc(title)}\n"
             f"{e('ok')} Approved just now: <b>{done}</b>\n"
-            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b></blockquote>"
+            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b>{dm_line}</blockquote>"
         )
     await render(ctx, chat_id, text, back)
+
+    uname = f"@{user.username}" if user.username else "no username"
+    status_line = f"{e('ok')} Approved: <b>{done}</b>" if found_any else f"{e('info')} No pending requests found"
+    admin_text = (
+        f"{e('bolt')} <b>Approve All used</b>\n\n"
+        f"<blockquote>{esc(user.first_name or 'User')} ({esc(uname)}, <code>{uid}</code>)\n"
+        f"{e('mega')} {esc(title)}\n"
+        f"{status_line}{dm_line}</blockquote>"
+    )
+    await notify_admins(ctx, admin_text, exclude=uid)
 
 
 async def _login_done(ctx, user, chat_id):
