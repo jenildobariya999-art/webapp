@@ -121,16 +121,10 @@ EMO_WHERE = {
     "bell": "Warnings", "image": "Banner button", "link": "Links button",
 }
 
-# Default pack: these IDs are applied to the EMO keys in order (1..28).
-# bell / image / link have no ID yet, so the normal emoji is shown for them.
+# Default pack: paste premium emoji IDs here, in EMO key order, to pre-fill them at startup.
+# Example: "5372981976804366741", "6158677579965407023", ...
+# Leave empty to manage everything from the Admin Panel -> Premium Emoji menu instead.
 _DEFAULT_IDS = [
-    "5372981976804366741", "6158677579965407023", "6158890438544597850", "6237704110628413424",
-    "4956612582816351459", "5832546462478635761", "6066366333203783372", "6298820412918734860",
-    "5440460938136300137", "5352759161945867747", "5954135079662916434", "5420315771991497307",
-    "6291981609507755102", "4958506272551863292", "6158813567219932663", "4958725487682650920",
-    "5195033767969839232", "5407025283456835913", "5330115548900501467", "6158877450563494862",
-    "5197269100878907942", "5442979945045335455", "5197288647275071607", "6242319667168287353",
-    "5015299982316536836", "6160983049690422056", "5017243970414052392", "6158822075550145902",
 ]
 DEFAULT_EMOJI = dict(zip(list(EMO), _DEFAULT_IDS))
 
@@ -536,36 +530,56 @@ def s_help(uid, fname):
 
 
 def s_channels(uid, fname):
-    mine = [(cid, c) for cid, c in DB["chats"].items() if c.get("owner") == uid][:10]
+    mine = [(cid, c) for cid, c in DB["chats"].items() if c.get("owner") == uid][:15]
     if mine:
-        lines = "\n".join(
-            f"{e('mega')} <b>{esc(c.get('title'))}</b> - {'🟢 ON' if c.get('auto', True) else '🔴 OFF'}" for cid, c in mine
-        )
-        body = f"<blockquote>{lines}</blockquote>"
+        body = f"<i>Tap a channel below to manage it ({len(mine)}).</i>"
     else:
         body = "<i>No channels connected yet.\nAdd me to your channel or group as an admin and it will appear here.</i>"
-    text = (
-        f"{e('list')} <b>My Channels</b>\n\n{body}\n\n"
-        f"<b>How it works</b>\n"
-        f"{e('ok')} Tap a <b>channel name</b> to switch its auto-approve ON or OFF.\n"
-        f"{e('bolt')} Tap <b>Pending</b> to approve that channel's old pending requests (login required)."
-    )
+    text = f"{e('list')} <b>My Channels</b>\n\n{body}"
 
     def kb():
-        rows = []
-        for cid, c in mine:
-            on = c.get("auto", True)
-            rows.append(
-                [
-                    btn(f"{(c.get('title') or 'Channel')[:18]}: {'ON' if on else 'OFF'}", "ok" if on else "no", f"act:ch_t:{cid}"),
-                    btn("Pending", "bolt", f"act:ch_p:{cid}"),
-                ]
-            )
+        rows = [[btn((c.get("title") or "Channel")[:28], "mega", f"act:ch_open:{cid}")] for cid, c in mine]
         rows.append(add_links())
         rows.append([btn("Back", "back", "go:home")])
         return Markup(rows)
 
     return text, kb
+
+
+def s_channel_menu(uid, cid):
+    info = DB["chats"].get(cid)
+    if not info or not (info.get("owner") == uid or is_admin(uid)):
+        return None
+    on = info.get("auto", True)
+    text = (
+        f"{e('mega')} <b>{esc(info.get('title'))}</b>\n\n"
+        f"<blockquote>{e('swap')} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
+        + (
+            f"{e('ok')} New join requests are approved automatically."
+            if on
+            else f"{e('no')} New join requests stay pending until you turn this ON."
+        )
+        + "</blockquote>"
+    )
+
+    def kb():
+        return Markup(
+            [
+                [btn(f"Auto Approve: {'ON' if on else 'OFF'}", "ok" if on else "no", f"act:ch_t:{cid}", style="success" if on else "danger")],
+                [btn("Approve Pending Requests", "bolt", f"act:ch_p:{cid}", style="primary")],
+                [btn("Back", "back", "go:channels")],
+            ]
+        )
+
+    return text, kb
+
+
+async def channel_menu(ctx, user, chat_id, cid, msg=None):
+    r = s_channel_menu(user.id, cid)
+    if not r:
+        return await goto(ctx, user, chat_id, "channels", msg=msg)
+    text, kb = r
+    await render(ctx, chat_id, text, kb, msg=msg)
 
 
 def s_admin(uid, fname):
@@ -603,8 +617,7 @@ def s_admin(uid, fname):
 def s_a_emoji(uid, fname):
     done = sum(1 for k in EMO if DB["emoji"].get(k))
     text = (
-        f"{e('star')} <b>Premium Emoji Setup</b>  ({done}/{len(EMO)} set)\n"
-        f"<i>A default pack is already set. Press Test to preview it - if something looks wrong, fix it with Guided Setup.</i>\n\n"
+        f"{e('star')} <b>Premium Emoji Setup</b>  ({done}/{len(EMO)} set)\n\n"
         f"<blockquote>"
         f"<b>1.</b> <b>Guided Setup</b> - I ask for one emoji at a time. Send several premium emoji in one message to fill the next slots too.\n"
         f"<b>2.</b> <b>Bulk Fill</b> - send all premium emoji in one message, in key order.\n"
@@ -822,16 +835,19 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     # ---------------- user: manage own channels
-    if act.startswith("ch_t:") or act.startswith("ch_p:"):
+    if act.startswith("ch_open:") or act.startswith("ch_t:") or act.startswith("ch_p:"):
         cid = act.split(":", 1)[1]
         info = DB["chats"].get(cid)
         if not info or not (info.get("owner") == uid or is_admin(uid)):
             return await q.answer("This channel does not belong to you.", show_alert=True)
+        if act.startswith("ch_open:"):
+            await q.answer()
+            return await channel_menu(context, user, chat_id, cid, msg=msg)
         if act.startswith("ch_t:"):
             info["auto"] = not info.get("auto", True)
             save_chat(cid)
             await q.answer("Auto-approve " + ("ON ✅" if info["auto"] else "OFF ⛔"))
-            return await goto(context, user, chat_id, "channels", msg=msg)
+            return await channel_menu(context, user, chat_id, cid, msg=msg)
         if str(uid) not in DB["sessions"]:
             return await q.answer("Please log in first (Bulk Approve → Login).", show_alert=True)
         await q.answer("Approving pending requests...")
