@@ -97,70 +97,125 @@ def dec(s):
         return None
 
 
-# ------------------------------------------------------------------ premium emoji pack
-# key -> normal (fallback) emoji. Each key can be mapped to a premium emoji in Admin Panel -> Premium Emoji.
-EMO = {
-    "bot": "🤖", "gem": "💎", "bolt": "⚡", "ok": "✅", "no": "❌", "lock": "🔐", "unlock": "🔓",
-    "gear": "⚙️", "mega": "📢", "group": "➕", "back": "🔙", "star": "⭐", "fire": "🔥",
-    "rocket": "🚀", "info": "ℹ️", "chart": "📊", "pen": "✏️", "mail": "📨", "crown": "👑",
-    "check": "☑️", "phone": "📱", "key": "🔑", "book": "📖", "list": "📋", "eye": "👁",
-    "shield": "🛡", "party": "🎉", "swap": "🔁", "bell": "🔔", "image": "🖼", "link": "🔗",
+# ---------------------------------------------------------------------------
+# PREMIUM EMOJI - fully managed here in code. No bot menu, no database.
+#
+# HOW TO CHANGE AN EMOJI:
+#   1. Send any premium emoji to this bot in a private chat (no setup needed) -
+#      it replies with that emoji's numeric ID.
+#   2. Paste that ID into the matching _ID_... line below (between the quotes).
+#   3. Redeploy. That's the only change needed - the line directly below each
+#      _ID_... constant already builds the exact tag Telegram expects:
+#        <tg-emoji emoji-id="...">fallback</tg-emoji>
+#      and every message in the bot uses that constant (e.g. {EMOJI_FAILED})
+#      directly in its text, so there is nothing else to touch.
+#   4. Leave an _ID_... line as "" to keep using the plain emoji for that slot
+#      (nothing breaks - the bot falls back automatically either way).
+#
+# PREMIUM_ENABLED / BUTTON_ICONS_ENABLED below are master switches: set to
+# False to turn all premium emoji (in text / in buttons) off at once.
+# ---------------------------------------------------------------------------
+PREMIUM_ENABLED = True
+BUTTON_ICONS_ENABLED = True
+
+_ID_BOT = ""        # 🤖  EMOJI_BOT
+_ID_GEM = ""        # 💎  EMOJI_GEM
+_ID_BOLT = ""        # ⚡  EMOJI_BOLT
+_ID_SUCCESS = ""     # ✅  EMOJI_SUCCESS
+_ID_FAILED = ""      # 🚫  EMOJI_FAILED
+_ID_LOCK = ""        # 🔐  EMOJI_LOCK
+_ID_UNLOCK = ""       # 🔓  EMOJI_UNLOCK
+_ID_SETTINGS = ""     # ⚙️  EMOJI_SETTINGS
+_ID_CHANNEL = ""      # 📢  EMOJI_CHANNEL
+_ID_GROUP = ""        # ➕  EMOJI_GROUP
+_ID_BACK = ""         # 🔙  EMOJI_BACK
+_ID_STAR = ""         # ⭐  EMOJI_STAR
+_ID_FIRE = ""         # 🔥  EMOJI_FIRE
+_ID_ROCKET = ""       # 🚀  EMOJI_ROCKET
+_ID_INFO = ""         # ℹ️  EMOJI_INFO
+_ID_CHART = ""        # 📊  EMOJI_CHART
+_ID_EDIT = ""         # ✏️  EMOJI_EDIT
+_ID_MAIL = ""         # 📨  EMOJI_MAIL
+_ID_CROWN = ""        # 👑  EMOJI_CROWN
+_ID_CHECK = ""        # ☑️  EMOJI_CHECK
+_ID_PHONE = ""        # 📱  EMOJI_PHONE
+_ID_KEY = ""          # 🔑  EMOJI_KEY
+_ID_BOOK = ""         # 📖  EMOJI_BOOK
+_ID_LIST = ""         # 📋  EMOJI_LIST
+_ID_EYE = ""          # 👁  EMOJI_EYE
+_ID_SHIELD = ""       # 🛡  EMOJI_SHIELD
+_ID_PARTY = ""        # 🎉  EMOJI_PARTY
+_ID_SWAP = ""         # 🔁  EMOJI_SWAP
+_ID_BELL = ""         # 🔔  EMOJI_BELL
+_ID_IMAGE = ""        # 🖼  EMOJI_IMAGE
+_ID_LINK = ""         # 🔗  EMOJI_LINK
+
+# fallback (plain) emoji shown whenever the matching _ID_... above is empty,
+# or PREMIUM_ENABLED is off, or Telegram rejects the premium emoji id.
+_FALLBACK = {
+    "EMOJI_BOT": "🤖", "EMOJI_GEM": "💎", "EMOJI_BOLT": "⚡", "EMOJI_SUCCESS": "✅", "EMOJI_FAILED": "🚫",
+    "EMOJI_LOCK": "🔐", "EMOJI_UNLOCK": "🔓", "EMOJI_SETTINGS": "⚙️", "EMOJI_CHANNEL": "📢", "EMOJI_GROUP": "➕",
+    "EMOJI_BACK": "🔙", "EMOJI_STAR": "⭐", "EMOJI_FIRE": "🔥", "EMOJI_ROCKET": "🚀", "EMOJI_INFO": "ℹ️",
+    "EMOJI_CHART": "📊", "EMOJI_EDIT": "✏️", "EMOJI_MAIL": "📨", "EMOJI_CROWN": "👑", "EMOJI_CHECK": "☑️",
+    "EMOJI_PHONE": "📱", "EMOJI_KEY": "🔑", "EMOJI_BOOK": "📖", "EMOJI_LIST": "📋", "EMOJI_EYE": "👁",
+    "EMOJI_SHIELD": "🛡", "EMOJI_PARTY": "🎉", "EMOJI_SWAP": "🔁", "EMOJI_BELL": "🔔", "EMOJI_IMAGE": "🖼",
+    "EMOJI_LINK": "🔗",
+}
+_IDS = {
+    "EMOJI_BOT": _ID_BOT, "EMOJI_GEM": _ID_GEM, "EMOJI_BOLT": _ID_BOLT, "EMOJI_SUCCESS": _ID_SUCCESS,
+    "EMOJI_FAILED": _ID_FAILED, "EMOJI_LOCK": _ID_LOCK, "EMOJI_UNLOCK": _ID_UNLOCK, "EMOJI_SETTINGS": _ID_SETTINGS,
+    "EMOJI_CHANNEL": _ID_CHANNEL, "EMOJI_GROUP": _ID_GROUP, "EMOJI_BACK": _ID_BACK, "EMOJI_STAR": _ID_STAR,
+    "EMOJI_FIRE": _ID_FIRE, "EMOJI_ROCKET": _ID_ROCKET, "EMOJI_INFO": _ID_INFO, "EMOJI_CHART": _ID_CHART,
+    "EMOJI_EDIT": _ID_EDIT, "EMOJI_MAIL": _ID_MAIL, "EMOJI_CROWN": _ID_CROWN, "EMOJI_CHECK": _ID_CHECK,
+    "EMOJI_PHONE": _ID_PHONE, "EMOJI_KEY": _ID_KEY, "EMOJI_BOOK": _ID_BOOK, "EMOJI_LIST": _ID_LIST,
+    "EMOJI_EYE": _ID_EYE, "EMOJI_SHIELD": _ID_SHIELD, "EMOJI_PARTY": _ID_PARTY, "EMOJI_SWAP": _ID_SWAP,
+    "EMOJI_BELL": _ID_BELL, "EMOJI_IMAGE": _ID_IMAGE, "EMOJI_LINK": _ID_LINK,
 }
 
-# ---------------------------------------------------------------------------
-# HOW TO SET PREMIUM EMOJI MANUALLY IN CODE
-#
-# 1. Send any premium emoji to this bot in a private chat (no button needed) and it
-#    replies with that emoji's numeric ID.
-# 2. Add it below as  "key": "the id",  using one of the key names from the EMO dict
-#    above (bot, gem, bolt, ok, no, lock, unlock, gear, mega, group, back, star, fire,
-#    rocket, info, chart, pen, mail, crown, check, phone, key, book, list, eye, shield,
-#    party, swap, bell, image, link).
-# 3. Redeploy. These are applied once when the bot starts; a key left out just keeps
-#    using its normal (non-premium) emoji.
-#
-# Example:
-# DEFAULT_EMOJI = {
-#     "bot": "5372981976804366741",
-#     "fire": "5832546462478635761",
-# }
-# ---------------------------------------------------------------------------
-DEFAULT_EMOJI = {
-    "bot": "5372981976804366741",
-    "gem": "4956739572114392015",
-    "bolt": "4958479549265347295",
-    "ok": "6237704110628413424",
-    "no": "5846210329700217522",
-    "lock": "5947074243622603846",
-    "unlock": "6158928436120263997",
-    "gear": "5258096772776991776",
-    "mega": "6298820412918734860",
-    "group": "5841494459904168607",
-    "back": "5352759161945867747",
-    "star": "5954135079662916434",
-    "fire": "4956222745814762495",
-    "rocket": "6291998931110860106",
-    "info": "5042306247047513767",
-    "chart": "6300985445803105841",
-    "pen": "6161349320206457768",
-    "mail": "5253742260054409879",
-    "crown": "6278244212446073097",
-    "check": "5249478615954906593",
-    "phone": "5407025283456835913",
-    "key": "6176966310920983412",
-    "book": "6158877450563494862",
-    "list": "6161336345110257391",
-    "eye": "6291878508817814505",
-    "shield": "6289584038504045982",
-    "party": "6172658553212381876",
-    "swap": "5015299982316536836",
-    "bell": "6160983049690422056",
-    "image": "5375074927252621134",
-    "link":"6158822075550145902",
-}
+
+def _tg(key):
+    fb = _FALLBACK[key]
+    cid = _IDS.get(key)
+    if PREMIUM_ENABLED and cid:
+        return f'<tg-emoji emoji-id="{cid}">{fb}</tg-emoji>'
+    return fb
+
+
+# These are the constants used directly in every message's text, e.g. {EMOJI_FAILED}.
+EMOJI_BOT = _tg("EMOJI_BOT")
+EMOJI_GEM = _tg("EMOJI_GEM")
+EMOJI_BOLT = _tg("EMOJI_BOLT")
+EMOJI_SUCCESS = _tg("EMOJI_SUCCESS")
+EMOJI_FAILED = _tg("EMOJI_FAILED")
+EMOJI_LOCK = _tg("EMOJI_LOCK")
+EMOJI_UNLOCK = _tg("EMOJI_UNLOCK")
+EMOJI_SETTINGS = _tg("EMOJI_SETTINGS")
+EMOJI_CHANNEL = _tg("EMOJI_CHANNEL")
+EMOJI_GROUP = _tg("EMOJI_GROUP")
+EMOJI_BACK = _tg("EMOJI_BACK")
+EMOJI_STAR = _tg("EMOJI_STAR")
+EMOJI_FIRE = _tg("EMOJI_FIRE")
+EMOJI_ROCKET = _tg("EMOJI_ROCKET")
+EMOJI_INFO = _tg("EMOJI_INFO")
+EMOJI_CHART = _tg("EMOJI_CHART")
+EMOJI_EDIT = _tg("EMOJI_EDIT")
+EMOJI_MAIL = _tg("EMOJI_MAIL")
+EMOJI_CROWN = _tg("EMOJI_CROWN")
+EMOJI_CHECK = _tg("EMOJI_CHECK")
+EMOJI_PHONE = _tg("EMOJI_PHONE")
+EMOJI_KEY = _tg("EMOJI_KEY")
+EMOJI_BOOK = _tg("EMOJI_BOOK")
+EMOJI_LIST = _tg("EMOJI_LIST")
+EMOJI_EYE = _tg("EMOJI_EYE")
+EMOJI_SHIELD = _tg("EMOJI_SHIELD")
+EMOJI_PARTY = _tg("EMOJI_PARTY")
+EMOJI_SWAP = _tg("EMOJI_SWAP")
+EMOJI_BELL = _tg("EMOJI_BELL")
+EMOJI_IMAGE = _tg("EMOJI_IMAGE")
+EMOJI_LINK = _tg("EMOJI_LINK")
 
 # ------------------------------------------------------------------ storage (MongoDB)
-GLOBAL_KEYS = ["g", "welcome_msg", "banner", "emoji", "premium", "btn_fx", "channel_url", "tut_url", "stats"]
+GLOBAL_KEYS = ["g", "welcome_msg", "banner", "channel_url", "tut_url", "stats"]
 DB = {
     "users": set(),
     "sessions": {},  # uid -> {"s": telethon string session (login state for that user's own account)}
@@ -168,9 +223,6 @@ DB = {
     "g": {"dm": True, "notify": True, "approve_msg": None},
     "welcome_msg": None,
     "banner": None,
-    "emoji": {},
-    "premium": True,
-    "btn_fx": True,
     "channel_url": "",
     "tut_url": "",
     "stats": {"approved": 0},
@@ -191,8 +243,6 @@ async def load_db():
                 DB[k].update(kv[k])
             else:
                 DB[k] = kv[k]
-    for k, v in DEFAULT_EMOJI.items():
-        DB["emoji"].setdefault(k, v)
     DB["users"] = {d["_id"] async for d in mdb.users.find({}, {"_id": 1})}
     async for d in mdb.sessions.find():
         raw = dec(d["d"]) if d.get("d") else None
@@ -278,15 +328,6 @@ def esc(s):
     return html.escape(str(s or ""))
 
 
-def e(key):
-    """Premium emoji (if set and enabled), otherwise the normal emoji."""
-    fb = EMO.get(key, "•")
-    cid = DB["emoji"].get(key)
-    if DB["premium"] and cid:
-        return f'<tg-emoji emoji-id="{cid}">{fb}</tg-emoji>'
-    return fb
-
-
 def strip_custom(s):
     return re.sub(r"<tg-emoji[^>]*>(.*?)</tg-emoji>", r"\1", s, flags=re.S)
 
@@ -309,12 +350,12 @@ def btn(text, ek=None, cb=None, url=None, style=None):
     kw = {}
     label = text
     if ek:
-        cid = DB["emoji"].get(ek)
-        if DB["btn_fx"] and cid:
+        cid = _IDS.get(ek)
+        if BUTTON_ICONS_ENABLED and cid:
             kw["icon_custom_emoji_id"] = cid
         else:
-            label = f"{EMO.get(ek, '')} {text}".strip()
-    if DB["btn_fx"] and style:
+            label = f"{_FALLBACK.get(ek, '')} {text}".strip()
+    if BUTTON_ICONS_ENABLED and style:
         kw["style"] = style
     return Btn(label, callback_data=cb, url=url, api_kwargs=kw or None)
 
@@ -416,21 +457,21 @@ async def notify_admins(ctx, text, exclude=None):
 # ------------------------------------------------------------------ default texts
 def default_welcome():
     return (
-        f"{e('bot')} <b>Hey {{name}}!</b> {e('check')}\n\n"
-        f"{e('gem')} <b>#1 Free Auto Approve Bot on Telegram</b>\n"
-        f"{e('star')} Accept New Join Requests\n"
-        f"{e('star')} Accept Pending Join Requests\n\n"
-        f"{e('rocket')} Approves every new join request automatically, 24/7\n"
-        f"{e('bolt')} Clears old pending requests in bulk\n\n"
-        f"{e('ok')} Powered By <b>Jenil Dobariya</b>"
+        f"{EMOJI_BOT} <b>Hey {{name}}!</b> {EMOJI_CHECK}\n\n"
+        f"{EMOJI_GEM} <b>#1 Free Auto Approve Bot on Telegram</b>\n"
+        f"{EMOJI_STAR} Accept New Join Requests\n"
+        f"{EMOJI_STAR} Accept Pending Join Requests\n\n"
+        f"{EMOJI_ROCKET} Approves every new join request automatically, 24/7\n"
+        f"{EMOJI_BOLT} Clears old pending requests in bulk\n\n"
+        f"{EMOJI_SUCCESS} Powered By <b>Piro</b>"
     )
 
 
 def default_approve():
     return (
-        f"{e('party')} <b>Congratulations {{name}}!</b>\n\n"
-        f"{e('ok')} Your join request for <b>{{chat}}</b> has been <b>approved</b>.\n"
-        f"{e('fire')} Welcome aboard!"
+        f"{EMOJI_PARTY} <b>Congratulations {{name}}!</b>\n\n"
+        f"{EMOJI_SUCCESS} Your join request for <b>{{chat}}</b> has been <b>approved</b>.\n"
+        f"{EMOJI_FIRE} Welcome aboard!"
     )
 
 
@@ -494,9 +535,9 @@ async def render(ctx, chat_id, text, kb_fn=None, msg=None):
                 ud["panel"] = None
                 continue
             log.warning("render BadRequest: %s", ex)
-            if DB["btn_fx"] and any(x in s for x in ("button", "icon", "style")):
-                DB["btn_fx"] = False  # button icons not available for this bot -> switch off automatically
-                save()
+            global BUTTON_ICONS_ENABLED
+            if BUTTON_ICONS_ENABLED and any(x in s for x in ("button", "icon", "style")):
+                BUTTON_ICONS_ENABLED = False  # button icons not available for this bot -> switch off automatically (this run)
             elif not stripped:
                 stripped = True  # premium emoji in text failed -> fall back to normal emoji
             continue
@@ -507,8 +548,8 @@ async def render(ctx, chat_id, text, kb_fn=None, msg=None):
 def add_links():
     me = BOT_USER[0]
     return [
-        btn("Add to Group", "group", url=f"https://t.me/{me}?startgroup=true&admin=invite_users+restrict_members"),
-        btn("Add to Channel", "mega", url=f"https://t.me/{me}?startchannel=true&admin=invite_users+post_messages"),
+        btn("Add to Group", "EMOJI_GROUP", url=f"https://t.me/{me}?startgroup=true&admin=invite_users+restrict_members"),
+        btn("Add to Channel", "EMOJI_CHANNEL", url=f"https://t.me/{me}?startchannel=true&admin=invite_users+post_messages"),
     ]
 
 
@@ -518,13 +559,13 @@ def s_home(uid, fname):
     def kb():
         rows = [
             add_links(),
-            [btn("Bulk Approve", "bolt", "go:bulk", style="primary"), btn("Help Menu", "info", "go:help")],
-            [btn("My Channels", "list", "go:channels")],
+            [btn("Bulk Approve", "EMOJI_BOLT", "go:bulk", style="primary"), btn("Help Menu", "EMOJI_INFO", "go:help")],
+            [btn("My Channels", "EMOJI_LIST", "go:channels")],
         ]
         if DB["channel_url"]:
-            rows.append([btn("Private Channel", "fire", url=DB["channel_url"])])
+            rows.append([btn("Private Channel", "EMOJI_FIRE", url=DB["channel_url"])])
         if is_admin(uid):
-            rows.append([btn("Admin Panel", "crown", "go:admin", style="danger")])
+            rows.append([btn("Admin Panel", "EMOJI_CROWN", "go:admin", style="danger")])
         return Markup(rows)
 
     return text, kb
@@ -532,27 +573,27 @@ def s_home(uid, fname):
 
 def s_bulk(uid, fname):
     logged = str(uid) in DB["sessions"]
-    status = f"{e('ok')} Logged in" if logged else f"{e('no')} Not logged in"
+    status = f"{EMOJI_SUCCESS} Logged in" if logged else f"{EMOJI_FAILED} Not logged in"
     text = (
-        f"{e('bolt')} <b>Bulk Approval Feature</b>\n\n"
+        f"{EMOJI_BOLT} <b>Bulk Approval Feature</b>\n\n"
         f"<blockquote>"
-        f"{e('lock')} <b>Login</b> - Connect your account.\n"
-        f"{e('unlock')} <b>Logout</b> - Disconnect your account.\n"
-        f"{e('star')} <b>Approve All</b> - Approve every pending request.\n"
-        f"{e('book')} <b>Tutorial</b> - Learn how this works."
+        f"{EMOJI_LOCK} <b>Login</b> - Connect your account.\n"
+        f"{EMOJI_UNLOCK} <b>Logout</b> - Disconnect your account.\n"
+        f"{EMOJI_STAR} <b>Approve All</b> - Approve every pending request.\n"
+        f"{EMOJI_BOOK} <b>Tutorial</b> - Learn how this works."
         f"</blockquote>\n\n"
         f"<i>Log in once, then forward any message from your channel or group to start the bulk approval instantly.</i>\n\n"
-        f"{e('shield')} Status: <b>{status}</b>"
+        f"{EMOJI_SHIELD} Status: <b>{status}</b>"
     )
 
     def kb():
-        tut = btn("Tutorial", "book", url=DB["tut_url"]) if DB["tut_url"] else btn("Tutorial", "book", "go:help")
+        tut = btn("Tutorial", "EMOJI_BOOK", url=DB["tut_url"]) if DB["tut_url"] else btn("Tutorial", "EMOJI_BOOK", "go:help")
         return Markup(
             [
-                [btn("Login", "lock", "act:login", style="primary"), btn("Logout", "unlock", "act:logout", style="danger")],
-                [btn("Approve All", "star", "act:approve", style="success")],
+                [btn("Login", "EMOJI_LOCK", "act:login", style="primary"), btn("Logout", "EMOJI_UNLOCK", "act:logout", style="danger")],
+                [btn("Approve All", "EMOJI_STAR", "act:approve", style="success")],
                 add_links(),
-                [tut, btn("Back", "back", "go:home")],
+                [tut, btn("Back", "EMOJI_BACK", "go:home")],
             ]
         )
 
@@ -561,72 +602,97 @@ def s_bulk(uid, fname):
 
 def s_help(uid, fname):
     text = (
-        f"{e('info')} <b>Here Is My Help Menu</b>\n\n"
-        f"{e('book')} <u>Getting Started</u>\n"
+        f"{EMOJI_INFO} <b>Here Is My Help Menu</b>\n\n"
+        f"{EMOJI_BOOK} <u>Getting Started</u>\n"
         f"<blockquote>"
-        f"{e('group')} Add me to your channel or group as an <b>admin</b> with the <b>Invite Users</b> permission.\n"
-        f"{e('ok')} That's all - every new join request is approved automatically."
+        f"{EMOJI_GROUP} Add me to your channel or group as an <b>admin</b> with the <b>Invite Users</b> permission.\n"
+        f"{EMOJI_SUCCESS} That's all - every new join request is approved automatically."
         f"</blockquote>\n\n"
-        f"{e('gear')} <u>Features</u>\n"
+        f"{EMOJI_SETTINGS} <u>Features</u>\n"
         f"<blockquote>"
-        f"{e('list')} <b>My Channels</b> - switch auto-approve ON or OFF for each channel.\n"
-        f"{e('bolt')} <b>Bulk Approve</b> - log in once and approve all old pending requests.\n"
-        f"{e('mail')} Approved members receive a welcome message in their DM."
+        f"{EMOJI_LIST} <b>My Channels</b> - switch auto-approve ON or OFF for each channel.\n"
+        f"{EMOJI_BOLT} <b>Bulk Approve</b> - log in once and approve all old pending requests.\n"
+        f"{EMOJI_MAIL} Approved members receive a welcome message in their DM."
         f"</blockquote>"
     )
-    return text, lambda: Markup([[btn("Back", "back", "go:home")]])
+    return text, lambda: Markup([[btn("Back", "EMOJI_BACK", "go:home")]])
 
 
-def s_channels(uid, fname):
+async def get_pending_count(ctx, cid):
+    """Live pending-join-request count for a chat, via Telegram's own Chat field.
+    Returns None when it can't be checked (bot no longer admin, no permission, etc.)."""
+    try:
+        chat = await ctx.bot.get_chat(int(cid))
+        n = getattr(chat, "pending_join_request_count", None)
+        return int(n) if n is not None else 0
+    except Exception:
+        return None
+
+
+async def render_channels(ctx, user, chat_id, msg=None):
+    uid = user.id
     mine = [(cid, c) for cid, c in DB["chats"].items() if c.get("owner") == uid][:15]
+    counts = {}
     if mine:
-        body = f"<i>Tap a channel below to manage it ({len(mine)}).</i>"
+        results = await asyncio.gather(*[get_pending_count(ctx, cid) for cid, _ in mine])
+        counts = dict(zip([cid for cid, _ in mine], results))
+
+    if mine:
+        total_pending = sum(c for c in counts.values() if c)
+        body = f"<i>Tap a channel below to manage it.</i>\n{EMOJI_BOLT} Pending across all channels: <b>{total_pending}</b>"
     else:
         body = "<i>No channels connected yet.\nAdd me to your channel or group as an admin and it will appear here.</i>"
-    text = f"{e('list')} <b>My Channels</b>\n\n{body}"
+    text = f"{EMOJI_LIST} <b>My Channels</b>\n\n{body}"
 
     def kb():
-        rows = [[btn((c.get("title") or "Channel")[:28], "mega", f"act:ch_open:{cid}")] for cid, c in mine]
+        rows = []
+        for cid, c in mine:
+            pc = counts.get(cid)
+            label = (c.get("title") or "Channel")[:24]
+            suffix = f" ({pc} pending)" if pc else (" (pending: ?)" if pc is None else "")
+            rows.append([btn(f"{label}{suffix}", "EMOJI_CHANNEL", f"act:ch_open:{cid}")])
         rows.append(add_links())
-        rows.append([btn("Back", "back", "go:home")])
+        rows.append([btn("Back", "EMOJI_BACK", "go:home")])
         return Markup(rows)
 
-    return text, kb
+    await render(ctx, chat_id, text, kb, msg=msg)
 
 
-def s_channel_menu(uid, cid):
+async def channel_menu(ctx, user, chat_id, cid, msg=None):
+    uid = user.id
     info = DB["chats"].get(cid)
     if not info or not (info.get("owner") == uid or is_admin(uid)):
-        return None
+        return await render_channels(ctx, user, chat_id, msg=msg)
+
     on = info.get("auto", True)
+    pending = await get_pending_count(ctx, cid)
+    if pending is None:
+        pend_line = f"{EMOJI_INFO} Pending requests: <b>unknown</b> (check my admin rights)\n"
+    else:
+        pend_line = f"{EMOJI_BOLT} Pending requests: <b>{pending}</b>\n"
+
     text = (
-        f"{e('mega')} <b>{esc(info.get('title'))}</b>\n\n"
-        f"<blockquote>{e('swap')} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
+        f"{EMOJI_CHANNEL} <b>{esc(info.get('title'))}</b>\n\n"
+        f"<blockquote>{EMOJI_SWAP} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
         + (
-            f"{e('ok')} New join requests are approved automatically.\n"
+            f"{EMOJI_SUCCESS} New join requests are approved automatically.\n"
             if on
-            else f"{e('no')} New join requests stay pending until you turn this ON.\n"
+            else f"{EMOJI_FAILED} New join requests stay pending until you turn this ON.\n"
         )
-        + f"{e('chart')} Approved via this bot (all time): <b>{info.get('approved', 0)}</b></blockquote>"
+        + pend_line
+        + f"{EMOJI_CHART} Approved via this bot (all time): <b>{info.get('approved', 0)}</b></blockquote>"
     )
+    pending_label = "Approve Pending Requests" + (f" ({pending})" if pending else "")
 
     def kb():
         return Markup(
             [
-                [btn(f"Auto Approve: {'ON' if on else 'OFF'}", "ok" if on else "no", f"act:ch_t:{cid}", style="success" if on else "danger")],
-                [btn("Approve Pending Requests", "bolt", f"act:ch_p:{cid}", style="primary")],
-                [btn("Back", "back", "go:channels")],
+                [btn(f"Auto Approve: {'ON' if on else 'OFF'}", "EMOJI_SUCCESS" if on else "EMOJI_FAILED", f"act:ch_t:{cid}", style="success" if on else "danger")],
+                [btn(pending_label, "EMOJI_BOLT", f"act:ch_p:{cid}", style="primary")],
+                [btn("Back", "EMOJI_BACK", "go:channels")],
             ]
         )
 
-    return text, kb
-
-
-async def channel_menu(ctx, user, chat_id, cid, msg=None):
-    r = s_channel_menu(user.id, cid)
-    if not r:
-        return await goto(ctx, user, chat_id, "channels", msg=msg)
-    text, kb = r
     await render(ctx, chat_id, text, kb, msg=msg)
 
 
@@ -635,33 +701,29 @@ def s_admin(uid, fname):
     dm_on = DB["g"]["dm"]
     notify_on = DB["g"].get("notify", True)
     text = (
-        f"{e('crown')} <b>Admin Panel</b>\n\n"
-        f"<blockquote>{e('chart')} Users: <b>{len(DB['users'])}</b>\n"
-        f"{e('mega')} Channels: <b>{len(DB['chats'])}</b>\n"
-        f"{e('lock')} Logged-in accounts: <b>{len(DB['sessions'])}</b>\n"
-        f"{e('ok')} Total approved: <b>{s['approved']}</b></blockquote>\n\n"
-        f"{e('mail')} Welcome DM after approval: <b>{'ON' if dm_on else 'OFF'}</b>\n"
-        f"{e('bell')} New-user / Approve-All alerts to admins: <b>{'ON' if notify_on else 'OFF'}</b>\n\n"
-        f"{e('ok')} <b>Approval message</b>\n<blockquote>{pv(DB['g'].get('approve_msg') or default_approve())}</blockquote>"
+        f"{EMOJI_CROWN} <b>Admin Panel</b>\n\n"
+        f"<blockquote>{EMOJI_CHART} Users: <b>{len(DB['users'])}</b>\n"
+        f"{EMOJI_CHANNEL} Channels: <b>{len(DB['chats'])}</b>\n"
+        f"{EMOJI_LOCK} Logged-in accounts: <b>{len(DB['sessions'])}</b>\n"
+        f"{EMOJI_SUCCESS} Total approved: <b>{s['approved']}</b></blockquote>\n\n"
+        f"{EMOJI_MAIL} Welcome DM after approval: <b>{'ON' if dm_on else 'OFF'}</b>\n"
+        f"{EMOJI_BELL} New-user / Approve-All alerts to admins: <b>{'ON' if notify_on else 'OFF'}</b>\n\n"
+        f"{EMOJI_SUCCESS} <b>Approval message</b>\n<blockquote>{pv(DB['g'].get('approve_msg') or default_approve())}</blockquote>"
     )
 
     def kb():
         return Markup(
             [
-                [btn("Approval Message", "pen", "act:g_ap", style="success"), btn("Preview", "eye", "act:pv_ap")],
-                [btn("Welcome Message", "pen", "act:g_wl"), btn("Banner Image", "image", "act:banner")],
-                [btn("Links", "link", "go:a_links")],
+                [btn("Approval Message", "EMOJI_EDIT", "act:g_ap", style="success"), btn("Preview", "EMOJI_EYE", "act:pv_ap")],
+                [btn("Welcome Message", "EMOJI_EDIT", "act:g_wl"), btn("Banner Image", "EMOJI_IMAGE", "act:banner")],
+                [btn("Links", "EMOJI_LINK", "go:a_links")],
                 [
-                    btn(f"DM: {'ON' if dm_on else 'OFF'}", "bell", "act:t_dm"),
-                    btn(f"Admin Alerts: {'ON' if notify_on else 'OFF'}", "bell", "act:t_notify"),
+                    btn(f"DM: {'ON' if dm_on else 'OFF'}", "EMOJI_BELL", "act:t_dm"),
+                    btn(f"Admin Alerts: {'ON' if notify_on else 'OFF'}", "EMOJI_BELL", "act:t_notify"),
                 ],
-                [
-                    btn(f"Premium Text: {'ON' if DB['premium'] else 'OFF'}", "swap", "act:t_prem"),
-                    btn(f"Button Icons: {'ON' if DB['btn_fx'] else 'OFF'}", "swap", "act:t_fx"),
-                ],
-                [btn("Remove Banner", "no", "act:banner_rm")],
-                [btn("Broadcast", "mega", "act:bc", style="success")],
-                [btn("Back", "back", "go:home")],
+                [btn("Remove Banner", "EMOJI_FAILED", "act:banner_rm")],
+                [btn("Broadcast", "EMOJI_CHANNEL", "act:bc", style="success")],
+                [btn("Back", "EMOJI_BACK", "go:home")],
             ]
         )
 
@@ -670,20 +732,20 @@ def s_admin(uid, fname):
 
 def s_a_links(uid, fname):
     text = (
-        f"{e('link')} <b>Links</b>\n\n"
-        f"<blockquote>{e('fire')} Private Channel: {esc(DB['channel_url']) or '<i>not set</i>'}\n"
-        f"{e('book')} Tutorial: {esc(DB['tut_url']) or '<i>not set</i>'}</blockquote>"
+        f"{EMOJI_LINK} <b>Links</b>\n\n"
+        f"<blockquote>{EMOJI_FIRE} Private Channel: {esc(DB['channel_url']) or '<i>not set</i>'}\n"
+        f"{EMOJI_BOOK} Tutorial: {esc(DB['tut_url']) or '<i>not set</i>'}</blockquote>"
     )
     return text, lambda: Markup(
         [
-            [btn("Set Channel URL", "fire", "act:url_ch"), btn("Set Tutorial URL", "book", "act:url_tut")],
-            [btn("Clear Both", "no", "act:url_clear"), btn("Back", "back", "go:admin")],
+            [btn("Set Channel URL", "EMOJI_FIRE", "act:url_ch"), btn("Set Tutorial URL", "EMOJI_BOOK", "act:url_tut")],
+            [btn("Clear Both", "EMOJI_FAILED", "act:url_clear"), btn("Back", "EMOJI_BACK", "go:admin")],
         ]
     )
 
 
 SCREENS = {
-    "home": s_home, "bulk": s_bulk, "help": s_help, "channels": s_channels,
+    "home": s_home, "bulk": s_bulk, "help": s_help,
     "admin": s_admin, "a_links": s_a_links,
 }
 ADMIN_SCREENS = {"admin", "a_links"}
@@ -692,6 +754,8 @@ ADMIN_SCREENS = {"admin", "a_links"}
 async def goto(ctx, user, chat_id, name, msg=None):
     if name in ADMIN_SCREENS and not is_admin(user.id):
         name = "home"
+    if name == "channels":
+        return await render_channels(ctx, user, chat_id, msg=msg)
     text, kb = SCREENS[name](user.id, user.first_name or "User")
     await render(ctx, chat_id, text, kb, msg=msg)
 
@@ -701,7 +765,7 @@ async def prompt(ctx, chat_id, msg, state, text, ret, **extra):
     ud["state"] = state
     ud["ret"] = ret
     ud.update(extra)
-    await render(ctx, chat_id, text, lambda: Markup([[btn("Cancel", "no", f"go:{ret}", style="danger")]]), msg=msg)
+    await render(ctx, chat_id, text, lambda: Markup([[btn("Cancel", "EMOJI_FAILED", f"go:{ret}", style="danger")]]), msg=msg)
 
 
 # ------------------------------------------------------------------ join requests / membership
@@ -725,7 +789,7 @@ async def on_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if DB["g"]["dm"]:
         kb = None
         if chat.username:
-            kb = Markup([[btn("Open " + (chat.title or "Channel")[:20], "mega", url=f"https://t.me/{chat.username}")]])
+            kb = Markup([[btn("Open " + (chat.title or "Channel")[:20], "EMOJI_CHANNEL", url=f"https://t.me/{chat.username}")]])
         context.application.create_task(
             dm(context.bot, req.user_chat_id, tpl(), user.first_name or "User", chat.title or "channel", kb)
         )
@@ -746,13 +810,13 @@ async def on_my_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_chat(chat.id)
         warn = ""
         if getattr(new, "can_invite_users", True) is False:
-            warn = f"\n\n{e('bell')} <b>Warning:</b> please give me the <b>Invite Users</b> permission, otherwise I cannot approve requests."
+            warn = f"\n\n{EMOJI_BELL} <b>Warning:</b> please give me the <b>Invite Users</b> permission, otherwise I cannot approve requests."
         try:
             await context.bot.send_message(
                 m.from_user.id,
-                f"{e('ok')} <b>{esc(chat.title)}</b> is connected!\n\n"
-                f"{e('bolt')} New join requests will now be <b>approved automatically</b>.\n"
-                f"{e('list')} Switch it ON/OFF or approve pending requests from <b>My Channels</b> in the main menu.{warn}",
+                f"{EMOJI_SUCCESS} <b>{esc(chat.title)}</b> is connected!\n\n"
+                f"{EMOJI_BOLT} New join requests will now be <b>approved automatically</b>.\n"
+                f"{EMOJI_LIST} Switch it ON/OFF or approve pending requests from <b>My Channels</b> in the main menu.{warn}",
                 parse_mode=HTML,
             )
         except Exception:
@@ -770,9 +834,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_new:
         uname = f"@{u.username}" if u.username else "no username"
         text = (
-            f"{e('bell')} <b>New user started the bot</b>\n\n"
+            f"{EMOJI_BELL} <b>New user started the bot</b>\n\n"
             f"<blockquote>{esc(u.first_name or 'User')} ({esc(uname)})\nID: <code>{u.id}</code>\n"
-            f"{e('chart')} Total users: <b>{len(DB['users'])}</b></blockquote>"
+            f"{EMOJI_CHART} Total users: <b>{len(DB['users'])}</b></blockquote>"
         )
         await notify_admins(context, text, exclude=u.id)
 
@@ -810,7 +874,7 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await _drop_login(uid)
         return await prompt(
             context, chat_id, msg, "phone",
-            f"{e('lock')} <b>Secure Login</b>\n\n"
+            f"{EMOJI_LOCK} <b>Secure Login</b>\n\n"
             f"<blockquote>Your session is stored <b>encrypted</b> and used only to approve pending join requests for your own "
             f"channels. Press <b>Logout</b> at any time to revoke and delete it.</blockquote>\n\n"
             f"Please enter your number (<b>without +</b> and <b>without spaces</b>, like <code>91xxxxxxxxxx</code>) "
@@ -839,7 +903,7 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.answer()
         return await prompt(
             context, chat_id, msg, "await_forward",
-            f"{e('mail')} <b>Approve All</b>\n\nForward <b>any message</b> from your channel or group to start the bulk approval.\n"
+            f"{EMOJI_MAIL} <b>Approve All</b>\n\nForward <b>any message</b> from your channel or group to start the bulk approval.\n"
             f"<i>Hidden forwards do not work.</i>", "bulk",
         )
 
@@ -886,34 +950,26 @@ async def on_cb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         names = {"g_ap": "APPROVAL", "g_wl": "WELCOME (main menu)"}
         return await prompt(
             context, chat_id, msg, act,
-            f"{e('pen')} <b>Send the new {names[act]} message</b>\n\n"
+            f"{EMOJI_EDIT} <b>Send the new {names[act]} message</b>\n\n"
             f"Use <code>{{name}}</code> for the user's name"
             + ("" if act == "g_wl" else " and <code>{chat}</code> for the channel name")
             + f".\nPremium emoji and formatting are supported."
             + ("" if act == "g_wl" else "\nYou can also send a photo / video / GIF with a caption."), "admin",
         )
     if act == "banner":
-        return await prompt(context, chat_id, msg, "banner", f"{e('image')} <b>Send the banner photo</b> (shown on top of every screen).", "admin")
+        return await prompt(context, chat_id, msg, "banner", f"{EMOJI_IMAGE} <b>Send the banner photo</b> (shown on top of every screen).", "admin")
     if act == "banner_rm":
         DB["banner"] = None
         save()
         ud["panel"] = None
         return await goto(context, user, chat_id, "admin")
-    if act == "t_prem":
-        DB["premium"] = not DB["premium"]
-        save()
-        return await goto(context, user, chat_id, "admin", msg=msg)
-    if act == "t_fx":
-        DB["btn_fx"] = not DB["btn_fx"]
-        save()
-        return await goto(context, user, chat_id, "admin", msg=msg)
     if act == "bc":
         return await prompt(
             context, chat_id, msg, "broadcast",
-            f"{e('mega')} <b>Send the broadcast message</b> (goes to all users).\nPremium emoji, photo and video are supported.", "admin",
+            f"{EMOJI_CHANNEL} <b>Send the broadcast message</b> (goes to all users).\nPremium emoji, photo and video are supported.", "admin",
         )
     if act in ("url_ch", "url_tut"):
-        return await prompt(context, chat_id, msg, act, f"{e('link')} <b>Send the URL</b> (https://t.me/...)", "a_links")
+        return await prompt(context, chat_id, msg, act, f"{EMOJI_LINK} <b>Send the URL</b> (https://t.me/...)", "a_links")
     if act == "url_clear":
         DB["channel_url"] = DB["tut_url"] = ""
         save()
@@ -967,17 +1023,17 @@ async def bulk_guard(ctx, user, chat_id, tg_chat_id, title):
 async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
     uid = user.id
     cl = await get_client(uid)
-    back = lambda: Markup([[btn("Back", "back", "go:bulk")]])
+    back = lambda: Markup([[btn("Back", "EMOJI_BACK", "go:bulk")]])
     if not cl:
-        return await render(ctx, chat_id, f"{e('no')} Your session has expired. Please log in again.", back)
-    await render(ctx, chat_id, f"{e('rocket')} <b>{esc(title)}</b>\n\n⏳ Processing pending requests...")
+        return await render(ctx, chat_id, f"{EMOJI_FAILED} Your session has expired. Please log in again.", back)
+    await render(ctx, chat_id, f"{EMOJI_ROCKET} <b>{esc(title)}</b>\n\n⏳ Processing pending requests...")
     try:
         await cl.get_dialogs(limit=300)
         peer = await cl.get_input_entity(tg_chat_id)
     except Exception as ex:
         return await render(
             ctx, chat_id,
-            f"{e('no')} Chat not found.\nThe account you logged in with must be an <b>admin</b> of this chat.\n<code>{esc(ex)}</code>", back,
+            f"{EMOJI_FAILED} Chat not found.\nThe account you logged in with must be an <b>admin</b> of this chat.\n<code>{esc(ex)}</code>", back,
         )
     cid = str(tg_chat_id)
     if cid not in DB["chats"]:
@@ -1009,7 +1065,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
             await asyncio.sleep(fw.seconds + 1)
             continue
         except Exception as ex:
-            return await render(ctx, chat_id, f"{e('no')} Error: <code>{esc(ex)}</code>\nApproved so far: <b>{done}</b>", back)
+            return await render(ctx, chat_id, f"{EMOJI_FAILED} Error: <code>{esc(ex)}</code>\nApproved so far: <b>{done}</b>", back)
         if not res.users:
             break
         found_any = True
@@ -1024,7 +1080,7 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
                         dm_tasks.append(asyncio.ensure_future(dm(ctx.bot, u.id, t_tpl, u.first_name or "User", title)))
             if time.time() - last > 2.5:
                 last = time.time()
-                await render(ctx, chat_id, f"{e('bolt')} <b>{esc(title)}</b>\n\n⏳ Approved so far: <b>{done}</b>")
+                await render(ctx, chat_id, f"{EMOJI_BOLT} <b>{esc(title)}</b>\n\n⏳ Approved so far: <b>{done}</b>")
         save()
         if done == before:
             stuck += 1
@@ -1040,31 +1096,31 @@ async def bulk_approve(ctx, user, chat_id, tg_chat_id, title):
     ch["approved"] = ch.get("approved", 0) + done
     save_chat(cid)
     on = ch.get("auto", True)
-    dm_line = f"\n{e('mail')} DM delivered: <b>{dm_ok}</b>   {e('no')} Failed: <b>{dm_fail}</b>" if send_dm and dm_tasks else ""
+    dm_line = f"\n{EMOJI_MAIL} DM delivered: <b>{dm_ok}</b>   {EMOJI_FAILED} Failed: <b>{dm_fail}</b>" if send_dm and dm_tasks else ""
 
     if not found_any:
         text = (
-            f"{e('info')} <b>No Pending Requests</b>\n\n"
-            f"<blockquote>{e('mega')} {esc(title)}\n"
-            f"{e('swap')} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
-            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b></blockquote>\n\n"
+            f"{EMOJI_INFO} <b>No Pending Requests</b>\n\n"
+            f"<blockquote>{EMOJI_CHANNEL} {esc(title)}\n"
+            f"{EMOJI_SWAP} Auto Approve: <b>{'ON' if on else 'OFF'}</b>\n"
+            f"{EMOJI_CHART} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b></blockquote>\n\n"
             f"<i>There are no old join requests waiting right now - new requests are handled automatically as they arrive.</i>"
         )
     else:
         text = (
-            f"{e('party')} <b>Done!</b>\n\n"
-            f"<blockquote>{e('mega')} {esc(title)}\n"
-            f"{e('ok')} Approved just now: <b>{done}</b>\n"
-            f"{e('chart')} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b>{dm_line}</blockquote>"
+            f"{EMOJI_PARTY} <b>Done!</b>\n\n"
+            f"<blockquote>{EMOJI_CHANNEL} {esc(title)}\n"
+            f"{EMOJI_SUCCESS} Approved just now: <b>{done}</b>\n"
+            f"{EMOJI_CHART} Approved via this bot (all time): <b>{ch.get('approved', 0)}</b>{dm_line}</blockquote>"
         )
     await render(ctx, chat_id, text, back)
 
     uname = f"@{user.username}" if user.username else "no username"
-    status_line = f"{e('ok')} Approved: <b>{done}</b>" if found_any else f"{e('info')} No pending requests found"
+    status_line = f"{EMOJI_SUCCESS} Approved: <b>{done}</b>" if found_any else f"{EMOJI_INFO} No pending requests found"
     admin_text = (
-        f"{e('bolt')} <b>Approve All used</b>\n\n"
+        f"{EMOJI_BOLT} <b>Approve All used</b>\n\n"
         f"<blockquote>{esc(user.first_name or 'User')} ({esc(uname)}, <code>{uid}</code>)\n"
-        f"{e('mega')} {esc(title)}\n"
+        f"{EMOJI_CHANNEL} {esc(title)}\n"
         f"{status_line}{dm_line}</blockquote>"
     )
     await notify_admins(ctx, admin_text, exclude=uid)
@@ -1078,8 +1134,8 @@ async def _login_done(ctx, user, chat_id):
     ctx.user_data.pop("state", None)
     await render(
         ctx, chat_id,
-        f"{e('ok')} <b>Login successful!</b>\n\nNow press <b>Approve All</b>, or simply forward any message from your channel or group.",
-        lambda: Markup([[btn("Approve All", "star", "act:approve", style="success"), btn("Back", "back", "go:bulk")]]),
+        f"{EMOJI_SUCCESS} <b>Login successful!</b>\n\nNow press <b>Approve All</b>, or simply forward any message from your channel or group.",
+        lambda: Markup([[btn("Approve All", "EMOJI_STAR", "act:approve", style="success"), btn("Back", "EMOJI_BACK", "go:bulk")]]),
     )
 
 
@@ -1104,7 +1160,7 @@ async def broadcast(ctx, chat_id, t):
     start = time.time()
     ok = fail = 0
     last = 0.0
-    back = lambda: Markup([[btn("Back", "back", "go:admin")]])
+    back = lambda: Markup([[btn("Back", "EMOJI_BACK", "go:admin")]])
     for i, u in enumerate(users):
         try:
             await send_tpl(ctx.bot, u, t)
@@ -1121,17 +1177,17 @@ async def broadcast(ctx, chat_id, t):
             await render(
                 ctx, chat_id,
                 f"{spin} <b>Broadcasting...</b>  {pct}%\n<code>{bar}</code>\n\n"
-                f"<blockquote>{e('chart')} Sent: <b>{done}/{total}</b>\n"
-                f"{e('ok')} Success: <b>{ok}</b>   {e('no')} Failed: <b>{fail}</b>\n"
-                f"{e('bolt')} Time elapsed: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
+                f"<blockquote>{EMOJI_CHART} Sent: <b>{done}/{total}</b>\n"
+                f"{EMOJI_SUCCESS} Success: <b>{ok}</b>   {EMOJI_FAILED} Failed: <b>{fail}</b>\n"
+                f"{EMOJI_BOLT} Time elapsed: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
             )
     await render(
         ctx, chat_id,
-        f"{e('party')} <b>Broadcast Complete!</b>\n\n"
-        f"<blockquote>{e('chart')} Total users: <b>{total}</b>\n"
-        f"{e('ok')} Success: <b>{ok}</b>\n"
-        f"{e('no')} Failed: <b>{fail}</b>\n"
-        f"{e('bolt')} Time taken: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
+        f"{EMOJI_PARTY} <b>Broadcast Complete!</b>\n\n"
+        f"<blockquote>{EMOJI_CHART} Total users: <b>{total}</b>\n"
+        f"{EMOJI_SUCCESS} Success: <b>{ok}</b>\n"
+        f"{EMOJI_FAILED} Failed: <b>{fail}</b>\n"
+        f"{EMOJI_BOLT} Time taken: <b>{fmt_duration(time.time() - start)}</b></blockquote>",
         back,
     )
 
@@ -1153,7 +1209,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await msg.reply_text(
                     "🔐 Please log in first to approve pending requests.",
-                    reply_markup=Markup([[btn("Bulk Approve", "bolt", "go:bulk", style="primary")]]),
+                    reply_markup=Markup([[btn("Bulk Approve", "EMOJI_BOLT", "go:bulk", style="primary")]]),
                 )
             return
         if is_admin(uid):  # admin sent premium emoji -> show their IDs
@@ -1193,7 +1249,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(digits) < 8:
             return await prompt(
                 context, chat_id, None, "phone",
-                f"{e('no')} That doesn't look like a valid number. Please enter it without + and without spaces, like <code>91xxxxxxxxxx</code>.", "bulk",
+                f"{EMOJI_FAILED} That doesn't look like a valid number. Please enter it without + and without spaces, like <code>91xxxxxxxxxx</code>.", "bulk",
             )
         phone = "+" + digits
         cl = TelegramClient(StringSession(), API_ID, API_HASH)
@@ -1207,12 +1263,12 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
             return await prompt(
                 context, chat_id, None, "phone",
-                f"{e('no')} <code>{esc(ex)}</code>\n\nPlease enter your number again, without + and without spaces.", "bulk",
+                f"{EMOJI_FAILED} <code>{esc(ex)}</code>\n\nPlease enter your number again, without + and without spaces.", "bulk",
             )
         _login_tmp[uid] = {"cl": cl, "phone": phone, "hash": sent.phone_code_hash}
         return await prompt(
             context, chat_id, None, "code",
-            f"{e('key')} Telegram just sent you a login code. Send it here with <b>spaces between the digits</b>, "
+            f"{EMOJI_KEY} Telegram just sent you a login code. Send it here with <b>spaces between the digits</b>, "
             f"like <code>1 2 3 4 5</code>.\n<i>Without spaces Telegram may expire the code.</i>", "bulk",
         )
 
@@ -1224,12 +1280,12 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await t["cl"].sign_in(t["phone"], re.sub(r"\D", "", text), phone_code_hash=t["hash"])
         except SessionPasswordNeededError:
-            return await prompt(context, chat_id, None, "2fa", f"{e('lock')} Send your <b>two-step verification password</b>.", "bulk")
+            return await prompt(context, chat_id, None, "2fa", f"{EMOJI_LOCK} Send your <b>two-step verification password</b>.", "bulk")
         except PhoneCodeInvalidError:
-            return await prompt(context, chat_id, None, "code", f"{e('no')} Wrong code. Please send it again (with spaces).", "bulk")
+            return await prompt(context, chat_id, None, "code", f"{EMOJI_FAILED} Wrong code. Please send it again (with spaces).", "bulk")
         except Exception as ex:
             await _drop_login(uid)
-            return await prompt(context, chat_id, None, "phone", f"{e('no')} <code>{esc(ex)}</code>\n\nLet's try again - enter your number.", "bulk")
+            return await prompt(context, chat_id, None, "phone", f"{EMOJI_FAILED} <code>{esc(ex)}</code>\n\nLet's try again - enter your number.", "bulk")
         return await _login_done(context, user, chat_id)
 
     if state == "2fa":
@@ -1240,7 +1296,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await t["cl"].sign_in(password=text)
         except Exception as ex:
-            return await prompt(context, chat_id, None, "2fa", f"{e('no')} <code>{esc(ex)}</code>\n\nPlease send the password again.", "bulk")
+            return await prompt(context, chat_id, None, "2fa", f"{EMOJI_FAILED} <code>{esc(ex)}</code>\n\nPlease send the password again.", "bulk")
         return await _login_done(context, user, chat_id)
 
     # ---- admin-only states
@@ -1280,7 +1336,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         t = capture(msg)
         await cleanup()
         ud.pop("state", None)
-        await render(context, chat_id, f"{e('mega')} Broadcasting...")
+        await render(context, chat_id, f"{EMOJI_CHANNEL} Broadcasting...")
         context.application.create_task(broadcast(context, chat_id, t))
 
 
