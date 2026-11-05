@@ -98,19 +98,21 @@ def dec(s):
 
 
 # ---------------------------------------------------------------------------
-# PREMIUM EMOJI - fully managed here in code. No bot menu, no database.
+# PREMIUM EMOJI - fully managed here in code, in ONE place. No bot menu, no database.
 #
-# HOW TO CHANGE AN EMOJI:
-#   1. Send any premium emoji to this bot in a private chat (no setup needed) -
-#      it replies with that emoji's numeric ID.
-#   2. Paste that ID into the matching _ID_... line below (between the quotes).
-#   3. Redeploy. That's the only change needed - the line directly below each
-#      _ID_... constant already builds the exact tag Telegram expects:
-#        <tg-emoji emoji-id="...">fallback</tg-emoji>
-#      and every message in the bot uses that constant (e.g. {EMOJI_FAILED})
-#      directly in its text, so there is nothing else to touch.
-#   4. Leave an _ID_... line as "" to keep using the plain emoji for that slot
-#      (nothing breaks - the bot falls back automatically either way).
+# TO CHANGE AN EXISTING EMOJI:
+#   1. Send that premium emoji to this bot in a private chat (no setup needed)
+#      - it replies with the emoji's numeric ID.
+#   2. Paste the ID as the first value on that emoji's line below.
+#   3. Redeploy.
+#
+# TO ADD A BRAND NEW EMOJI (only ONE line to add, nothing else to touch):
+#   "EMOJI_NAME": ("premium id or empty string", "fallback emoji"),
+#   Then use it as {EMOJI_NAME} in any message text, or "EMOJI_NAME" as a
+#   button's icon key in btn(...).
+#
+# Leave the id as "" to keep using the fallback emoji for that slot - nothing
+# breaks, the bot falls back automatically either way.
 #
 # PREMIUM_ENABLED / BUTTON_ICONS_ENABLED below are master switches: set to
 # False to turn all premium emoji (in text / in buttons) off at once.
@@ -118,59 +120,43 @@ def dec(s):
 PREMIUM_ENABLED = True
 BUTTON_ICONS_ENABLED = True
 
-_ID_BOT = ""        # 🤖  EMOJI_BOT
-_ID_GEM = ""        # 💎  EMOJI_GEM
-_ID_BOLT = ""        # ⚡  EMOJI_BOLT
-_ID_SUCCESS = ""     # ✅  EMOJI_SUCCESS
-_ID_FAILED = ""      # 🚫  EMOJI_FAILED
-_ID_LOCK = ""        # 🔐  EMOJI_LOCK
-_ID_UNLOCK = ""       # 🔓  EMOJI_UNLOCK
-_ID_SETTINGS = ""     # ⚙️  EMOJI_SETTINGS
-_ID_CHANNEL = ""      # 📢  EMOJI_CHANNEL
-_ID_GROUP = ""        # ➕  EMOJI_GROUP
-_ID_BACK = ""         # 🔙  EMOJI_BACK
-_ID_STAR = ""         # ⭐  EMOJI_STAR
-_ID_FIRE = ""         # 🔥  EMOJI_FIRE
-_ID_ROCKET = ""       # 🚀  EMOJI_ROCKET
-_ID_INFO = ""         # ℹ️  EMOJI_INFO
-_ID_CHART = ""        # 📊  EMOJI_CHART
-_ID_EDIT = ""         # ✏️  EMOJI_EDIT
-_ID_MAIL = ""         # 📨  EMOJI_MAIL
-_ID_CROWN = ""        # 👑  EMOJI_CROWN
-_ID_CHECK = ""        # ☑️  EMOJI_CHECK
-_ID_PHONE = ""        # 📱  EMOJI_PHONE
-_ID_KEY = ""          # 🔑  EMOJI_KEY
-_ID_BOOK = ""         # 📖  EMOJI_BOOK
-_ID_LIST = ""         # 📋  EMOJI_LIST
-_ID_EYE = ""          # 👁  EMOJI_EYE
-_ID_SHIELD = ""       # 🛡  EMOJI_SHIELD
-_ID_PARTY = ""        # 🎉  EMOJI_PARTY
-_ID_SWAP = ""         # 🔁  EMOJI_SWAP
-_ID_BELL = ""         # 🔔  EMOJI_BELL
-_ID_IMAGE = ""        # 🖼  EMOJI_IMAGE
-_ID_LINK = ""         # 🔗  EMOJI_LINK
+_EMOJI_DEFS = {
+    # name                 premium id (paste here)      fallback
+    "EMOJI_BOT":          ("", "🤖"),
+    "EMOJI_GEM":          ("", "💎"),
+    "EMOJI_BOLT":         ("", "⚡"),
+    "EMOJI_SUCCESS":      ("", "✅"),
+    "EMOJI_FAILED":       ("", "🚫"),
+    "EMOJI_LOCK":         ("", "🔐"),
+    "EMOJI_UNLOCK":       ("", "🔓"),
+    "EMOJI_SETTINGS":     ("", "⚙️"),
+    "EMOJI_CHANNEL":      ("", "📢"),
+    "EMOJI_GROUP":        ("", "➕"),
+    "EMOJI_BACK":         ("", "🔙"),
+    "EMOJI_STAR":         ("", "⭐"),
+    "EMOJI_FIRE":         ("", "🔥"),
+    "EMOJI_ROCKET":       ("", "🚀"),
+    "EMOJI_INFO":         ("", "ℹ️"),
+    "EMOJI_CHART":        ("", "📊"),
+    "EMOJI_EDIT":         ("", "✏️"),
+    "EMOJI_MAIL":         ("", "📨"),
+    "EMOJI_CROWN":        ("", "👑"),
+    "EMOJI_CHECK":        ("", "☑️"),
+    "EMOJI_PHONE":        ("", "📱"),
+    "EMOJI_KEY":          ("", "🔑"),
+    "EMOJI_BOOK":         ("", "📖"),
+    "EMOJI_LIST":         ("", "📋"),
+    "EMOJI_EYE":          ("", "👁"),
+    "EMOJI_SHIELD":       ("", "🛡"),
+    "EMOJI_PARTY":        ("", "🎉"),
+    "EMOJI_SWAP":         ("", "🔁"),
+    "EMOJI_BELL":         ("", "🔔"),
+    "EMOJI_IMAGE":        ("", "🖼"),
+    "EMOJI_LINK":         ("", "🔗"),
+}
 
-# fallback (plain) emoji shown whenever the matching _ID_... above is empty,
-# or PREMIUM_ENABLED is off, or Telegram rejects the premium emoji id.
-_FALLBACK = {
-    "EMOJI_BOT": "🤖", "EMOJI_GEM": "💎", "EMOJI_BOLT": "⚡", "EMOJI_SUCCESS": "✅", "EMOJI_FAILED": "🚫",
-    "EMOJI_LOCK": "🔐", "EMOJI_UNLOCK": "🔓", "EMOJI_SETTINGS": "⚙️", "EMOJI_CHANNEL": "📢", "EMOJI_GROUP": "➕",
-    "EMOJI_BACK": "🔙", "EMOJI_STAR": "⭐", "EMOJI_FIRE": "🔥", "EMOJI_ROCKET": "🚀", "EMOJI_INFO": "ℹ️",
-    "EMOJI_CHART": "📊", "EMOJI_EDIT": "✏️", "EMOJI_MAIL": "📨", "EMOJI_CROWN": "👑", "EMOJI_CHECK": "☑️",
-    "EMOJI_PHONE": "📱", "EMOJI_KEY": "🔑", "EMOJI_BOOK": "📖", "EMOJI_LIST": "📋", "EMOJI_EYE": "👁",
-    "EMOJI_SHIELD": "🛡", "EMOJI_PARTY": "🎉", "EMOJI_SWAP": "🔁", "EMOJI_BELL": "🔔", "EMOJI_IMAGE": "🖼",
-    "EMOJI_LINK": "🔗",
-}
-_IDS = {
-    "EMOJI_BOT": _ID_BOT, "EMOJI_GEM": _ID_GEM, "EMOJI_BOLT": _ID_BOLT, "EMOJI_SUCCESS": _ID_SUCCESS,
-    "EMOJI_FAILED": _ID_FAILED, "EMOJI_LOCK": _ID_LOCK, "EMOJI_UNLOCK": _ID_UNLOCK, "EMOJI_SETTINGS": _ID_SETTINGS,
-    "EMOJI_CHANNEL": _ID_CHANNEL, "EMOJI_GROUP": _ID_GROUP, "EMOJI_BACK": _ID_BACK, "EMOJI_STAR": _ID_STAR,
-    "EMOJI_FIRE": _ID_FIRE, "EMOJI_ROCKET": _ID_ROCKET, "EMOJI_INFO": _ID_INFO, "EMOJI_CHART": _ID_CHART,
-    "EMOJI_EDIT": _ID_EDIT, "EMOJI_MAIL": _ID_MAIL, "EMOJI_CROWN": _ID_CROWN, "EMOJI_CHECK": _ID_CHECK,
-    "EMOJI_PHONE": _ID_PHONE, "EMOJI_KEY": _ID_KEY, "EMOJI_BOOK": _ID_BOOK, "EMOJI_LIST": _ID_LIST,
-    "EMOJI_EYE": _ID_EYE, "EMOJI_SHIELD": _ID_SHIELD, "EMOJI_PARTY": _ID_PARTY, "EMOJI_SWAP": _ID_SWAP,
-    "EMOJI_BELL": _ID_BELL, "EMOJI_IMAGE": _ID_IMAGE, "EMOJI_LINK": _ID_LINK,
-}
+_IDS = {k: cid for k, (cid, fb) in _EMOJI_DEFS.items()}
+_FALLBACK = {k: fb for k, (cid, fb) in _EMOJI_DEFS.items()}
 
 
 def _tg(key):
@@ -181,38 +167,13 @@ def _tg(key):
     return fb
 
 
-# These are the constants used directly in every message's text, e.g. {EMOJI_FAILED}.
-EMOJI_BOT = _tg("EMOJI_BOT")
-EMOJI_GEM = _tg("EMOJI_GEM")
-EMOJI_BOLT = _tg("EMOJI_BOLT")
-EMOJI_SUCCESS = _tg("EMOJI_SUCCESS")
-EMOJI_FAILED = _tg("EMOJI_FAILED")
-EMOJI_LOCK = _tg("EMOJI_LOCK")
-EMOJI_UNLOCK = _tg("EMOJI_UNLOCK")
-EMOJI_SETTINGS = _tg("EMOJI_SETTINGS")
-EMOJI_CHANNEL = _tg("EMOJI_CHANNEL")
-EMOJI_GROUP = _tg("EMOJI_GROUP")
-EMOJI_BACK = _tg("EMOJI_BACK")
-EMOJI_STAR = _tg("EMOJI_STAR")
-EMOJI_FIRE = _tg("EMOJI_FIRE")
-EMOJI_ROCKET = _tg("EMOJI_ROCKET")
-EMOJI_INFO = _tg("EMOJI_INFO")
-EMOJI_CHART = _tg("EMOJI_CHART")
-EMOJI_EDIT = _tg("EMOJI_EDIT")
-EMOJI_MAIL = _tg("EMOJI_MAIL")
-EMOJI_CROWN = _tg("EMOJI_CROWN")
-EMOJI_CHECK = _tg("EMOJI_CHECK")
-EMOJI_PHONE = _tg("EMOJI_PHONE")
-EMOJI_KEY = _tg("EMOJI_KEY")
-EMOJI_BOOK = _tg("EMOJI_BOOK")
-EMOJI_LIST = _tg("EMOJI_LIST")
-EMOJI_EYE = _tg("EMOJI_EYE")
-EMOJI_SHIELD = _tg("EMOJI_SHIELD")
-EMOJI_PARTY = _tg("EMOJI_PARTY")
-EMOJI_SWAP = _tg("EMOJI_SWAP")
-EMOJI_BELL = _tg("EMOJI_BELL")
-EMOJI_IMAGE = _tg("EMOJI_IMAGE")
-EMOJI_LINK = _tg("EMOJI_LINK")
+# Builds EMOJI_BOT, EMOJI_GEM, ... as plain module-level constants, one per
+# _EMOJI_DEFS entry above - these are what every message's text uses directly,
+# e.g. {EMOJI_FAILED}. Adding a key above automatically creates its constant.
+for _k in _EMOJI_DEFS:
+    globals()[_k] = _tg(_k)
+del _k
+
 
 # ------------------------------------------------------------------ storage (MongoDB)
 GLOBAL_KEYS = ["g", "welcome_msg", "banner", "channel_url", "tut_url", "stats"]
