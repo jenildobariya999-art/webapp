@@ -140,7 +140,7 @@ _EMOJI_DEFS = {
     "EMOJI_EDIT":       ("6161349320206457768", "✏️"),
     "EMOJI_MAIL":       ("6158813567219932663", "✉️"),
     "EMOJI_CROWN":      ("6278244212446073097", "👑"),
-    "EMOJI_CHECK":      ("5188216731453103384", "✔️"),
+    "EMOJI_CHECK":      ("5249053508681883137", "👤"),
     "EMOJI_PHONE":      ("5195033767969839232", "📱"),
     "EMOJI_KEY":        ("5855092747270098407", "🔑"),
     "EMOJI_BOOK":       ("5330115548900501467", "🔖"),
@@ -150,8 +150,13 @@ _EMOJI_DEFS = {
     "EMOJI_PARTY":      ("5942583262609150318", "🎉"),
     "EMOJI_SWAP":       ("6242319667168287353", "🔁"),
     "EMOJI_BELL":       ("5015299982316536836", "🔔"),
+    "EMOJI_GROUP":      ("5841494459904168607", "➕"),
+    "EMOJI_CHANNEL":    ("6269303009658802514", "➕"),
     "EMOJI_IMAGE":      ("4956290155326473271", "🖼"),
     "EMOJI_LINK":        ("5375074927252621134", "🔗"),
+    "EMOJI_NEW":        ("5895669571058142797", "🆕"),
+    "EMOJI_PENDING":    ("5262838597060422237", "🔔"),
+    "EMOJI_BY":         ("5190498849440931467", "🧑🏻‍💻"),
 }
 
 _IDS = {k: cid for k, (cid, fb) in _EMOJI_DEFS.items()}
@@ -419,11 +424,11 @@ def default_welcome():
     return (
         f"{EMOJI_BOT} <b>Hey {{name}}!</b> {EMOJI_CHECK}\n\n"
         f"{EMOJI_GEM} <b>#1 Free Auto Approve Bot on Telegram</b>\n"
-        f"{EMOJI_STAR} Accept New Join Requests\n"
-        f"{EMOJI_STAR} Accept Pending Join Requests\n\n"
+        f"{EMOJI_NEW} Accept New Join Requests\n"
+        f"{EMOJI_PENDING} Accept Pending Join Requests\n\n"
         f"{EMOJI_ROCKET} Approves every new join request automatically, 24/7\n"
         f"{EMOJI_BOLT} Clears old pending requests in bulk\n\n"
-        f"{EMOJI_SUCCESS} Powered By <b>Piro</b>"
+        f"{EMOJI_BY} Powered By <b>Piro</b>"
     )
 
 
