@@ -147,11 +147,13 @@ _EMOJI_DEFS = {
     "EMOJI_SHIELD":     ("4958617898751886363", "🛡"),
     "EMOJI_PARTY":      ("5942583262609150318", "🎉"),
     "EMOJI_SWAP":       ("6242319667168287353", "🔁"),
-    "EMOJI_BELL":       ("5015299982316536836", "🔔"),
+    "EMOJI_BELL":       ("4956290155326473271", "🔔"),
+    "EMOJI_BULK":      ("6032594876506312598",  "📦"),
+    "EMOJI_BROADCAST": ("6278087248571272765", "🎙️"),
     "EMOJI_GROUP":      ("5841494459904168607", "➕"),
     "EMOJI_CHANNEL":    ("6269303009658802514", "➕"),
-    "EMOJI_IMAGE":      ("4956290155326473271", "🖼"),
-    "EMOJI_LINK":        ("5375074927252621134", "🔗"),
+    "EMOJI_IMAGE":      ("5375074927252621134", "🖼"),
+    "EMOJI_LINK":        ("6158822075550145902", "🔗"),
     "EMOJI_NEW":        ("5895669571058142797", "🆕"),
     "EMOJI_PENDING":    ("5262838597060422237", "🔔"),
     "EMOJI_BY":         ("5190498849440931467", "🧑🏻‍💻"),
@@ -426,7 +428,7 @@ def default_welcome():
         f"{EMOJI_PENDING} Accept Pending Join Requests\n\n"
         f"{EMOJI_ROCKET} Approves every new join request automatically, 24/7\n"
         f"{EMOJI_BOLT} Clears old pending requests in bulk\n\n"
-        f"{EMOJI_BY} Powered By <b>Piro</b>"
+        f"{EMOJI_BY} Powered By <b>Jenil Dobariya</b>"
     )
 
 
@@ -522,7 +524,7 @@ def s_home(uid, fname):
     def kb():
         rows = [
             add_links(),
-            [btn("Bulk Approve", "EMOJI_BOLT", "go:bulk", style="primary"), btn("Help Menu", "EMOJI_INFO", "go:help")],
+            [btn("Bulk Approve", "EMOJI_BULK", "go:bulk", style="primary"), btn("Help Menu", "EMOJI_INFO", "go:help")],
             [btn("My Channels", "EMOJI_LIST", "go:channels")],
         ]
         if DB["channel_url"]:
@@ -685,7 +687,7 @@ def s_admin(uid, fname):
                     btn(f"Admin Alerts: {'ON' if notify_on else 'OFF'}", "EMOJI_BELL", "act:t_notify"),
                 ],
                 [btn("Remove Banner", "EMOJI_FAILED", "act:banner_rm")],
-                [btn("Broadcast", "EMOJI_CHANNEL", "act:bc", style="success")],
+                [btn("Broadcast", "EMOJI_BROADCAST", "act:bc", style="success")],
                 [btn("Back", "EMOJI_BACK", "go:home")],
             ]
         )
